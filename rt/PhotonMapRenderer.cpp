@@ -1,18 +1,14 @@
-#include <math.h>   // smallpt, a Path Tracer by Kevin Beason, 2008
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "Common.h"
 #include "Scene.h"
 #include "SceneData.h"
 #include "PhotonMap.h"
+#include "LightSource.h"
 #include "PhotonMapRenderer.h"
 #include "PhotonFilter.h"
 
-// @todo locate_photonsでいまいち見つかってない。半径と強さを調整してみる
-// @todo フォトンマップの可視化
-// @todo トーンマップしてみる
-
-// @todo posおかしい
 
 inline double clamp(double x){
     return x<    0 ? 0 : x>    1 ? 1 : x;
@@ -23,43 +19,6 @@ inline int toInt(double x){
 }
 
 
-//----------------------------------------------------------------
-/**
- * point light source
- */
-class LightSource
-{
-public:
-    LightSource(Vec position, float intensity);
-    
-    Ray GenerateRay();
-    
-	Vec position_;
-    float intensity_;
-	unsigned short xi_[3];
-};
-
-LightSource::LightSource(Vec position, float intensity)
-    : position_(position)
-    , intensity_(intensity)
-{
-    intensity_ = intensity;
-	xi_[0] = 0;
-	xi_[1] = 0;
-	xi_[2] = (unsigned short)(position.x + position.y + position.z + intensity);
-}
-
-Ray LightSource::GenerateRay()
-{
-	Vec dir;
-    float theta = M_PI * erand48(xi_);
-    float phi = 2.0f*M_PI * erand48(xi_);
-    dir.x = sinf(theta) * cosf(phi);
-    dir.y = sinf(theta) * sinf(phi);
-    dir.z = cosf(theta);
-
-	return Ray(position_, dir);
-}
 
 //----------------------------------------------------------------
 PhotonMapRenderer::PhotonMapRenderer()

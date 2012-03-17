@@ -1,14 +1,16 @@
 #ifndef _Scene_H_
 #define _Scene_H_
 
-#include <math.h>   // smallpt, a Path Tracer by Kevin Beason, 2008
+#include <math.h>
 #include "Common.h"
 
-enum Refl_t {
+enum Refl_t
+{
     DIFF, SPEC, REFR
 }; // material types, used in radiance()
 
-struct Sphere {
+struct Sphere
+{
     double rad;     // radius
     Vec p, e, c;    // position, emission, color
     Refl_t refl;    // reflection type (DIFFuse, SPECular, REFRactive)

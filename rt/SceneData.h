@@ -1,5 +1,5 @@
-#ifndef _SceneData_H_
-#define _SceneData_H_
+#ifndef SceneData_H
+#define SceneData_H
 
 #include "Scene.h"
 

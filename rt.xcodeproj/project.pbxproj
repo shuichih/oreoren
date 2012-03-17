@@ -15,6 +15,7 @@
 		B2C152C51483DCD800245AD6 /* GLUT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B2C152C41483DCD800245AD6 /* GLUT.framework */; };
 		B2C152C71483DF9700245AD6 /* App.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2C152C61483DF9700245AD6 /* App.cpp */; };
 		B2C152CE14851E8400245AD6 /* smallpt_fmt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2C152CD14851E8400245AD6 /* smallpt_fmt.cpp */; };
+		B2F4FECF15153367002EB635 /* LightSource.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2F4FECE15153367002EB635 /* LightSource.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -33,7 +34,7 @@
 		B20961781483117300863694 /* rt */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = rt; sourceTree = BUILT_PRODUCTS_DIR; };
 		B209617C1483117300863694 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		B20FAF54150FCEE500846A20 /* PhotonFilter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PhotonFilter.cpp; sourceTree = "<group>"; };
-		B20FAF55150FCEE500846A20 /* PhotonFilter.h */ = {isa = PBXFileReference; fileEncoding = 4; path = PhotonFilter.h; sourceTree = "<group>"; };
+		B20FAF55150FCEE500846A20 /* PhotonFilter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PhotonFilter.h; sourceTree = "<group>"; };
 		B263223414E7893A00158AF5 /* PhotonMapRenderer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PhotonMapRenderer.cpp; sourceTree = "<group>"; };
 		B263223514E7893A00158AF5 /* PhotonMapRenderer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PhotonMapRenderer.h; sourceTree = "<group>"; };
 		B263223814E78A5900158AF5 /* PhotonMap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PhotonMap.h; sourceTree = "<group>"; };
@@ -45,6 +46,8 @@
 		B2C152C61483DF9700245AD6 /* App.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = App.cpp; sourceTree = "<group>"; };
 		B2C152C81483E23100245AD6 /* App.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = App.h; sourceTree = "<group>"; };
 		B2C152CD14851E8400245AD6 /* smallpt_fmt.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = smallpt_fmt.cpp; sourceTree = "<group>"; };
+		B2F4FECC15153359002EB635 /* LightSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LightSource.h; sourceTree = "<group>"; };
+		B2F4FECE15153367002EB635 /* LightSource.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LightSource.cpp; sourceTree = "<group>"; };
 		B2F74FCF14F8B861007135DE /* SceneData.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SceneData.cpp; sourceTree = "<group>"; };
 		B2F74FD114F8BB11007135DE /* SceneData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SceneData.h; sourceTree = "<group>"; };
 		B2F74FD214F8BB42007135DE /* Scene.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Scene.h; sourceTree = "<group>"; };
@@ -99,6 +102,8 @@
 				B209617C1483117300863694 /* main.cpp */,
 				B2C152C81483E23100245AD6 /* App.h */,
 				B2C152C61483DF9700245AD6 /* App.cpp */,
+				B2F4FECC15153359002EB635 /* LightSource.h */,
+				B2F4FECE15153367002EB635 /* LightSource.cpp */,
 			);
 			path = rt;
 			sourceTree = "<group>";
@@ -156,6 +161,7 @@
 				B2921B3614CDB970009FBB71 /* PhotonMap.cpp in Sources */,
 				B263223614E7893A00158AF5 /* PhotonMapRenderer.cpp in Sources */,
 				B20FAF56150FCEE500846A20 /* PhotonFilter.cpp in Sources */,
+				B2F4FECF15153367002EB635 /* LightSource.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

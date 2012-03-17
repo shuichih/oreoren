@@ -124,8 +124,6 @@ void Photon_map::irradiance_estimate(
     // if less than 8 photons return
     if (np.found < 8)
     {
-        //fprintf(stderr, "> %d\n", np.found);
-        //fprintf(stderr, "> (%f %f %f) (%f %f %f)\n", pos[0], pos[1], pos[2], normal[0], normal[1], normal[2]);
         return;
     }
 
