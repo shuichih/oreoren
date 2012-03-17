@@ -8,7 +8,13 @@
 
 /* Begin PBXBuildFile section */
 		B209617D1483117300863694 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B209617C1483117300863694 /* main.cpp */; };
-		B209617F1483117300863694 /* rt.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = B209617E1483117300863694 /* rt.1 */; };
+		B20FAF56150FCEE500846A20 /* PhotonFilter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B20FAF54150FCEE500846A20 /* PhotonFilter.cpp */; };
+		B263223614E7893A00158AF5 /* PhotonMapRenderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B263223414E7893A00158AF5 /* PhotonMapRenderer.cpp */; };
+		B2921B3614CDB970009FBB71 /* PhotonMap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2921B3514CDB970009FBB71 /* PhotonMap.cpp */; };
+		B2C152C21483DCCE00245AD6 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B2C152C11483DCCE00245AD6 /* OpenGL.framework */; };
+		B2C152C51483DCD800245AD6 /* GLUT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B2C152C41483DCD800245AD6 /* GLUT.framework */; };
+		B2C152C71483DF9700245AD6 /* App.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2C152C61483DF9700245AD6 /* App.cpp */; };
+		B2C152CE14851E8400245AD6 /* smallpt_fmt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2C152CD14851E8400245AD6 /* smallpt_fmt.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -18,7 +24,6 @@
 			dstPath = /usr/share/man/man1/;
 			dstSubfolderSpec = 0;
 			files = (
-				B209617F1483117300863694 /* rt.1 in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
@@ -27,7 +32,22 @@
 /* Begin PBXFileReference section */
 		B20961781483117300863694 /* rt */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = rt; sourceTree = BUILT_PRODUCTS_DIR; };
 		B209617C1483117300863694 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
-		B209617E1483117300863694 /* rt.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = rt.1; sourceTree = "<group>"; };
+		B20FAF54150FCEE500846A20 /* PhotonFilter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PhotonFilter.cpp; sourceTree = "<group>"; };
+		B20FAF55150FCEE500846A20 /* PhotonFilter.h */ = {isa = PBXFileReference; fileEncoding = 4; path = PhotonFilter.h; sourceTree = "<group>"; };
+		B263223414E7893A00158AF5 /* PhotonMapRenderer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PhotonMapRenderer.cpp; sourceTree = "<group>"; };
+		B263223514E7893A00158AF5 /* PhotonMapRenderer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PhotonMapRenderer.h; sourceTree = "<group>"; };
+		B263223814E78A5900158AF5 /* PhotonMap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PhotonMap.h; sourceTree = "<group>"; };
+		B263223914E7A5B700158AF5 /* Common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Common.h; sourceTree = "<group>"; };
+		B2921B3514CDB970009FBB71 /* PhotonMap.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PhotonMap.cpp; sourceTree = "<group>"; };
+		B29B9DB214B4A248003A0CC2 /* smallpt_fmt.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = smallpt_fmt.h; sourceTree = "<group>"; };
+		B2C152C11483DCCE00245AD6 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
+		B2C152C41483DCD800245AD6 /* GLUT.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLUT.framework; path = System/Library/Frameworks/GLUT.framework; sourceTree = SDKROOT; };
+		B2C152C61483DF9700245AD6 /* App.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = App.cpp; sourceTree = "<group>"; };
+		B2C152C81483E23100245AD6 /* App.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = App.h; sourceTree = "<group>"; };
+		B2C152CD14851E8400245AD6 /* smallpt_fmt.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = smallpt_fmt.cpp; sourceTree = "<group>"; };
+		B2F74FCF14F8B861007135DE /* SceneData.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SceneData.cpp; sourceTree = "<group>"; };
+		B2F74FD114F8BB11007135DE /* SceneData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SceneData.h; sourceTree = "<group>"; };
+		B2F74FD214F8BB42007135DE /* Scene.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Scene.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -35,6 +55,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B2C152C51483DCD800245AD6 /* GLUT.framework in Frameworks */,
+				B2C152C21483DCCE00245AD6 /* OpenGL.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -44,6 +66,8 @@
 		B209616D1483117300863694 = {
 			isa = PBXGroup;
 			children = (
+				B2C152C41483DCD800245AD6 /* GLUT.framework */,
+				B2C152C11483DCCE00245AD6 /* OpenGL.framework */,
 				B209617B1483117300863694 /* rt */,
 				B20961791483117300863694 /* Products */,
 			);
@@ -60,8 +84,21 @@
 		B209617B1483117300863694 /* rt */ = {
 			isa = PBXGroup;
 			children = (
+				B20FAF54150FCEE500846A20 /* PhotonFilter.cpp */,
+				B20FAF55150FCEE500846A20 /* PhotonFilter.h */,
+				B2F74FD214F8BB42007135DE /* Scene.h */,
+				B2F74FD114F8BB11007135DE /* SceneData.h */,
+				B2F74FCF14F8B861007135DE /* SceneData.cpp */,
+				B263223914E7A5B700158AF5 /* Common.h */,
+				B263223814E78A5900158AF5 /* PhotonMap.h */,
+				B2921B3514CDB970009FBB71 /* PhotonMap.cpp */,
+				B263223414E7893A00158AF5 /* PhotonMapRenderer.cpp */,
+				B263223514E7893A00158AF5 /* PhotonMapRenderer.h */,
+				B29B9DB214B4A248003A0CC2 /* smallpt_fmt.h */,
+				B2C152CD14851E8400245AD6 /* smallpt_fmt.cpp */,
 				B209617C1483117300863694 /* main.cpp */,
-				B209617E1483117300863694 /* rt.1 */,
+				B2C152C81483E23100245AD6 /* App.h */,
+				B2C152C61483DF9700245AD6 /* App.cpp */,
 			);
 			path = rt;
 			sourceTree = "<group>";
@@ -114,6 +151,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				B209617D1483117300863694 /* main.cpp in Sources */,
+				B2C152C71483DF9700245AD6 /* App.cpp in Sources */,
+				B2C152CE14851E8400245AD6 /* smallpt_fmt.cpp in Sources */,
+				B2921B3614CDB970009FBB71 /* PhotonMap.cpp in Sources */,
+				B263223614E7893A00158AF5 /* PhotonMapRenderer.cpp in Sources */,
+				B20FAF56150FCEE500846A20 /* PhotonFilter.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -198,6 +240,7 @@
 				B20961841483117300863694 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
