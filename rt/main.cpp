@@ -19,7 +19,7 @@ int main(int argc, const char * argv[])
 
     App* pApp = new App();
     //pApp->Run(argc, argv, 512, 384, App::SimpleRayTrace);
-    pApp->Run(argc, argv, 1024, 768, App::SimpleRayTrace);
+    pApp->Run(argc, argv, 256, 256, App::SimpleRayTrace);
     
 
     delete pApp;

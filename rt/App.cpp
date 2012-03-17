@@ -36,8 +36,6 @@ void App::Init(int argc, const char * argv[], int w, int h, Mode mode)
     mode_ = mode;
     w_ = w;
     h_ = h;
-    //pColorBuf_ = float[w_ * h_ * 3];
-    //pPhotonMap_ = new Photon_map(500000);
 
     glutInit(&argc, (char**)argv);
 	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
@@ -52,22 +50,18 @@ void App::Update()
 {
     static unsigned char* pColorBuf = 0;
 
-    //pColorBuf = rt(w_, h_, 2);
-    Photon_map photonMap(500000);
     PhotonMapRenderer renderer;
-    pColorBuf = renderer.Run(&photonMap, 500000, w_, h_);
+    PhotonMapRenderer::Config config = renderer.GetDefaultConfig();
+    config.screenWidth = w_;
+    config.screenHeight = h_;
+    renderer.SetConfig(config);
+    pColorBuf = renderer.Run();
 
-#if 1
     glMatrixMode(GL_PROJECTION);
     glOrtho(0, w_, h_, 0, -1, 1);
+    //gluPerspective(60.0, 1.0, 0.1, 1000.0);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-#else
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(60.0, 1.0, 0.1, 1000.0);
-    glMatrixMode(GL_MODELVIEW);
-#endif
     glDisable(GL_DITHER);
 
     glEnable(GL_TEXTURE_2D);
@@ -78,8 +72,6 @@ void App::Update()
                 
     glTexImage2D(GL_TEXTURE_2D, 0, 3, w_, h_, 0, GL_RGBA,
                  GL_UNSIGNED_BYTE, pColorBuf);
-    
-    //gentextureとかいらないのは何なのかね
     
     glClearColor(0.5, 0.5, 0.5, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);

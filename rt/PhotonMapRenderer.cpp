@@ -64,12 +64,35 @@ Ray LightSource::GenerateRay()
 //----------------------------------------------------------------
 PhotonMapRenderer::PhotonMapRenderer()
 {
-    pFilter_ = new ConeFilter(1.1f);
+    defaultConfig_.screenWidth = 256;
+    defaultConfig_.screenHeight = 256;
+    defaultConfig_.nSamplePerPixel = 4;
+    defaultConfig_.nPhotons = 100000;
+    defaultConfig_.nEstimatePhotons = 100;
+    defaultConfig_.estimateDist = 10.f;
+    defaultConfig_.pFilter = new ConeFilter(1.1f);
+    
+    config_ = defaultConfig_;
+    
+    pPhotonMap_ = new Photon_map(config_.nPhotons);
 }
 
 PhotonMapRenderer::~PhotonMapRenderer()
 {
-    delete pFilter_;
+    delete defaultConfig_.pFilter;
+    delete pPhotonMap_;
+}
+
+PhotonMapRenderer::Config PhotonMapRenderer::GetDefaultConfig()
+{
+    return defaultConfig_;
+}
+
+void PhotonMapRenderer::SetConfig(const PhotonMapRenderer::Config &config)
+{
+    config_ = config;
+    delete pPhotonMap_;
+    pPhotonMap_ = new Photon_map(config_.nPhotons);
 }
 
 bool PhotonMapRenderer::Intersect(const Ray& r, double& t, int& id)
@@ -214,7 +237,7 @@ Vec PhotonMapRenderer::Irradiance(const Ray &r, int depth)
         float pos[3] = { x.x, x.y, x.z };
         float nrm[3] = { nl.x, nl.y, nl.z };
         float irrad[3] = { 0, 0, 0 };
-        pPhotonMap_->irradiance_estimate(irrad, pos, nrm, estimateDist_, nEstimatePhotons_);
+        pPhotonMap_->irradiance_estimate(irrad, pos, nrm, config_.estimateDist, config_.nEstimatePhotons);
         //fprintf(stderr, "irrad %f %f %f\r", irrad[0], irrad[1], irrad[2]);
         return Vec(f.x * irrad[0], f.y * irrad[1], f.z * irrad[2]);
     }
@@ -264,24 +287,17 @@ Vec PhotonMapRenderer::Irradiance(const Ray &r, int depth)
     return retRadiance;
 }
 
-unsigned char* PhotonMapRenderer::Run(Photon_map* pPhotonMap, unsigned int nPhotons, int w, int h)
+unsigned char* PhotonMapRenderer::Run()
 {
     xi_[0] = 0;
 	xi_[1] = 0;
-	xi_[2] = (unsigned short)nPhotons;
-	pPhotonMap_ = pPhotonMap;
-	nPhotons_ = nPhotons;
-    estimateDist_ = 10.f;
-    nEstimatePhotons_ = 500;
-    //estimateDist_ = 10.f;
-    //nEstimatePhotons_ = 150;
-    pPhotonMap_->SetFilter(pFilter_);
+	xi_[2] = (unsigned short)config_.nPhotons;
 
 	LightSource litSrc(Vec(50.0f, 81.0f, 81.6f), 10000);
-    unsigned int nLitPhotons = nPhotons; // ライトが複数ならnPhotonsをintensityの比率等で割り振る
-	for (int iPhoton = 0; iPhoton < nPhotons; iPhoton++) {
-        if (iPhoton % (nPhotons / 100) == 0)
-            fprintf(stderr, "PhotonTracing %5.2f%%\n", 100. * iPhoton / nPhotons);
+    unsigned int nLitPhotons = config_.nPhotons; // ライトが複数ならnPhotonsをintensityの比率等で割り振る
+	for (int iPhoton = 0; iPhoton < config_.nPhotons; iPhoton++) {
+        if (iPhoton % (config_.nPhotons / 100) == 0)
+            fprintf(stderr, "PhotonTracing %5.2f%%\n", 100. * iPhoton / config_.nPhotons);
         
 		Ray ray = litSrc.GenerateRay();
         float power[3] = { litSrc.intensity_, litSrc.intensity_, litSrc.intensity_ };
@@ -290,14 +306,18 @@ unsigned char* PhotonMapRenderer::Run(Photon_map* pPhotonMap, unsigned int nPhot
     pPhotonMap_->scale_photon_power(1.0f / nLitPhotons);
     pPhotonMap_->balance();
     
-    return RayTracing(w, h, 1);
+    return RayTracing();
 }
 
 
 
-unsigned char* PhotonMapRenderer::RayTracing(int w, int h, int samps)
-{    
-    //int samps = (argc == 2) ? atoi(argv[1])/4 : 1;   // # samples
+unsigned char* PhotonMapRenderer::RayTracing()
+{
+    const unsigned int w = config_.screenWidth;
+    const unsigned int h = config_.screenHeight;
+    const unsigned int nSamples = config_.nSamplePerPixel;
+    const unsigned int nSamplesSqrt = (unsigned int)sqrt(nSamples);
+    
     Ray cam(Vec(50, 52, 295.6), Vec(0, -0.042612, -1).norm());      // cam pos, dir
     Vec cx = Vec(w * .5135 / h);
     Vec cy = (cx % cam.d).norm() * .5135; // .5135は視野角
@@ -308,7 +328,7 @@ unsigned char* PhotonMapRenderer::RayTracing(int w, int h, int samps)
 
     // Loop over image rows
     for (int y=0; y<h; y++) {
-        fprintf(stderr, "\rRayTracing (%d spp) %5.2f%%", samps*4, 100. * y / (h-1));
+        fprintf(stderr, "\rRayTracing (%d spp) %5.2f%%", nSamples, 100.f * y / (h-1));
 
         xi_[0] = 0;
         xi_[1] = 0;
@@ -318,11 +338,11 @@ unsigned char* PhotonMapRenderer::RayTracing(int w, int h, int samps)
         for (unsigned short x=0; x<w; x++) {
             
             int i = (h-y-1) * w + x; // カラーバッファのインデックス
-            for (int sy=0; sy<2; sy++) {     // 2x2 subpixel rows
-                for (int sx=0; sx<2; sx++) {       // 2x2 subpixel cols
+            for (int sy=0; sy<nSamplesSqrt; sy++) {         // subpixel rows
+                for (int sx=0; sx<nSamplesSqrt; sx++) {     // subpixel cols
                     r = Vec();
                     
-                    for (int s=0; s<samps; s++) {
+                    for (int s=0; s<nSamples; s++) {
                         // r1, r2 = 0 to 2
                         // dx, dy = -1 to 1  中心に集まったサンプリング --> tent filter
                         double r1 = 2*erand48(xi_), dx = (r1 < 1) ? sqrt(r1)-1 : 1-sqrt(2-r1);
@@ -337,7 +357,7 @@ unsigned char* PhotonMapRenderer::RayTracing(int w, int h, int samps)
                                 cy*( ( (sy+.5 + dy)/2 + y)/h - .5) + cam.d;
 
                         // 140は多分投影面までの距離
-                        r = r + Irradiance(Ray(cam.o + d * 140, d.norm()), 0) * (1./samps);
+                        r = r + Irradiance(Ray(cam.o + d * 140, d.norm()), 0) * (1.f/nSamples);
                     }
                     // Camera rays are pushed ^^^^^ forward to start in interior
                     // トーンマップとか特にやってない。クランプしてるだけ。
@@ -348,23 +368,13 @@ unsigned char* PhotonMapRenderer::RayTracing(int w, int h, int samps)
         }
     }
     
-    static unsigned char* pColorBuf = new unsigned char[w * h * 4];
+    static unsigned char* pColorBuf = new unsigned char[w * h * sizeof(char)*4];
     for (int i = 0, j=0; i < (w*h); ++i, j+=4)
     {
-        //pColorBuf[j+0] = (unsigned char)(toInt(c[i].x));
-#if 0
-        pColorBuf[j+0] = 255;//(i%4 == 0) ? 0 : 255;
-        pColorBuf[j+1] = 0;//(unsigned char)(toInt(c[i].y));
-        pColorBuf[j+2] = 0;//(unsigned char)(toInt(c[i].z));
-        pColorBuf[j+3] = 255;
-#else
         pColorBuf[j+0] = (unsigned char)(toInt(c[i].x));
         pColorBuf[j+1] = (unsigned char)(toInt(c[i].y));
         pColorBuf[j+2] = (unsigned char)(toInt(c[i].z));
         pColorBuf[j+3] = 255;
-#endif
-        //fprintf(stderr, "\r%f %f %f", c[i].x, c[i].y, c[i].z);
-        //fprintf(stderr, "\r%d %d %d", pColorBuf[j+0], pColorBuf[j+1], pColorBuf[j+2]);
     }
     delete [] c;
     

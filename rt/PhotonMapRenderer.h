@@ -8,23 +8,37 @@ class Photon_map;
 class PhotonMapRenderer
 {
 public:
+    
+    struct Config
+    {
+        unsigned int screenWidth;
+        unsigned int screenHeight;
+        unsigned int nSamplePerPixel;
+        unsigned int nPhotons;
+        unsigned int nEstimatePhotons;
+        float estimateDist;
+        const PhotonFilter* pFilter;
+    };
+    
+    //
+    
     PhotonMapRenderer();
     ~PhotonMapRenderer();
-    unsigned char* Run(Photon_map* pPhotonMap, unsigned int nPhotons, int w, int h);
+    void SetConfig(const Config& config);
+    Config GetDefaultConfig();
+    unsigned char* Run();
 
 private:
     
     void PhotonTracing(const Ray& r, float power[3], int depth);
     bool Intersect(const Ray& r, double& t, int& id);
-    unsigned char* RayTracing(int w, int h, int samps);
+    unsigned char* RayTracing();
     Vec Irradiance(const Ray &r, int depth);
     
-    unsigned short xi_[3];
+    struct Config config_;
+    struct Config defaultConfig_;
     Photon_map* pPhotonMap_;
-    unsigned int nPhotons_;
-    unsigned int nEstimatePhotons_;
-    float estimateDist_;
-    PhotonFilter* pFilter_;
+    unsigned short xi_[3];
 };
 
 #endif
