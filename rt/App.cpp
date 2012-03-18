@@ -48,14 +48,26 @@ void App::Init(int argc, const char * argv[], int w, int h, Mode mode)
 
 void App::Update()
 {
-    static unsigned char* pColorBuf = 0;
+    static u8* pColorBuf = 0;
 
     PhotonMapRenderer renderer;
     PhotonMapRenderer::Config config = renderer.GetDefaultConfig();
     config.screenWidth = w_;
     config.screenHeight = h_;
+    config.nPhotons = 500000;
+    config.nEstimatePhotons = 500;
+    config.estimateDist = 10.f;
+    config.nSubPixelsSqrt = 1;
     renderer.SetConfig(config);
+    
+    time_t startTime, endTime;
+    time(&startTime);
+    
     pColorBuf = renderer.Run();
+    
+    time(&endTime);
+    u32 elapsed = (u32)difftime(endTime, startTime);
+    printf("rendering time = %dm %ds\n", elapsed/60, elapsed%60);
 
     glMatrixMode(GL_PROJECTION);
     glOrtho(0, w_, h_, 0, -1, 1);

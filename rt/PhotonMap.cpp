@@ -78,7 +78,7 @@ Photon_map::~Photon_map()
 	free(photons);
 }
 
-void Photon_map::SetFilter(PhotonFilter* pFilter)
+void Photon_map::SetFilter(const PhotonFilter* pFilter)
 {
     pFilter_ = pFilter;
 }

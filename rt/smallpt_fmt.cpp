@@ -18,19 +18,21 @@ Sphere g_spheres2[] = {
     Sphere(600, Vec(50,681.6-.27,81.6),Vec(12,12,12), Vec(),  DIFF)     //Lite
 };
 
-inline double clamp(double x){
+inline real clamp(real x)
+{
     return x < 0 ? 0 : x > 1 ? 1 : x;
 }
 
-inline int toInt(double x){
+inline int toInt(real x)
+{
     return int(pow(clamp(x),1/2.2)*255+.5);
 }
 
-inline bool intersect(const Ray &r, double &t, int &id){
-
+inline bool intersect(const Ray& r, real& t, int& id)
+{
     int n = sizeof(g_spheres2) / sizeof(g_spheres2[0]);
-    double d;
-    double inf = 1e20;
+    real d;
+    real inf = 1e20;
     t = inf;
 
     for(int i=n; i--;) {
@@ -46,7 +48,7 @@ inline bool intersect(const Ray &r, double &t, int &id){
 Vec radiance(const Ray &r, int depth, unsigned short *Xi);
 Vec radiance(const Ray &r, int depth, unsigned short *Xi)
 {
-    double t;   // distance to intersection
+    real t;   // distance to intersection
     int id=0;   // id of intersected object
     if (!intersect(r, t, id)) return Vec(); // if miss, return black
     const Sphere &obj = g_spheres2[id];        // the hit object
@@ -55,7 +57,7 @@ Vec radiance(const Ray &r, int depth, unsigned short *Xi)
     Vec nl=n.dot(r.d) < 0 ? n : n*-1; // 交点の法線
     Vec f=obj.c;
 
-    double p = f.x > f.y && f.x > f.z ? f.x : f.y > f.z ? f.y : f.z;
+    real p = f.x > f.y && f.x > f.z ? f.x : f.y > f.z ? f.y : f.z;
     // max refl
     if (++depth > 5)
     {
@@ -76,9 +78,9 @@ Vec radiance(const Ray &r, int depth, unsigned short *Xi)
         // cosθ = sqrt(1-r_2)
         //    φ = 2πr_1
         // (r1とr2がRealistic Ray Tracingとは逆)
-        double r1 = 2*M_PI*erand48(Xi);
-        double r2 = erand48(Xi); // => 1-cos^2θ = 1-sqrt(1-r_2)^2 = r_2
-        double r2s = sqrt(r2);   // => sinθ = sqrt(1-cos^2θ) = sqrt(r_2)
+        real r1 = 2*M_PI*erand48(Xi);
+        real r2 = erand48(Xi); // => 1-cos^2θ = 1-sqrt(1-r_2)^2 = r_2
+        real r2s = sqrt(r2);   // => sinθ = sqrt(1-cos^2θ) = sqrt(r_2)
         Vec w = nl; // normal
         Vec u = ((fabs(w.x) > .1 ? Vec(0,1) : Vec(1)) % w).norm(); // binormal
         Vec v = w % u; // tangent
@@ -96,11 +98,11 @@ Vec radiance(const Ray &r, int depth, unsigned short *Xi)
     // Ideal dielectric REFRACTION
     Ray reflRay(x, r.d - n * 2 * n.dot(r.d));
     bool into = n.dot(nl) > 0; // Ray from outside going in?
-    double airRefrIdx = 1;
-    double grassRefrIdx = 1.5;
-    double nnt = into ? airRefrIdx/grassRefrIdx : grassRefrIdx/airRefrIdx;
-    double ddn = r.d.dot(nl); // レイと法線のcos
-    double cos2t;
+    real airRefrIdx = 1;
+    real grassRefrIdx = 1.5;
+    real nnt = into ? airRefrIdx/grassRefrIdx : grassRefrIdx/airRefrIdx;
+    real ddn = r.d.dot(nl); // レイと法線のcos
+    real cos2t;
     
     // Total internal reflection
     if ((cos2t = 1-nnt * nnt * (1 - ddn * ddn)) < 0)
@@ -109,18 +111,18 @@ Vec radiance(const Ray &r, int depth, unsigned short *Xi)
     // 屈折方向
     Vec tdir = (r.d * nnt - n * ((into ? 1 : -1) * (ddn * nnt + sqrt(cos2t)))).norm();
     
-    double a = grassRefrIdx - airRefrIdx;
-    double b = grassRefrIdx + airRefrIdx;
-    double R0 = a * a / (b * b); // 垂直反射率 0.25 / 2.5 = 0.1 @todo 根拠調査
-    double c = 1 - (into ? -ddn : tdir.dot(n));
-    double fresnel = R0 + (1 - R0)*c*c*c*c*c;
-    double Tr = 1 - fresnel;
+    real a = grassRefrIdx - airRefrIdx;
+    real b = grassRefrIdx + airRefrIdx;
+    real R0 = a * a / (b * b); // 垂直反射率 0.25 / 2.5 = 0.1 @todo 根拠調査
+    real c = 1 - (into ? -ddn : tdir.dot(n));
+    real fresnel = R0 + (1 - R0)*c*c*c*c*c;
+    real Tr = 1 - fresnel;
     // 0.25 と 0.5はどっから出てきた？ 結果を綺麗にするためのヒューリスティックな調整？
     // そうぽい。この調整が無ければRP, TPは1になって、下のでRP, TP掛ける必要はなくなる。
     // 屈折する確率も反射する確率も最低限25%にするということ。例えば.1 + (.8 * fresnel)でもよい。
-    double P = .25 + (.5 * fresnel);
-    double RP = fresnel / P;
-    double TP = Tr / (1-P);
+    real P = .25 + (.5 * fresnel);
+    real RP = fresnel / P;
+    real TP = Tr / (1-P);
     Vec retRadiance;
     if (depth > 2) {
         if (erand48(Xi) < P)
@@ -136,16 +138,16 @@ Vec radiance(const Ray &r, int depth, unsigned short *Xi)
     Ray reflRay(x, r.d-n*2*n.dot(r.d)); // Ideal dielectric REFRACTION
     bool into = n.dot(nl) > 0;
     // Ray from outside going in?
-    double nc=1, nt=1.5, nnt=into ? nc/nt : nt/nc, ddn=r.d.dot(nl), cos2t;
+    real nc=1, nt=1.5, nnt=into ? nc/nt : nt/nc, ddn=r.d.dot(nl), cos2t;
 
     if ((cos2t=1-nnt*nnt*(1-ddn*ddn)) < 0) // Total internal reflection
     return obj.e + f.mult(radiance(reflRay,depth,Xi));
 
     Vec tdir = (r.d*nnt - n*((into?1:-1)*(ddn*nnt+sqrt(cos2t)))).norm();
 
-    double a=nt-nc, b=nt+nc, R0=a*a/(b*b), c = 1-(into?-ddn:tdir.dot(n));
+    real a=nt-nc, b=nt+nc, R0=a*a/(b*b), c = 1-(into?-ddn:tdir.dot(n));
 
-    double Re=R0+(1-R0)*c*c*c*c*c,Tr=1-Re,P=.25+.5*Re,RP=Re/P,TP=Tr/(1-P);
+    real Re=R0+(1-R0)*c*c*c*c*c,Tr=1-Re,P=.25+.5*Re,RP=Re/P,TP=Tr/(1-P);
 
     return obj.e + f.mult(depth > 2 ? (erand48(Xi) < P ?  // Russian roulette
     radiance(reflRay,depth,Xi)*RP:radiance(Ray(x,tdir),depth,Xi)*TP) :
@@ -154,7 +156,7 @@ Vec radiance(const Ray &r, int depth, unsigned short *Xi)
 }
 
 
-unsigned char* rt(int w, int h, int samps){
+u8* rt(int w, int h, int samps){
     
     //int w=1024, h=768;
     //int samps = (argc == 2) ? atoi(argv[1])/4 : 1;   // # samples
@@ -183,8 +185,8 @@ unsigned char* rt(int w, int h, int samps){
                     for (int s=0; s<samps; s++) {
                         // r1, r2 = 0 to 2
                         // dx, dy = -1 to 1  中心に集まったサンプリング --> tent filter
-                        double r1 = 2*erand48(Xi), dx = (r1 < 1) ? sqrt(r1)-1 : 1-sqrt(2-r1);
-                        double r2 = 2*erand48(Xi), dy = (r2 < 1) ? sqrt(r2)-1 : 1-sqrt(2-r2);
+                        real r1 = 2*erand48(Xi), dx = (r1 < 1) ? sqrt(r1)-1 : 1-sqrt(2-r1);
+                        real r2 = 2*erand48(Xi), dy = (r2 < 1) ? sqrt(r2)-1 : 1-sqrt(2-r2);
                         // (sx+.5 + dx)/2 --> .5でサブピクセルの中心に。dxでフィルタの揺らぎ。
                         // sx+.5 = 0.5 or 1.5
                         // sx+.5 + dx = -0.5 to 1.5 or 0.5 to 2.5
@@ -206,19 +208,19 @@ unsigned char* rt(int w, int h, int samps){
         }
     }
     
-    static unsigned char* pColorBuf = new unsigned char[w * h * 4];
+    static u8* pColorBuf = new u8[w * h * 4];
     for (int i = 0, j=0; i < (w*h); ++i, j+=4)
     {
-        //pColorBuf[j+0] = (unsigned char)(toInt(c[i].x));
+        //pColorBuf[j+0] = (u8)(toInt(c[i].x));
 #if 0
         pColorBuf[j+0] = 255;//(i%4 == 0) ? 0 : 255;
-        pColorBuf[j+1] = 0;//(unsigned char)(toInt(c[i].y));
-        pColorBuf[j+2] = 0;//(unsigned char)(toInt(c[i].z));
+        pColorBuf[j+1] = 0;//(u8)(toInt(c[i].y));
+        pColorBuf[j+2] = 0;//(u8)(toInt(c[i].z));
         pColorBuf[j+3] = 255;
 #else
-        pColorBuf[j+0] = (unsigned char)(toInt(c[i].x));
-        pColorBuf[j+1] = (unsigned char)(toInt(c[i].y));
-        pColorBuf[j+2] = (unsigned char)(toInt(c[i].z));
+        pColorBuf[j+0] = (u8)(toInt(c[i].x));
+        pColorBuf[j+1] = (u8)(toInt(c[i].y));
+        pColorBuf[j+2] = (u8)(toInt(c[i].z));
         pColorBuf[j+3] = 255;
 #endif
         //fprintf(stderr, "\r%f %f %f", c[i].x, c[i].y, c[i].z);

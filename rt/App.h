@@ -30,7 +30,6 @@ private:
     int h_;
     Mode mode_;
     Photon_map* pPhotonMap_;
-//    unsigned int* pColorBuf_;
 };
 
 #endif

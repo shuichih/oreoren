@@ -41,7 +41,7 @@ public:
 	Photon_map(int max_phot);
 	~Photon_map();
 
-    void SetFilter(PhotonFilter* pFilter);
+    void SetFilter(const PhotonFilter* pFilter);
     
 	void store(
 		const float power[3],		// photon power
@@ -99,6 +99,6 @@ private:
 	float bbox_min[3];		// photons全体のbbox_min
 	float bbox_max[3];		// photons全体のbbox_max
     
-    PhotonFilter* pFilter_;
+    const PhotonFilter* pFilter_;
 };
 

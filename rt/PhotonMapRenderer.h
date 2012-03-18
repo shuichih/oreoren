@@ -11,11 +11,11 @@ public:
     
     struct Config
     {
-        unsigned int screenWidth;
-        unsigned int screenHeight;
-        unsigned int nSamplePerPixel;
-        unsigned int nPhotons;
-        unsigned int nEstimatePhotons;
+        u32 screenWidth;
+        u32 screenHeight;
+        u32 nSubPixelsSqrt;
+        u32 nPhotons;
+        u32 nEstimatePhotons;
         float estimateDist;
         const PhotonFilter* pFilter;
     };
@@ -26,13 +26,13 @@ public:
     ~PhotonMapRenderer();
     void SetConfig(const Config& config);
     Config GetDefaultConfig();
-    unsigned char* Run();
+    u8* Run();
 
 private:
     
     void PhotonTracing(const Ray& r, float power[3], int depth);
-    bool Intersect(const Ray& r, double& t, int& id);
-    unsigned char* RayTracing();
+    bool Intersect(const Ray& r, real& t, int& id);
+    u8* RayTracing();
     Vec Irradiance(const Ray &r, int depth);
     
     struct Config config_;

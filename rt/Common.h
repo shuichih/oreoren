@@ -3,18 +3,37 @@
 
 #include <cmath>
 
+//#define USE_FLOAT
+
+//----------------------------------------------------------------
+
+typedef char                i8;
+typedef short               i16;
+typedef int                 i32;
+typedef long long           i64;
+typedef unsigned char       u8;
+typedef unsigned short      u16;
+typedef unsigned int        u32;
+typedef unsigned long long  u64;
+#ifdef USE_FLOAT
+typedef float               real;
+#else
+typedef double              real;
+#endif
+
+//----------------------------------------------------------------
 struct Vec {
     
     union
     {
         struct
         {
-            double x, y, z;
+            real x, y, z;
         };
-        double e[3];
+        real e[3];
     };
 
-    inline Vec(double x_=0, double y_=0, double z_=0)
+    inline Vec(real x_=0, real y_=0, real z_=0)
     {
         x=x_;
         y=y_;
@@ -25,13 +44,13 @@ struct Vec {
     {
         return Vec(x+b.x,y+b.y,z+b.z);
     }
-    
+   
     inline Vec operator-(const Vec &b) const
     {
         return Vec(x-b.x,y-b.y,z-b.z);
     }
     
-    inline Vec operator*(double b) const
+    inline Vec operator*(real b) const
     {
         return Vec(x*b,y*b,z*b);
     }
@@ -41,12 +60,45 @@ struct Vec {
         return Vec(x*b.x,y*b.y,z*b.z);
     }
     
+    inline Vec& operator+=(const Vec &b)
+    {
+        x += b.x;
+        y += b.y;
+        z += b.z;
+        return *this;
+    }
+    
+    inline Vec& operator-=(const Vec& b)
+    {
+        x -= b.x;
+        y -= b.y;
+        z -= b.z;
+        return *this;
+    } 
+    
+    inline Vec& operator*=(real b)
+    {
+        x *= b;
+        y *= b;
+        z *= b;
+        return *this;
+    }
+    
+    inline Vec& operator/=(real b)
+    {
+        real bInv = 1.0 / b;
+        x *= bInv;
+        y *= bInv;
+        z *= bInv;
+        return *this;
+    }
+    
     inline Vec& norm()
     {
         return *this = *this * (1/sqrt(x*x+y*y+z*z));
     }
     
-    inline double dot(const Vec &b) const
+    inline real dot(const Vec &b) const
     {
         return x*b.x+y*b.y+z*b.z;
     }
