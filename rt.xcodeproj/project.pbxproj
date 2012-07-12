@@ -10,12 +10,14 @@
 		B209617D1483117300863694 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B209617C1483117300863694 /* main.cpp */; };
 		B20FAF56150FCEE500846A20 /* PhotonFilter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B20FAF54150FCEE500846A20 /* PhotonFilter.cpp */; };
 		B263223614E7893A00158AF5 /* PhotonMapRenderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B263223414E7893A00158AF5 /* PhotonMapRenderer.cpp */; };
+		B282457315AE5E64006A3DC1 /* Scene.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B282457215AE5E64006A3DC1 /* Scene.cpp */; };
 		B2921B3614CDB970009FBB71 /* PhotonMap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2921B3514CDB970009FBB71 /* PhotonMap.cpp */; };
 		B2C152C21483DCCE00245AD6 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B2C152C11483DCCE00245AD6 /* OpenGL.framework */; };
 		B2C152C51483DCD800245AD6 /* GLUT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B2C152C41483DCD800245AD6 /* GLUT.framework */; };
 		B2C152C71483DF9700245AD6 /* App.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2C152C61483DF9700245AD6 /* App.cpp */; };
 		B2C152CE14851E8400245AD6 /* smallpt_fmt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2C152CD14851E8400245AD6 /* smallpt_fmt.cpp */; };
 		B2F4FECF15153367002EB635 /* LightSource.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2F4FECE15153367002EB635 /* LightSource.cpp */; };
+		B2F7F63A1518109900C3F71A /* PostEffect.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2F7F6381518109900C3F71A /* PostEffect.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -39,6 +41,7 @@
 		B263223514E7893A00158AF5 /* PhotonMapRenderer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PhotonMapRenderer.h; sourceTree = "<group>"; };
 		B263223814E78A5900158AF5 /* PhotonMap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PhotonMap.h; sourceTree = "<group>"; };
 		B263223914E7A5B700158AF5 /* Common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Common.h; sourceTree = "<group>"; };
+		B282457215AE5E64006A3DC1 /* Scene.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Scene.cpp; sourceTree = "<group>"; };
 		B2921B3514CDB970009FBB71 /* PhotonMap.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PhotonMap.cpp; sourceTree = "<group>"; };
 		B29B9DB214B4A248003A0CC2 /* smallpt_fmt.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = smallpt_fmt.h; sourceTree = "<group>"; };
 		B2C152C11483DCCE00245AD6 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
@@ -51,6 +54,8 @@
 		B2F74FCF14F8B861007135DE /* SceneData.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SceneData.cpp; sourceTree = "<group>"; };
 		B2F74FD114F8BB11007135DE /* SceneData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SceneData.h; sourceTree = "<group>"; };
 		B2F74FD214F8BB42007135DE /* Scene.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Scene.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
+		B2F7F6381518109900C3F71A /* PostEffect.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PostEffect.cpp; sourceTree = "<group>"; };
+		B2F7F6391518109900C3F71A /* PostEffect.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PostEffect.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -87,9 +92,13 @@
 		B209617B1483117300863694 /* rt */ = {
 			isa = PBXGroup;
 			children = (
+				B282457515AEF2EC006A3DC1 /* objLoader */,
+				B2F7F6381518109900C3F71A /* PostEffect.cpp */,
+				B2F7F6391518109900C3F71A /* PostEffect.h */,
 				B20FAF54150FCEE500846A20 /* PhotonFilter.cpp */,
 				B20FAF55150FCEE500846A20 /* PhotonFilter.h */,
 				B2F74FD214F8BB42007135DE /* Scene.h */,
+				B282457215AE5E64006A3DC1 /* Scene.cpp */,
 				B2F74FD114F8BB11007135DE /* SceneData.h */,
 				B2F74FCF14F8B861007135DE /* SceneData.cpp */,
 				B263223914E7A5B700158AF5 /* Common.h */,
@@ -106,6 +115,13 @@
 				B2F4FECE15153367002EB635 /* LightSource.cpp */,
 			);
 			path = rt;
+			sourceTree = "<group>";
+		};
+		B282457515AEF2EC006A3DC1 /* objLoader */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = objLoader;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -162,6 +178,8 @@
 				B263223614E7893A00158AF5 /* PhotonMapRenderer.cpp in Sources */,
 				B20FAF56150FCEE500846A20 /* PhotonFilter.cpp in Sources */,
 				B2F4FECF15153367002EB635 /* LightSource.cpp in Sources */,
+				B2F7F63A1518109900C3F71A /* PostEffect.cpp in Sources */,
+				B282457315AE5E64006A3DC1 /* Scene.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

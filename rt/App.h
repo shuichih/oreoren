@@ -21,6 +21,7 @@ public:
     };
 
     App();
+    ~App();
     void Run(int argc, const char * argv[], int w, int h, Mode mode);
     void Init(int argc, const char * argv[], int w, int h, Mode mode);
     void Update();

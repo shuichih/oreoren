@@ -4,6 +4,7 @@
 #include "Common.h"
 
 class Photon_map;
+struct HitRecord;
 
 class PhotonMapRenderer
 {
@@ -26,13 +27,13 @@ public:
     ~PhotonMapRenderer();
     void SetConfig(const Config& config);
     Config GetDefaultConfig();
-    u8* Run();
+    Vec* Run();
 
 private:
     
     void PhotonTracing(const Ray& r, float power[3], int depth);
-    bool Intersect(const Ray& r, real& t, int& id);
-    u8* RayTracing();
+    bool Intersect(const Ray& r, HitRecord& out, int& id);
+    Vec* RayTracing();
     Vec Irradiance(const Ray &r, int depth);
     
     struct Config config_;

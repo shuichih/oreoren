@@ -1,47 +1,53 @@
+
+
 #ifndef _Scene_H_
 #define _Scene_H_
 
-#include <math.h>
 #include "Common.h"
-
-namespace {
-#ifdef USE_FLOAT
-    const real EPSILON = 2e-3;
-#else
-    const real EPSILON = 1e-4;
-#endif
-}
 
 enum Refl_t
 {
-    DIFF, SPEC, REFR
+    DIFF, SPEC, REFR, PHONGMETAL
 }; // material types, used in radiance()
 
-struct Sphere
+struct HitRecord
 {
-    real rad;       // radius
-    Vec p, e, c;    // position, emission, color
+    real t;
+    Vec normal;
+    Vec color;
+    Refl_t refl;
+};
+
+class Shape
+{
+public:
+    virtual bool intersect(const Ray& r, HitRecord& rec) const = 0;
+};
+
+class Sphere : public Shape
+{
+public:
+    Sphere(real rad_, Vec p_, Vec c_, Refl_t refl_);
+    virtual bool intersect(const Ray &r, HitRecord& rec) const;
+
+    real rad;   // radius
+    Vec p;      // position
+    Vec c;      // color
     Refl_t refl;    // reflection type (DIFFuse, SPECular, REFRactive)
-    
-    Sphere(real rad_, Vec p_, Vec e_, Vec c_, Refl_t refl_):
-        rad(rad_), p(p_), e(e_), c(c_), refl(refl_)
-    {
-    }
+};
 
-    // returns distance, 0 if nohit
-    real intersect(const Ray &r) const
-    {
-        Vec op = p-r.o; // Solve t^2*d.d + 2*t*(o-p).d + (o-p).(o-p)-R^2 = 0
-        real t;
-        real b = op.dot(r.d);
-        real det = b * b - op.dot(op) + rad * rad;
-        if (det < 0)
-            return 0;
-        else
-            det = sqrt(det);
+class Triangle : public Shape
+{
+public:
+    Triangle(const Vec& _p0, const Vec& _p1, const Vec& _p2, const RGB& _color, Refl_t _refl);
+    bool intersect(const Ray& r, HitRecord& rec) const;
 
-        return (t=b-det) > EPSILON ? t : ((t=b+det) > EPSILON ? t : 0);
-    }
+    Vec p0;
+    Vec p1;
+    Vec p2;
+    Vec normal;
+    RGB color;
+    Refl_t refl;
 };
 
 #endif

@@ -12,18 +12,45 @@
 #include <algorithm>
 #include "PhotonMap.h"
 #include "PhotonMapRenderer.h"
+#include "PostEffect.h"
+#include "objLoader/objLoader.h"
+
 
 using namespace std;
 
 static App* s_pApp = 0;
+objLoader* g_pObjLoader = NULL;
 
 void DrawScene();
 void Idle();
+
+//
+
+inline real clamp(real x)
+{
+    return x < 0 ? 0 : x > 1 ? 1 : x;
+}
+
+inline int toInt(real x)
+{
+    return int(pow(clamp(x), 1/2.2) * 255 + .5);
+}
+
+//
 
 App::App()
 {
 
 }
+
+App::~App()
+{
+    if( g_pObjLoader )
+    {
+//        delete g_pObjLoader;
+    }
+}
+
 
 void App::Run(int argc, const char * argv[], int w, int h, Mode mode)
 {
@@ -43,6 +70,14 @@ void App::Init(int argc, const char * argv[], int w, int h, Mode mode)
 	glutCreateWindow("glut window");
 	glutDisplayFunc(DrawScene);
     //glutIdleFunc(Idle);
+    
+    // objロード
+//	g_pObjLoader = new objLoader();
+//	if( !g_pObjLoader->load("venusm.obj") )
+//	{
+//		return false;
+//	}
+    
 	glutMainLoop();
 }
 
@@ -50,12 +85,13 @@ void App::Update()
 {
     static u8* pColorBuf = 0;
 
+    // Render using photonmap
     PhotonMapRenderer renderer;
     PhotonMapRenderer::Config config = renderer.GetDefaultConfig();
     config.screenWidth = w_;
     config.screenHeight = h_;
-    config.nPhotons = 500000;
-    config.nEstimatePhotons = 500;
+    config.nPhotons = 100000;
+    config.nEstimatePhotons = 200;
     config.estimateDist = 10.f;
     config.nSubPixelsSqrt = 1;
     renderer.SetConfig(config);
@@ -63,12 +99,31 @@ void App::Update()
     time_t startTime, endTime;
     time(&startTime);
     
-    pColorBuf = renderer.Run();
+    Vec* pRealColorBuf = renderer.Run();
+    
+    // Tone Mapping
+    ToneMap toneMap;
+    toneMap.SetKeyValue(0.045);
+    //toneMap.SetDelta(0.01);
+    //toneMap.Apply(pRealColorBuf, w_, h_);
+    
+    // Convert to u8 format
+    delete pColorBuf;
+    pColorBuf = new u8[w_ * h_ * sizeof(char)*4];
+    for (int i = 0, j=0; i < (w_*h_); ++i, j+=4)
+    {
+        pColorBuf[j+0] = (u8)(toInt(pRealColorBuf[i].x)); // including Gamma Correction
+        pColorBuf[j+1] = (u8)(toInt(pRealColorBuf[i].y));
+        pColorBuf[j+2] = (u8)(toInt(pRealColorBuf[i].z));
+        pColorBuf[j+3] = 255;
+    }
+    delete [] pRealColorBuf;
     
     time(&endTime);
     u32 elapsed = (u32)difftime(endTime, startTime);
     printf("rendering time = %dm %ds\n", elapsed/60, elapsed%60);
 
+    // Display
     glMatrixMode(GL_PROJECTION);
     glOrtho(0, w_, h_, 0, -1, 1);
     //gluPerspective(60.0, 1.0, 0.1, 1000.0);

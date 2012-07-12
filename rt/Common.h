@@ -55,6 +55,12 @@ struct Vec {
         return Vec(x*b,y*b,z*b);
     }
     
+    inline Vec operator/(real b) const
+    {
+        real bi = 1.0 / b;
+        return Vec(x*bi, y*bi, z*bi);
+    }
+    
     inline Vec mult(const Vec &b) const
     {
         return Vec(x*b.x,y*b.y,z*b.z);
@@ -104,9 +110,9 @@ struct Vec {
     }
     
     // cross:
-    Vec operator%(Vec&b)
+    Vec operator%(const Vec&b) const
     {
-        return Vec(y*b.z-z*b.y,z*b.x-x*b.z,x*b.y-y*b.x);
+        return Vec(y*b.z-z*b.y, z*b.x-x*b.z, x*b.y-y*b.x);
     }
 };
 
@@ -116,6 +122,7 @@ struct Ray
     Ray(Vec o_, Vec d_) : o(o_), d(d_) {}
 };
 
+typedef Vec RGB;
 
 #endif
 

@@ -11,19 +11,6 @@
 
 
 //----------------------------------------------------------------
-inline real clamp(real x)
-{
-    return x < 0 ? 0 : x > 1 ? 1 : x;
-}
-
-inline int toInt(real x)
-{
-    return int(pow(clamp(x), 1/2.2) * 255 + .5);
-}
-
-
-
-//----------------------------------------------------------------
 PhotonMapRenderer::PhotonMapRenderer()
 {
     defaultConfig_.screenWidth = 256;
@@ -57,20 +44,20 @@ void PhotonMapRenderer::SetConfig(const PhotonMapRenderer::Config &config)
     pPhotonMap_ = new Photon_map(config_.nPhotons);
 }
 
-bool PhotonMapRenderer::Intersect(const Ray& r, real& t, int& id)
+bool PhotonMapRenderer::Intersect(const Ray& r, HitRecord& out, int& id)
 {
-    real d;
     real inf = 1e20;
-    t = inf;
+    out.t = inf;
     
-    for(int i=g_nSpheres; i--;) {
-        if((d=g_spheres[i].intersect(r)) && d < t) {
-            t=d;
-            id=i;
+    HitRecord rec;
+    for (int i=g_nShapes; i--;) {
+        if(g_shapes[i]->intersect(r, rec) && (rec.t < out.t)) {
+            out = rec;
+            id = i;
         }
     }
     
-    return t < inf;    
+    return out.t < inf;
 }
 
 void PhotonMapRenderer::PhotonTracing(const Ray& r, float power[3], int depth)
@@ -81,25 +68,27 @@ void PhotonMapRenderer::PhotonTracing(const Ray& r, float power[3], int depth)
         return;
     }
 
-    real t;         // distance to intersection
+    HitRecord rec;
     int id = 0;     // id of intersected object
-    if (!Intersect(r, t, id))
+//    if (!Intersect(r, t, id))
+    if (!Intersect(r, rec, id))
         return;
     
-    const Sphere &obj = g_spheres[id];    // the hit object
-    Vec x = r.o + r.d * t;              // 交点
-    Vec n = (x - obj.p).norm();         // 交点の法線
+    //const Shape &obj = *g_shapes[id];    // the hit object
+    Vec x = r.o + r.d * rec.t;
+    Vec n = rec.normal;
     Vec nl = n.dot(r.d) < 0 ? n : n*-1; // 交点の法線, 裏面ヒット考慮
-    Vec f = obj.c;
+    Vec color = rec.color;
+    Refl_t refl = rec.refl;
     
     // Ideal DIFFUSE reflection
-    if (obj.refl == DIFF) {
+    if (refl == DIFF) {
         float pos[3] = { x.x, x.y, x.z };
         float dir[3] = { r.d.x, r.d.y, r.d.z };
         
         pPhotonMap_->store(power, pos, dir);
         
-        float ave_refl = (obj.c.x + obj.c.y + obj.c.z) / 3.f;
+        float ave_refl = (color.x + color.y + color.z) / 3.f;
         if (erand48(xi_) < ave_refl)
         {
             real r1 = 2*M_PI*erand48(xi_);
@@ -112,23 +101,44 @@ void PhotonMapRenderer::PhotonTracing(const Ray& r, float power[3], int depth)
             // ucosφsinθ + vsinφsinθ + wcosθ
             Vec d = (u*cos(r1)*r2s + v*sin(r1)*r2s + w*sqrt(1-r2)).norm();
 
-            power[0] *= obj.c.x / ave_refl;
-            power[1] *= obj.c.y / ave_refl;
-            power[2] *= obj.c.z / ave_refl;
+            real ave_refl_inv = 1.0 / ave_refl;
+            power[0] *= color.x * ave_refl_inv;
+            power[1] *= color.y * ave_refl_inv;
+            power[2] *= color.z * ave_refl_inv;
             PhotonTracing(Ray(x,d), power, depth);
         }
         //fprintf(stderr, "p (%f %f %f) (%f %f %f) (%f %f %f)\n", power[0], power[1], power[2], pos[0], pos[1], pos[2], dir[0], dir[1], dir[2]);
         return;
     }
     // Ideal SPECULAR reflection
-    else if (obj.refl == SPEC) {
+    else if (refl == SPEC) {
         Ray refl(x, r.d - n * 2 * n.dot(r.d));
         PhotonTracing(refl, power, depth);
         return;
     }
+    else if (refl == PHONGMETAL) {
+        real r1 = 2*M_PI*erand48(xi_);
+        real r2 = erand48(xi_);
+        real exponent = 10.0;
+        real cosTheta = pow(1-r2, 1.0/(exponent+1.0));
+        real sinTheta = sqrt(1.0 - cosTheta*cosTheta);
+        real rx = cos(r1) * sinTheta;
+        real ry = sin(r1) * sinTheta;
+        real rz = cosTheta;
+        Vec w = r.d - n * 2 * n.dot(r.d); // reflected ray
+        Vec u = ((fabs(w.x) > .1 ? Vec(0,1) : Vec(1)) % w).norm(); // binormal
+        Vec v = w % u; // tangent
+        
+        // ucosφsinθ + vsinφsinθ + wcosθ
+        Vec d = (u*rx + v*ry + w*rz).norm();
+        
+        Vec mx = x + n*1e-4;
+        PhotonTracing(Ray(mx, d), power, depth);
+        return;
+    }
     
     // Ideal dielectric REFRACTION
-    Ray refl(x, r.d - n * 2 * n.dot(r.d));
+    Ray reflRay(x, r.d - n * 2 * n.dot(r.d));
     bool into = n.dot(nl) > 0;  // Ray from outside going in?
     real airRefrIdx = 1;
     real grassRefrIdx = 1.5;
@@ -138,7 +148,7 @@ void PhotonMapRenderer::PhotonTracing(const Ray& r, float power[3], int depth)
     
     // Total internal reflection
     if ((cos2t = 1 - nnt * nnt * (1 - ddn * ddn)) < 0) {
-        PhotonTracing(refl, power, depth);
+        PhotonTracing(reflRay, power, depth);
         return;
     }
     
@@ -154,9 +164,8 @@ void PhotonMapRenderer::PhotonTracing(const Ray& r, float power[3], int depth)
     // 屈折する確率も反射する確率も最低限25%にするということ。例えば.1 + (.8 * fresnel)でもよい。
     // この調整が無ければRP, TPは1になって、下でRP, TP掛ける必要はなくなる。
     real P = fresnel;
-    Vec retRadiance = obj.e;
     if (erand48(xi_) < P)
-        PhotonTracing(refl, power, depth);          // 反射
+        PhotonTracing(reflRay, power, depth);          // 反射
     else
         PhotonTracing(Ray(x, tdir), power, depth);  // 屈折
 
@@ -172,19 +181,20 @@ Vec PhotonMapRenderer::Irradiance(const Ray &r, int depth)
         return Vec();
     }
 
-    real t;         // distance to intersection
+    HitRecord rec;
     int id = 0;     // id of intersected object
-    if (!Intersect(r, t, id)) return Vec(); // if miss, return black
-    const Sphere &obj = g_spheres[id];      // the hit object
-    Vec x = r.o + r.d * t;                  // 交点
-    Vec n = (x - obj.p).norm();             // 交点の法線
+    if (!Intersect(r, rec, id)) return Vec();
+    //const Shape& obj = *g_shapes[id];       // the hit object
+    Vec x = r.o + r.d * rec.t;
+    Vec n = rec.normal;
     Vec nl = n.dot(r.d) < 0 ? n : n * -1;   // 交点の法線
-    Vec f = obj.c;
+    Vec f = rec.color;
+    Refl_t refl = rec.refl;
     
     
     // 0.5にしたらカラーが反射率になってるから暗くなるだけ。IDEALでない反射は扱えない。カラーと混ぜるとかもない。
     // Ideal DIFFUSE reflection
-    if (obj.refl == DIFF){
+    if (refl == DIFF){
         float pos[3] = { x.x, x.y, x.z };
         float nrm[3] = { nl.x, nl.y, nl.z };
         float irrad[3] = { 0, 0, 0 };
@@ -192,9 +202,32 @@ Vec PhotonMapRenderer::Irradiance(const Ray &r, int depth)
         //fprintf(stderr, "irrad %f %f %f\r", irrad[0], irrad[1], irrad[2]);
         return Vec(f.x * irrad[0], f.y * irrad[1], f.z * irrad[2]);
     }
-    else if (obj.refl == SPEC) {
+    else if (refl == SPEC) {
         // Ideal SPECULAR reflection
         return Irradiance(Ray(x,r.d-n*2*n.dot(r.d)), depth);
+    }
+    else if (refl == PHONGMETAL) {
+        Vec irrad;
+        for (int i = 0; i < 16; i++) {
+            // Imperfect SPECULAR reflection
+            real r1 = 2*M_PI*erand48(xi_);
+            real r2 = erand48(xi_);
+            real exponent = 10.0;
+            real cosTheta = pow(1-r2, 1.0/(exponent+1.0));
+            real sinTheta = sqrt(1.0 - cosTheta*cosTheta);
+            real rx = cos(r1) * sinTheta;
+            real ry = sin(r1) * sinTheta;
+            real rz = cosTheta;
+            Vec w = r.d - n * 2 * n.dot(r.d); // reflected ray
+            Vec u = ((fabs(w.x) > .1 ? Vec(0,1) : Vec(1)) % w).norm(); // binormal
+            Vec v = w % u; // tangent
+            
+            // ucosφsinθ + vsinφsinθ + wcosθ
+            Vec rd = (u*rx + v*ry + w*rz).norm();
+            Vec mx = x + n*1e-4; // 自己ヒットしないようにちょっと浮かす
+            irrad += Irradiance(Ray(mx, rd), depth);
+        }
+        return irrad / 16;
     }
     
     // Ideal dielectric REFRACTION
@@ -223,11 +256,12 @@ Vec PhotonMapRenderer::Irradiance(const Ray &r, int depth)
     return Irradiance(reflRay, depth) * fresnel + Irradiance(Ray(x,tdir), depth) * Tr;
 }
 
-u8* PhotonMapRenderer::RayTracing()
+Vec* PhotonMapRenderer::RayTracing()
 {
     const u32 w = config_.screenWidth;
     const u32 h = config_.screenHeight;
     const u32 nSub = config_.nSubPixelsSqrt;
+    const real subPixelFactor = 1.0 / (real)(nSub*nSub);
     
     Ray cam(Vec(50, 52, 295.6), Vec(0, -0.042612, -1).norm());      // cam pos, dir
     Vec cx = Vec(w * .5135 / h);
@@ -238,7 +272,7 @@ u8* PhotonMapRenderer::RayTracing()
 
     // Loop over image rows
     for (int y=0; y<h; y++) {
-        fprintf(stderr, "\rRayTracing (%d spp) %5.2f%%", nSub*nSub, 100.f * y / (h-1));
+        fprintf(stderr, "RayTracing (%d spp) %5.2f%%\n", nSub*nSub, 100.f * y / (h-1));
 
         xi_[0] = 0;
         xi_[1] = 0;
@@ -253,8 +287,15 @@ u8* PhotonMapRenderer::RayTracing()
                     
                     // r1, r2 = 0 to 2
                     // dx, dy = -1 to 1  中心に集まったサンプリング --> tent filter
+#if USE_TENT_FILTER
                     real r1 = 2*erand48(xi_), dx = (r1 < 1) ? sqrt(r1)-1 : 1-sqrt(2-r1);
                     real r2 = 2*erand48(xi_), dy = (r2 < 1) ? sqrt(r2)-1 : 1-sqrt(2-r2);
+#else
+                    real dx = 0;
+                    real dy = 0;
+#endif
+                    // sx = 0 or 1  (...nSub == 2の場合)
+                    // dx = -1 to 1
                     // (sx+.5 + dx)/2 --> .5でサブピクセルの中心に。dxでフィルタの揺らぎ。
                     // sx+.5 = 0.5 or 1.5
                     // sx+.5 + dx = -0.5 to 1.5 or 0.5 to 2.5
@@ -269,33 +310,32 @@ u8* PhotonMapRenderer::RayTracing()
 
                     // Camera rays are pushed ^^^^^ forward to start in interior
                     // トーンマップとか特にやってない。クランプしてるだけ。
-                    c[i] += Vec(clamp(r.x),clamp(r.y),clamp(r.z));
+                    c[i] += r * subPixelFactor;
                 }
             }
             //fprintf(stderr, "\r%f %f %f", c[i].x, c[i].y, c[i].z);
         }
     }
     
-    static u8* pColorBuf = new u8[w * h * sizeof(char)*4];
-    for (int i = 0, j=0; i < (w*h); ++i, j+=4)
-    {
-        pColorBuf[j+0] = (u8)(toInt(c[i].x));
-        pColorBuf[j+1] = (u8)(toInt(c[i].y));
-        pColorBuf[j+2] = (u8)(toInt(c[i].z));
-        pColorBuf[j+3] = 255;
-    }
-    delete [] c;
-    
-    return pColorBuf;
+    return c;
 }
 
 
-u8* PhotonMapRenderer::Run()
+Vec* PhotonMapRenderer::Run()
 {
     xi_[0] = 0;
 	xi_[1] = 0;
 	xi_[2] = (unsigned short)config_.nPhotons;
     
+    g_nShapes = g_nSpheres + g_nTriangles;
+    g_shapes = new Shape*[g_nShapes];
+    for (int i = 0; i < g_nSpheres; i++) {
+        g_shapes[i] = &g_spheres[i];
+    }
+    for (int i = 0; i < g_nTriangles; i++) {
+        g_shapes[i + g_nSpheres] = &g_triangles[i];
+    }
+
 	LightSource litSrc(Vec(50.0f, 81.0f, 81.6f), 10000);
     u32 nLitPhotons = config_.nPhotons; // ライトが複数ならnPhotonsをintensityの比率等で割り振る
 	for (int iPhoton = 0; iPhoton < config_.nPhotons; iPhoton++) {
@@ -309,5 +349,7 @@ u8* PhotonMapRenderer::Run()
     pPhotonMap_->scale_photon_power(1.0f / nLitPhotons);
     pPhotonMap_->balance();
     
-    return RayTracing();
+    Vec* pColorBuf = RayTracing();
+    delete [] g_shapes;
+    return pColorBuf;
 }
