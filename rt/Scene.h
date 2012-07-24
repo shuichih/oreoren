@@ -40,7 +40,7 @@ class Triangle : public Shape
 {
 public:
     Triangle(const Vec& _p0, const Vec& _p1, const Vec& _p2, const RGB& _color, Refl_t _refl);
-    bool intersect(const Ray& r, HitRecord& rec) const;
+    virtual bool intersect(const Ray& r, HitRecord& rec) const;
 
     Vec p0;
     Vec p1;
@@ -48,6 +48,44 @@ public:
     Vec normal;
     RGB color;
     Refl_t refl;
+};
+
+struct Vertex
+{
+    Vec pos;
+    Vec normal;
+};
+
+class Mesh;
+
+class MeshTriangle : public Shape
+{
+public:
+    MeshTriangle();
+    ~MeshTriangle();
+
+    virtual bool intersect(const Ray& r, HitRecord& rec) const;
+    
+    u32 indices[3];
+    Vec normal;
+    Mesh* pMesh;
+};
+
+class Mesh : public Shape
+{
+public:
+    Mesh(u32 nVertices, u32 nFaces);
+    ~Mesh();
+
+    virtual bool intersect(const Ray& r, HitRecord& rec) const;
+    
+    void scale(real x, real y, real z);
+    void translate(real x, real y, real z);
+
+    Vertex*         pVertices;
+    MeshTriangle*   pFaces;
+    u32             nVertices;
+    u32             nFaces;
 };
 
 #endif

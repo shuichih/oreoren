@@ -44,7 +44,7 @@ void PhotonMapRenderer::SetConfig(const PhotonMapRenderer::Config &config)
     pPhotonMap_ = new Photon_map(config_.nPhotons);
 }
 
-bool PhotonMapRenderer::Intersect(const Ray& r, HitRecord& out, int& id)
+bool PhotonMapRenderer::Intersect(const Ray& r, HitRecord& out)
 {
     real inf = 1e20;
     out.t = inf;
@@ -53,7 +53,6 @@ bool PhotonMapRenderer::Intersect(const Ray& r, HitRecord& out, int& id)
     for (int i=g_nShapes; i--;) {
         if(g_shapes[i]->intersect(r, rec) && (rec.t < out.t)) {
             out = rec;
-            id = i;
         }
     }
     
@@ -69,9 +68,8 @@ void PhotonMapRenderer::PhotonTracing(const Ray& r, float power[3], int depth)
     }
 
     HitRecord rec;
-    int id = 0;     // id of intersected object
 //    if (!Intersect(r, t, id))
-    if (!Intersect(r, rec, id))
+    if (!Intersect(r, rec))
         return;
     
     //const Shape &obj = *g_shapes[id];    // the hit object
@@ -95,11 +93,11 @@ void PhotonMapRenderer::PhotonTracing(const Ray& r, float power[3], int depth)
             real r2 = erand48(xi_); // => 1-cos^2θ = 1-sqrt(1-r_2)^2 = r_2
             real r2s = sqrt(r2);    // => sinθ = sqrt(1-cos^2θ) = sqrt(r_2)
             Vec w = nl; // normal
-            Vec u = ((fabs(w.x) > .1 ? Vec(0,1) : Vec(1)) % w).norm(); // binormal
+            Vec u = ((fabs(w.x) > .1 ? Vec(0,1) : Vec(1)) % w).normalize(); // binormal
             Vec v = w % u; // tangent
             
             // ucosφsinθ + vsinφsinθ + wcosθ
-            Vec d = (u*cos(r1)*r2s + v*sin(r1)*r2s + w*sqrt(1-r2)).norm();
+            Vec d = (u*cos(r1)*r2s + v*sin(r1)*r2s + w*sqrt(1-r2)).normalize();
 
             real ave_refl_inv = 1.0 / ave_refl;
             power[0] *= color.x * ave_refl_inv;
@@ -126,11 +124,11 @@ void PhotonMapRenderer::PhotonTracing(const Ray& r, float power[3], int depth)
         real ry = sin(r1) * sinTheta;
         real rz = cosTheta;
         Vec w = r.d - n * 2 * n.dot(r.d); // reflected ray
-        Vec u = ((fabs(w.x) > .1 ? Vec(0,1) : Vec(1)) % w).norm(); // binormal
+        Vec u = ((fabs(w.x) > .1 ? Vec(0,1) : Vec(1)) % w).normalize(); // binormal
         Vec v = w % u; // tangent
         
         // ucosφsinθ + vsinφsinθ + wcosθ
-        Vec d = (u*rx + v*ry + w*rz).norm();
+        Vec d = (u*rx + v*ry + w*rz).normalize();
         
         Vec mx = x + n*1e-4;
         PhotonTracing(Ray(mx, d), power, depth);
@@ -153,7 +151,7 @@ void PhotonMapRenderer::PhotonTracing(const Ray& r, float power[3], int depth)
     }
     
     // 屈折方向
-    Vec tdir = (r.d * nnt - n * ((into ? 1 : -1) * (ddn * nnt + sqrt(cos2t)))).norm();
+    Vec tdir = (r.d * nnt - n * ((into ? 1 : -1) * (ddn * nnt + sqrt(cos2t)))).normalize();
     
     real a = grassRefrIdx - airRefrIdx;
     real b = grassRefrIdx + airRefrIdx;
@@ -182,8 +180,7 @@ Vec PhotonMapRenderer::Irradiance(const Ray &r, int depth)
     }
 
     HitRecord rec;
-    int id = 0;     // id of intersected object
-    if (!Intersect(r, rec, id)) return Vec();
+    if (!Intersect(r, rec)) return Vec();
     //const Shape& obj = *g_shapes[id];       // the hit object
     Vec x = r.o + r.d * rec.t;
     Vec n = rec.normal;
@@ -219,11 +216,11 @@ Vec PhotonMapRenderer::Irradiance(const Ray &r, int depth)
             real ry = sin(r1) * sinTheta;
             real rz = cosTheta;
             Vec w = r.d - n * 2 * n.dot(r.d); // reflected ray
-            Vec u = ((fabs(w.x) > .1 ? Vec(0,1) : Vec(1)) % w).norm(); // binormal
+            Vec u = ((fabs(w.x) > .1 ? Vec(0,1) : Vec(1)) % w).normalize(); // binormal
             Vec v = w % u; // tangent
             
             // ucosφsinθ + vsinφsinθ + wcosθ
-            Vec rd = (u*rx + v*ry + w*rz).norm();
+            Vec rd = (u*rx + v*ry + w*rz).normalize();
             Vec mx = x + n*1e-4; // 自己ヒットしないようにちょっと浮かす
             irrad += Irradiance(Ray(mx, rd), depth);
         }
@@ -244,7 +241,7 @@ Vec PhotonMapRenderer::Irradiance(const Ray &r, int depth)
         return Irradiance(reflRay, depth);
     
     // 屈折方向
-    Vec tdir = (r.d * nnt - n * ((into ? 1 : -1) * (ddn * nnt + sqrt(cos2t)))).norm();
+    Vec tdir = (r.d * nnt - n * ((into ? 1 : -1) * (ddn * nnt + sqrt(cos2t)))).normalize();
     
     real a = grassRefrIdx - airRefrIdx;
     real b = grassRefrIdx + airRefrIdx;
@@ -263,9 +260,9 @@ Vec* PhotonMapRenderer::RayTracing()
     const u32 nSub = config_.nSubPixelsSqrt;
     const real subPixelFactor = 1.0 / (real)(nSub*nSub);
     
-    Ray cam(Vec(50, 52, 295.6), Vec(0, -0.042612, -1).norm());      // cam pos, dir
+    Ray cam(Vec(50, 52, 295.6), Vec(0, -0.042612, -1).normalize());      // cam pos, dir
     Vec cx = Vec(w * .5135 / h);
-    Vec cy = (cx % cam.d).norm() * .5135; // .5135は視野角
+    Vec cy = (cx % cam.d).normalize() * .5135; // .5135は視野角
     Vec* c = new Vec[w*h];
 
     #pragma omp parallel for schedule(dynamic, 1) private(r)    // OpenMP
@@ -306,7 +303,7 @@ Vec* PhotonMapRenderer::RayTracing()
                             cy*( ( (sy+.5 + dy)/2 + y)/h - .5) + cam.d;
 
                     // 140は多分投影面までの距離
-                    Vec r = Irradiance(Ray(cam.o + d * 140, d.norm()), 0);
+                    Vec r = Irradiance(Ray(cam.o + d * 140, d.normalize()), 0);
 
                     // Camera rays are pushed ^^^^^ forward to start in interior
                     // トーンマップとか特にやってない。クランプしてるだけ。
@@ -320,6 +317,8 @@ Vec* PhotonMapRenderer::RayTracing()
     return c;
 }
 
+
+#include "MeshLoader.h"
 
 Vec* PhotonMapRenderer::Run()
 {
@@ -335,8 +334,25 @@ Vec* PhotonMapRenderer::Run()
     for (int i = 0; i < g_nTriangles; i++) {
         g_shapes[i + g_nSpheres] = &g_triangles[i];
     }
+    
+    {
+        //const char* OBJ_FILE = "/Users/shuichih/Dev/rt/venusm.obj";
+        const char* OBJ_FILE = "/Users/shuichih/Dev/rt/cornell_box.obj";
+        ObjLoader loader;
+        Mesh* pMesh = loader.Load(OBJ_FILE);
+        if (pMesh == NULL)
+        {
+            printf("File Load Error: %s\n", OBJ_FILE);
+            return NULL;
+        }
+        pMesh->scale(-0.10, 0.10, -0.10);
+        pMesh->translate(80, 10, 70);
+        g_shapes[g_nShapes-1] = pMesh;
+    }
+    
 
-	LightSource litSrc(Vec(50.0f, 81.0f, 81.6f), 10000);
+	LightSource litSrc(Vec(50.0f, 81.0f, 111.6f), 10000);
+	//LightSource litSrc(Vec(50.0f, 81.0f, 81.6f), 10000);
     u32 nLitPhotons = config_.nPhotons; // ライトが複数ならnPhotonsをintensityの比率等で割り振る
 	for (int iPhoton = 0; iPhoton < config_.nPhotons; iPhoton++) {
         if (iPhoton % (config_.nPhotons / 100) == 0)

@@ -13,13 +13,13 @@
 #include "PhotonMap.h"
 #include "PhotonMapRenderer.h"
 #include "PostEffect.h"
-#include "objLoader/objLoader.h"
+#include "MeshLoader.h"
+#include "Scene.h"
 
 
 using namespace std;
 
 static App* s_pApp = 0;
-objLoader* g_pObjLoader = NULL;
 
 void DrawScene();
 void Idle();
@@ -33,7 +33,11 @@ inline real clamp(real x)
 
 inline int toInt(real x)
 {
+#ifdef USE_FLOAT
+    return int(powf(clamp(x), 1/2.2) * 255 + .5);
+#else
     return int(pow(clamp(x), 1/2.2) * 255 + .5);
+#endif
 }
 
 //
@@ -45,10 +49,6 @@ App::App()
 
 App::~App()
 {
-    if( g_pObjLoader )
-    {
-//        delete g_pObjLoader;
-    }
 }
 
 
@@ -72,11 +72,17 @@ void App::Init(int argc, const char * argv[], int w, int h, Mode mode)
     //glutIdleFunc(Idle);
     
     // objロード
-//	g_pObjLoader = new objLoader();
-//	if( !g_pObjLoader->load("venusm.obj") )
-//	{
-//		return false;
-//	}
+    /*
+    const char* OBJ_FILE = "/Users/shuichih/Dev/rt/venusm.obj";
+    ObjLoader loader;
+    Mesh* pMesh = loader.Load(OBJ_FILE);
+	if (pMesh == NULL)
+	{
+        printf("File Load Error: %s\n", OBJ_FILE);
+		return;
+	}
+    pMesh->scale(0.01, 0.01, 0.01);
+    */
     
 	glutMainLoop();
 }

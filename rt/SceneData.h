@@ -16,11 +16,12 @@ Sphere g_spheres[] = {
     Sphere(1e5, Vec( 1+1e5,  40.8,      81.6),    Vec(.75,.25,.25),DIFF),    //Left
     Sphere(1e5, Vec(99-1e5,  40.8,      81.6),    Vec(.25,.25,.75),DIFF),    //Rght
     Sphere(1e5, Vec(50,      40.8,      1e5),     Vec(.75,.75,.75),DIFF),    //Back
-    Sphere(1e5, Vec(50,      40.8,      170-1e5), Vec(),           DIFF),    //Frnt
+    //Sphere(1e5, Vec(50,      40.8,      170-1e5), Vec(),           DIFF),    //Frnt
+    Sphere(1e5, Vec(50,      40.8,      170-1e5), Vec(.75,.75,.75),           DIFF),    //Frnt
     Sphere(1e5, Vec(50,      1e5,       81.6),    Vec(.75,.75,.75),DIFF),    //Botm
     Sphere(1e5, Vec(50,      81.6-1e5,  81.6),    Vec(.75,.75,.75),DIFF),    //Top
-    Sphere(16.5,Vec(27,      16.5,      47),      Vec(1,1,1)*.999, SPEC),    //Mirr
-    Sphere(16.5,Vec(73,      16.5,      78),      Vec(1,1,1)*.999, REFR),    //Glas
+//    Sphere(16.5,Vec(27,      16.5,      47),      Vec(1,1,1)*.999, SPEC),    //Mirr
+//    Sphere(16.5,Vec(73,      16.5,      78),      Vec(1,1,1)*.999, REFR),    //Glas
 };
 
 Triangle g_triangles[] = {

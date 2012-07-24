@@ -1,5 +1,6 @@
 #include "Scene.h"
-#include <math.h>
+#include <cmath>
+#include <cstring>
 
 namespace {
 #ifdef USE_FLOAT
@@ -31,7 +32,7 @@ bool Sphere::intersect(const Ray &r, HitRecord& rec) const
     
     if ((t=b-det) > EPSILON || ((t=b+det) > EPSILON)) {
         rec.t = t;
-        rec.normal = ((r.o + r.d * t) - p).norm();
+        rec.normal = ((r.o + r.d * t) - p).normalize();
         rec.color = c;
         rec.refl = refl;
         return true;
@@ -45,7 +46,7 @@ bool Sphere::intersect(const Ray &r, HitRecord& rec) const
 Triangle::Triangle(const Vec& _p0, const Vec& _p1, const Vec& _p2, const RGB& _color, Refl_t _refl)
     : p0(_p0), p1(_p1), p2(_p2), color(_color), refl(_refl)
 {
-    normal = ((p1 - p0) % (p2 - p0)).norm();
+    normal = ((p1 - p0) % (p2 - p0)).normalize();
 }
 
 #if 0
@@ -219,4 +220,110 @@ bool Triangle::intersect(const Ray& r, HitRecord& rec) const
     return true;
 }
 #endif
+
+//--------------------------------------------------------------------------------
+MeshTriangle::MeshTriangle() 
+    : pMesh(NULL)
+{
+    indices[0] = 0; 
+    indices[1] = 0; 
+    indices[2] = 0; 
+}
+
+MeshTriangle::~MeshTriangle()
+{
+}
+
+bool MeshTriangle::intersect(const Ray &r, HitRecord &rec) const
+{
+    Vec p0 = pMesh->pVertices[indices[0]].pos;
+    Vec p1 = pMesh->pVertices[indices[1]].pos;
+    Vec p2 = pMesh->pVertices[indices[2]].pos;
+    Vec e1 = p1 - p0;
+    Vec e2 = p2 - p0;
+    Vec s1 = r.d % e2;
+    real divisor = s1.dot(e1);
+    
+    if (divisor == 0.0)
+        return false;
+    
+    real invDivisor = 1.0 / divisor;
+    
+    // 重心座標を算出して範囲内にあるかチェック
+    Vec d = r.o - p0;
+    real b1 = d.dot(s1) * invDivisor;
+    if (b1 < 0.0 || b1 > 1.0)
+        return false;
+    
+    Vec s2 = d % e1;
+    real b2 = r.d.dot(s2) * invDivisor;
+    if (b2 < 0.0 || b1 + b2 > 1.0)
+        return false;
+    
+    // t算出
+    real t = e2.dot(s2) * invDivisor;
+    
+    // 光線始点より後ろならヒットしない、EPSILONは自己ヒット抑止のため
+    if (t < EPSILON)
+        return false;
+    
+    rec.t = t;
+    rec.normal = normal;
+    rec.color = RGB(1, 1, 1);
+    rec.refl = DIFF;
+    return true;
+}
+
+//--------------------------------------------------------------------------------
+Mesh::Mesh(u32 nVertices_, u32 nFaces_)
+{
+    pVertices = new Vertex[nVertices_];
+    pFaces = new MeshTriangle[nFaces_];
+    nVertices = nVertices_;
+    nFaces = nFaces_;
+    
+    for (int i=0; i<nFaces; i++) {
+        pFaces[i].pMesh = this;
+    }
+}
+
+Mesh::~Mesh()
+{
+    delete [] pVertices;
+    delete [] pFaces;
+}
+
+bool Mesh::intersect(const Ray &r, HitRecord &out) const
+{
+    HitRecord rec;
+    const real inf = 1e20;
+    out.t = inf;
+    
+    for (u32 i=0; i<nFaces; i++) {
+        if(pFaces[i].intersect(r, rec) && (rec.t < out.t)) {
+            out = rec;
+        }
+    }
+    
+    return out.t != inf;
+}
+
+void Mesh::scale(real x, real y, real z)
+{
+    for (u32 i=0; i<nVertices; i++) {
+        pVertices[i].pos.x *= x;
+        pVertices[i].pos.y *= y;
+        pVertices[i].pos.z *= z;
+    }
+}
+
+void Mesh::translate(real x, real y, real z)
+{
+    for (u32 i=0; i<nVertices; i++) {
+        pVertices[i].pos.x += x;
+        pVertices[i].pos.y += y;
+        pVertices[i].pos.z += z;
+    }
+}
+
 

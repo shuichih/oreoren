@@ -34,6 +34,7 @@ struct Vec {
     };
 
     inline Vec(real x_=0, real y_=0, real z_=0)
+        : x(x_), y(y_), z(z_)
     {
         x=x_;
         y=y_;
@@ -99,7 +100,7 @@ struct Vec {
         return *this;
     }
     
-    inline Vec& norm()
+    inline Vec& normalize()
     {
         return *this = *this * (1/sqrt(x*x+y*y+z*z));
     }

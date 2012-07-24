@@ -32,7 +32,7 @@ public:
 private:
     
     void PhotonTracing(const Ray& r, float power[3], int depth);
-    bool Intersect(const Ray& r, HitRecord& out, int& id);
+    bool Intersect(const Ray& r, HitRecord& out);
     Vec* RayTracing();
     Vec Irradiance(const Ray &r, int depth);
     
