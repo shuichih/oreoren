@@ -2,8 +2,9 @@
 #define Common_H
 
 #include <cmath>
+#include <cfloat>
 
-//#define USE_FLOAT
+#define USE_FLOAT
 
 //----------------------------------------------------------------
 
@@ -17,8 +18,12 @@ typedef unsigned int        u32;
 typedef unsigned long long  u64;
 #ifdef USE_FLOAT
 typedef float               real;
+const float REAL_MAX = FLT_MAX;
+const float REAL_MIN = FLT_MIN;
 #else
 typedef double              real;
+const double REAL_MAX = DBL_MAX;
+const double REAL_MIN = DBL_MIN;
 #endif
 
 //----------------------------------------------------------------
@@ -58,7 +63,7 @@ struct Vec {
     
     inline Vec operator/(real b) const
     {
-        real bi = 1.0 / b;
+        real bi = 1.0f / b;
         return Vec(x*bi, y*bi, z*bi);
     }
     
@@ -93,7 +98,7 @@ struct Vec {
     
     inline Vec& operator/=(real b)
     {
-        real bInv = 1.0 / b;
+        real bInv = 1.0f / b;
         x *= bInv;
         y *= bInv;
         z *= bInv;
@@ -102,7 +107,7 @@ struct Vec {
     
     inline Vec& normalize()
     {
-        return *this = *this * (1/sqrt(x*x+y*y+z*z));
+        return *this = *this * (1.f/sqrtf(x*x+y*y+z*z));
     }
     
     inline real dot(const Vec &b) const

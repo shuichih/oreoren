@@ -65,11 +65,11 @@ Photon_map::Photon_map(const int max_phot)
 	//----------------------------------------
 
 	for (int i=0; i<256; i++) {
-		double angle = double(i)*(1.0/256.0)*M_PI;
-		costheta[i] = cos(angle);
-		sintheta[i] = sin(angle);
-		cosphi[i]   = cos(2.0 * angle);
-		sinphi[i]   = sin(2.0 * angle);
+		float angle = i*(1.0f/256.0f)*(float)M_PI;
+		costheta[i] = cosf(angle);
+		sintheta[i] = sinf(angle);
+		cosphi[i]   = cosf(2.0f * angle);
+		sinphi[i]   = sinf(2.0f * angle);
 	}
 }
 
@@ -104,7 +104,7 @@ void Photon_map::irradiance_estimate(
 	const float max_dist,   	// max distance to look for photons
 	const int nphotons) const 	// number of photons to use
 {
-	irrad[0] = irrad[1] = irrad[2] = 0.0;
+	irrad[0] = irrad[1] = irrad[2] = 0.0f;
 	
 	// allocaはスタックに確保するので遅くはない。
 	NearestPhotons np;
@@ -128,7 +128,7 @@ void Photon_map::irradiance_estimate(
     }
 
     float pdir[3];
-    float np0_dist = sqrt(np.dist2[0]);
+    float np0_dist = sqrtf(np.dist2[0]);
     
     // sum irradiance from all photons
     for (int i=1; i<=np.found; i++) {
@@ -141,7 +141,7 @@ void Photon_map::irradiance_estimate(
             float w = 1.f;
             if (pFilter_) // ループ内で何度もチェックするのが無駄
             {
-                float dist = sqrt(np.dist2[i]);
+                float dist = sqrtf(np.dist2[i]);
                 w = pFilter_->Weight(dist, np0_dist);
             }
             irrad[0] += p->power[0] * w; // フィルタなしのときw掛けるの無駄
@@ -152,7 +152,7 @@ void Photon_map::irradiance_estimate(
 
     // BRDFの1/π掛けてないけど、それはきっとこの関数の呼び出し元で
     // 任意のBRDFを掛けるから
-    float tmp = (1.0f/M_PI) / (np.dist2[0]);  // estimate of density
+    float tmp = (1.0f/(float)M_PI) / (np.dist2[0]);  // estimate of density
     if (pFilter_)
         tmp *= pFilter_->Normalizer();
     irrad[0] *= tmp;

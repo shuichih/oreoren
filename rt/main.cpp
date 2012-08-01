@@ -18,8 +18,8 @@ int main(int argc, const char * argv[])
     //printf("%lu %lu %lu %lu", sizeof(int), sizeof(long), sizeof(long long), sizeof(void*));
 
     App* pApp = new App();
-    pApp->Run(argc, argv, 512, 384, App::SimpleRayTrace);
-    //pApp->Run(argc, argv, 1024, 768, App::SimpleRayTrace);
+    //pApp->Run(argc, argv, 512, 384, App::SimpleRayTrace);
+    pApp->Run(argc, argv, 1024, 768, App::SimpleRayTrace);
     
 
     delete pApp;

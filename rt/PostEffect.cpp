@@ -1,9 +1,9 @@
 #include "PostEffect.h"
 
 ToneMap::ToneMap()
-: keyValue_(0.18)
-, delta_(0.0001)
-, smallestWhiteLum_(-1)
+: keyValue_(0.18f)
+, delta_(0.0001f)
+, smallestWhiteLum_(-1.f)
 {
 }
 
@@ -36,23 +36,23 @@ void ToneMap::Apply(Vec* pBuffer, i32 bufferWidth, i32 bufferHeight)
     const Vec YCbCr2G(+1.00000f, -0.34414f, -0.71414f);
     const Vec YCbCr2B(+1.00000f, +1.77200f, +0.00000f);
     
-    real lmSum = 0.0;
+    real lmSum = 0.0f;
     real delta = delta_;
     i32 num = bufferWidth * bufferHeight;
     real lmMax = 0;
     for (i32 i = 0; i < num; i++)
     {
         real lm = pBuffer[i].dot(RGB2Y);
-        lmSum += log(delta + lm);
+        lmSum += logf(delta + lm);
         if (lm > lmMax) {
             lmMax = lm;
         }
     }
     
-    real lwm = exp(lmSum / num);
+    real lwm = expf(lmSum / num);
     real scale = keyValue_ / lwm;
     real lmWhite = (smallestWhiteLum_ == -1) ? scale*lmMax : smallestWhiteLum_;
-    real wL2Inv = 1.0 / (lmWhite * lmWhite);
+    real wL2Inv = 1.0f / (lmWhite * lmWhite);
     //real wL2Inv = 0;
     for (i32 i = 0; i < num; i++)
     {

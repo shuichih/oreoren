@@ -28,13 +28,13 @@ void Idle();
 
 inline real clamp(real x)
 {
-    return x < 0 ? 0 : x > 1 ? 1 : x;
+    return x < 0.f ? 0.f : x > 1.f ? 1.f : x;
 }
 
 inline int toInt(real x)
 {
 #ifdef USE_FLOAT
-    return int(powf(clamp(x), 1/2.2) * 255 + .5);
+    return int(powf(clamp(x), 1/2.2f) * 255.f + .5f);
 #else
     return int(pow(clamp(x), 1/2.2) * 255 + .5);
 #endif
@@ -81,7 +81,7 @@ void App::Init(int argc, const char * argv[], int w, int h, Mode mode)
         printf("File Load Error: %s\n", OBJ_FILE);
 		return;
 	}
-    pMesh->scale(0.01, 0.01, 0.01);
+    pMesh->scale(0.01f, 0.01f, 0.01f);
     */
     
 	glutMainLoop();
@@ -97,7 +97,7 @@ void App::Update()
     config.screenWidth = w_;
     config.screenHeight = h_;
     config.nPhotons = 100000;
-    config.nEstimatePhotons = 200;
+    config.nEstimatePhotons = 100;
     config.estimateDist = 10.f;
     config.nSubPixelsSqrt = 1;
     renderer.SetConfig(config);
@@ -109,8 +109,8 @@ void App::Update()
     
     // Tone Mapping
     ToneMap toneMap;
-    toneMap.SetKeyValue(0.045);
-    //toneMap.SetDelta(0.01);
+    toneMap.SetKeyValue(0.045f);
+    //toneMap.SetDelta(0.01f);
     //toneMap.Apply(pRealColorBuf, w_, h_);
     
     // Convert to u8 format
@@ -132,7 +132,7 @@ void App::Update()
     // Display
     glMatrixMode(GL_PROJECTION);
     glOrtho(0, w_, h_, 0, -1, 1);
-    //gluPerspective(60.0, 1.0, 0.1, 1000.0);
+    //gluPerspective(60.0f, 1.0f, 0.1f, 1000.0f);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glDisable(GL_DITHER);
@@ -146,19 +146,19 @@ void App::Update()
     glTexImage2D(GL_TEXTURE_2D, 0, 3, w_, h_, 0, GL_RGBA,
                  GL_UNSIGNED_BYTE, pColorBuf);
     
-    glClearColor(0.5, 0.5, 0.5, 1.0);
+    glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     
     glBegin(GL_POLYGON);
     glDisable(GL_CULL_FACE);
-    glTexCoord2f(1.0, 1.0); // texcoordとvertexはこの順じゃないと駄目
-    glVertex3f(w_, h_, 0.0);
-    glTexCoord2f(0.0, 1.0);
-    glVertex3f(0, h_, 0.0);
-    glTexCoord2f(0.0, 0.0);
-    glVertex3f(0, 0, 0.0);
-    glTexCoord2f(1.0, 0.0);
-    glVertex3f(w_, 0, 0.0);
+    glTexCoord2f(1.0f, 1.0f); // texcoordとvertexはこの順じゃないと駄目
+    glVertex3f(w_, h_, 0.0f);
+    glTexCoord2f(0.0f, 1.0f);
+    glVertex3f(0.f, h_, 0.0f);
+    glTexCoord2f(0.0f, 0.0f);
+    glVertex3f(0.f, 0.f, 0.f);
+    glTexCoord2f(1.0f, 0.0f);
+    glVertex3f(w_, 0.f, 0.0f);
     glEnd();
     
     glDisable(GL_TEXTURE_2D);

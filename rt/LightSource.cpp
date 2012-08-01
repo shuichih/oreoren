@@ -15,8 +15,8 @@ LightSource::LightSource(Vec position, float intensity)
 Ray LightSource::GenerateRay()
 {
 	Vec dir;
-    float theta = M_PI * erand48(xi_);
-    float phi = 2.0f*M_PI * erand48(xi_);
+    real theta = (real)M_PI * (real)erand48(xi_);
+    real phi = 2.0f*(real)M_PI * (real)erand48(xi_);
     dir.x = sinf(theta) * cosf(phi);
     dir.y = sinf(theta) * sinf(phi);
     dir.z = cosf(theta);

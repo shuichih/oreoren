@@ -4,7 +4,7 @@
 
 namespace {
 #ifdef USE_FLOAT
-    const real EPSILON = 2e-3;
+    const real EPSILON = 4e-3f;
 #else
     const real EPSILON = 2e-4;
 #endif
@@ -24,11 +24,11 @@ bool Sphere::intersect(const Ray &r, HitRecord& rec) const
     real t;
     real b = op.dot(r.d);
     real det = b * b - op.dot(op) + rad * rad;
-    if (det < 0) {
+    if (det <= 0.f) {
         return false;
     }
     
-    det = sqrt(det);
+    det = sqrtf(det);
     
     if ((t=b-det) > EPSILON || ((t=b+det) > EPSILON)) {
         rec.t = t;
@@ -190,20 +190,20 @@ bool Triangle::intersect(const Ray& r, HitRecord& rec) const
     Vec s1 = r.d % e2;
     real divisor = s1.dot(e1);
     
-    if (divisor == 0.0)
+    if (divisor == 0.0f)
         return false;
     
-    real invDivisor = 1.0 / divisor;
+    real invDivisor = 1.0f / divisor;
     
     // 重心座標を算出して範囲内にあるかチェック
     Vec d = r.o - p0;
     real b1 = d.dot(s1) * invDivisor;
-    if (b1 < 0.0 || b1 > 1.0)
+    if (b1 < 0.0f || b1 > 1.0f)
         return false;
     
     Vec s2 = d % e1;
     real b2 = r.d.dot(s2) * invDivisor;
-    if (b2 < 0.0 || b1 + b2 > 1.0)
+    if (b2 < 0.0f || b1 + b2 > 1.0f)
         return false;
     
     // t算出
@@ -247,17 +247,17 @@ bool MeshTriangle::intersect(const Ray &r, HitRecord &rec) const
     if (divisor == 0.0)
         return false;
     
-    real invDivisor = 1.0 / divisor;
+    real invDivisor = 1.0f / divisor;
     
     // 重心座標を算出して範囲内にあるかチェック
     Vec d = r.o - p0;
     real b1 = d.dot(s1) * invDivisor;
-    if (b1 < 0.0 || b1 > 1.0)
+    if (b1 < 0.0f || b1 > 1.0f)
         return false;
     
     Vec s2 = d % e1;
     real b2 = r.d.dot(s2) * invDivisor;
-    if (b2 < 0.0 || b1 + b2 > 1.0)
+    if (b2 < 0.0f || b1 + b2 > 1.0f)
         return false;
     
     // t算出
@@ -296,7 +296,7 @@ Mesh::~Mesh()
 bool Mesh::intersect(const Ray &r, HitRecord &out) const
 {
     HitRecord rec;
-    const real inf = 1e20;
+    const real inf = REAL_MAX;
     out.t = inf;
     
     for (u32 i=0; i<nFaces; i++) {
