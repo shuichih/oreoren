@@ -9,13 +9,15 @@
 class LightSource
 {
 public:
-    LightSource(Vec position, float intensity);
+    LightSource();
+    LightSource(const Vec3& position, const Vec3& intensity);
     
-    Ray GenerateRay();
+    Ray GenerateRay() const;
     
-	Vec position_;
-    float intensity_;
-	unsigned short xi_[3];
+	Vec3 position_;
+    Vec3 intensity_;
+private:
+	mutable unsigned short xi_[3];
 };
 
 #endif

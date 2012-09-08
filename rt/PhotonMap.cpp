@@ -32,10 +32,10 @@ balance()
 		median_split()
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <cmath>
 #include "PhotonMap.h"
 #include "PhotonFilter.h"
 
@@ -278,8 +278,10 @@ void Photon_map::store(
 	const float pos[3],
 	const float dir[3])
 {
-	if (stored_photons >= max_photons)
+	if (stored_photons >= max_photons) {
+        printf("[WARNING] over max_photons\n");
 		return;
+    }
 	
 	stored_photons++;
 	Photon* const node = &photons[stored_photons];

@@ -42,22 +42,22 @@ Mesh* ObjLoader::Load(const char* pFilePath)
     
     for (int i = 0; i < pLoader->vertexCount; i++) {
         obj_vector* pVert = pLoader->vertexList[i];
-        pMesh->pVertices[i].pos = Vec((real)pVert->e[0], (real)pVert->e[1], (real)pVert->e[2]);
+        pMesh->pVertices[i].pos = Vec3((real)pVert->e[0], (real)pVert->e[1], (real)pVert->e[2]);
     }
     
-    Vec* pVertNs = new Vec[pLoader->vertexCount];
-    Vec* pFaceNs = new Vec[pLoader->faceCount];
+    Vec3* pVertNs = new Vec3[pLoader->vertexCount];
+    Vec3* pFaceNs = new Vec3[pLoader->faceCount];
     for (int i = 0; i < pLoader->faceCount; i++)
     {
         obj_face* pFace = pLoader->faceList[i];
         obj_vector* pVert0 = pLoader->vertexList[pFace->vertex_index[0]];
         obj_vector* pVert1 = pLoader->vertexList[pFace->vertex_index[1]];
         obj_vector* pVert2 = pLoader->vertexList[pFace->vertex_index[2]];
-        Vec p0((real)pVert0->e[0], (real)pVert0->e[1], (real)pVert0->e[2]);
-        Vec p1((real)pVert1->e[0], (real)pVert1->e[1], (real)pVert1->e[2]);
-        Vec p2((real)pVert2->e[0], (real)pVert2->e[1], (real)pVert2->e[2]);
-        Vec s0 = p1 - p0;
-        Vec s1 = p2 - p0;
+        Vec3 p0((real)pVert0->e[0], (real)pVert0->e[1], (real)pVert0->e[2]);
+        Vec3 p1((real)pVert1->e[0], (real)pVert1->e[1], (real)pVert1->e[2]);
+        Vec3 p2((real)pVert2->e[0], (real)pVert2->e[1], (real)pVert2->e[2]);
+        Vec3 s0 = p1 - p0;
+        Vec3 s1 = p2 - p0;
         pFaceNs[i] = (s0 % s1).normalize();
         
         for (int iVert = 0; iVert < pFace->vertex_count; iVert++) {

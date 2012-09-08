@@ -7,13 +7,12 @@
 //
 
 #include <GLUT/glut.h>
+#include <algorithm>
 #include "App.h"
 #include "smallpt_fmt.h"
-#include <algorithm>
 #include "PhotonMap.h"
 #include "PhotonMapRenderer.h"
 #include "PostEffect.h"
-#include "MeshLoader.h"
 #include "Scene.h"
 
 
@@ -52,71 +51,60 @@ App::~App()
 }
 
 
-void App::Run(int argc, const char * argv[], int w, int h, Mode mode)
+void App::Run(int argc, const char * argv[])
 {
     s_pApp = this;
-    Init(argc, argv, w, h, mode);
-}
-
-void App::Init(int argc, const char * argv[], int w, int h, Mode mode)
-{
-    mode_ = mode;
-    w_ = w;
-    h_ = h;
-
-    glutInit(&argc, (char**)argv);
-	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
-	glutInitWindowSize(w, h);
-	glutCreateWindow("glut window");
-	glutDisplayFunc(DrawScene);
-    //glutIdleFunc(Idle);
     
-    // objロード
-    /*
-    const char* OBJ_FILE = "/Users/shuichih/Dev/rt/venusm.obj";
-    ObjLoader loader;
-    Mesh* pMesh = loader.Load(OBJ_FILE);
-	if (pMesh == NULL)
-	{
-        printf("File Load Error: %s\n", OBJ_FILE);
-		return;
-	}
-    pMesh->scale(0.01f, 0.01f, 0.01f);
-    */
+    Init(argc, argv);
     
 	glutMainLoop();
 }
+
+void App::Init(int argc, const char * argv[])
+{
+    const char* path = (argc >= 2) ? argv[1] : "~/Dev/rt/rt/SceneFiles/cornell_box.scene";
+    config.Load(path);
+    
+    glutInit(&argc, (char**)argv);
+	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
+	glutInitWindowSize(config.windowWidth, config.windowHeight);
+	glutCreateWindow("Renderer");
+	glutDisplayFunc(DrawScene);
+    //glutIdleFunc(Idle);
+    
+    PhotonMapRenderer::Config pmconfig = renderer_.GetDefaultConfig();
+    config.ApplyTo(pmconfig);
+    renderer_.SetConfig(pmconfig);
+    Ray cam(config.camera.position, config.camera.direction);
+    renderer_.SetCamera(cam, config.camera.fovY);
+}
+    
 
 void App::Update()
 {
     static u8* pColorBuf = 0;
 
+    int w = config.windowWidth;
+    int h = config.windowHeight;
+    
     // Render using photonmap
-    PhotonMapRenderer renderer;
-    PhotonMapRenderer::Config config = renderer.GetDefaultConfig();
-    config.screenWidth = w_;
-    config.screenHeight = h_;
-    config.nPhotons = 100000;
-    config.nEstimatePhotons = 100;
-    config.estimateDist = 10.f;
-    config.nSubPixelsSqrt = 1;
-    renderer.SetConfig(config);
     
     time_t startTime, endTime;
     time(&startTime);
     
-    Vec* pRealColorBuf = renderer.Run();
+    Vec3* pRealColorBuf = renderer_.Run(config.scene);
     
     // Tone Mapping
-    ToneMap toneMap;
-    toneMap.SetKeyValue(0.045f);
-    //toneMap.SetDelta(0.01f);
-    //toneMap.Apply(pRealColorBuf, w_, h_);
+    if (config.postEffect.toneMapEnabled) {
+        ToneMap toneMap;
+        toneMap.SetKeyValue(config.postEffect.toneMapKeyValue);
+        toneMap.Apply(pRealColorBuf, w, h);
+    }
     
     // Convert to u8 format
     delete pColorBuf;
-    pColorBuf = new u8[w_ * h_ * sizeof(char)*4];
-    for (int i = 0, j=0; i < (w_*h_); ++i, j+=4)
+    pColorBuf = new u8[w * h * sizeof(char)*4];
+    for (int i = 0, j=0; i < (w*h); ++i, j+=4)
     {
         pColorBuf[j+0] = (u8)(toInt(pRealColorBuf[i].x)); // including Gamma Correction
         pColorBuf[j+1] = (u8)(toInt(pRealColorBuf[i].y));
@@ -131,7 +119,7 @@ void App::Update()
 
     // Display
     glMatrixMode(GL_PROJECTION);
-    glOrtho(0, w_, h_, 0, -1, 1);
+    glOrtho(0, w, h, 0, -1, 1);
     //gluPerspective(60.0f, 1.0f, 0.1f, 1000.0f);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -143,7 +131,7 @@ void App::Update()
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
                 
-    glTexImage2D(GL_TEXTURE_2D, 0, 3, w_, h_, 0, GL_RGBA,
+    glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h, 0, GL_RGBA,
                  GL_UNSIGNED_BYTE, pColorBuf);
     
     glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
@@ -152,13 +140,13 @@ void App::Update()
     glBegin(GL_POLYGON);
     glDisable(GL_CULL_FACE);
     glTexCoord2f(1.0f, 1.0f); // texcoordとvertexはこの順じゃないと駄目
-    glVertex3f(w_, h_, 0.0f);
+    glVertex3f(w, h, 0.0f);
     glTexCoord2f(0.0f, 1.0f);
-    glVertex3f(0.f, h_, 0.0f);
+    glVertex3f(0.f, h, 0.0f);
     glTexCoord2f(0.0f, 0.0f);
     glVertex3f(0.f, 0.f, 0.f);
     glTexCoord2f(1.0f, 0.0f);
-    glVertex3f(w_, 0.f, 0.0f);
+    glVertex3f(w, 0.f, 0.0f);
     glEnd();
     
     glDisable(GL_TEXTURE_2D);

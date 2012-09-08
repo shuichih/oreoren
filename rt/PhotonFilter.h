@@ -20,7 +20,8 @@ public:
     
     virtual float Weight(float dist, float maxDist) const;
     virtual float Normalizer() const;
-
+    void SetK(float k);
+    
 private:
     float k_;
     float normalizer_;

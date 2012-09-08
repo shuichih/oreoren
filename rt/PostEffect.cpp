@@ -27,14 +27,14 @@ void ToneMap::SetSmallestWhiteLuminance(real l)
     smallestWhiteLum_ = l;
 }
 
-void ToneMap::Apply(Vec* pBuffer, i32 bufferWidth, i32 bufferHeight)
+void ToneMap::Apply(Vec3* pBuffer, i32 bufferWidth, i32 bufferHeight)
 {
-    const Vec RGB2Y  (+0.29900f, +0.58700f, +0.11400f);
-    const Vec RGB2Cb (-0.16874f, -0.33126f, +0.50000f);
-    const Vec RGB2Cr (+0.50000f, -0.41869f, -0.08131f);
-    const Vec YCbCr2R(+1.00000f, +0.00000f, +1.40200f);
-    const Vec YCbCr2G(+1.00000f, -0.34414f, -0.71414f);
-    const Vec YCbCr2B(+1.00000f, +1.77200f, +0.00000f);
+    const Vec3 RGB2Y  (+0.29900f, +0.58700f, +0.11400f);
+    const Vec3 RGB2Cb (-0.16874f, -0.33126f, +0.50000f);
+    const Vec3 RGB2Cr (+0.50000f, -0.41869f, -0.08131f);
+    const Vec3 YCbCr2R(+1.00000f, +0.00000f, +1.40200f);
+    const Vec3 YCbCr2G(+1.00000f, -0.34414f, -0.71414f);
+    const Vec3 YCbCr2B(+1.00000f, +1.77200f, +0.00000f);
     
     real lmSum = 0.0f;
     real delta = delta_;
@@ -56,8 +56,8 @@ void ToneMap::Apply(Vec* pBuffer, i32 bufferWidth, i32 bufferHeight)
     //real wL2Inv = 0;
     for (i32 i = 0; i < num; i++)
     {
-        Vec& pixel = pBuffer[i];
-        Vec YCbCr;
+        Vec3& pixel = pBuffer[i];
+        Vec3 YCbCr;
         
         // 色成分はそのまま
         YCbCr.y = RGB2Cb.dot(pixel);

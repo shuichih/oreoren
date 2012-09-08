@@ -9,28 +9,25 @@
 #ifndef rt_App_h
 #define rt_App_h
 
+#include "Config.h"
+
 class Photon_map;
 
 class App
 {
 public:
-    enum Mode
-    {
-        SimpleRayTrace,
-        PhotonMapping
-    };
 
     App();
     ~App();
-    void Run(int argc, const char * argv[], int w, int h, Mode mode);
-    void Init(int argc, const char * argv[], int w, int h, Mode mode);
+    void Run(int argc, const char * argv[]);
+    void Init(int argc, const char * argv[]);
     void Update();
     
 private:
-    int w_;
-    int h_;
-    Mode mode_;
+    
+    Config config;
     Photon_map* pPhotonMap_;
+    PhotonMapRenderer renderer_;
 };
 
 #endif

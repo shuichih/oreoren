@@ -12,15 +12,35 @@ namespace {
 
 //--------------------------------------------------------------------------------
 
-Sphere::Sphere(real rad_, Vec p_, Vec c_, Refl_t refl_)
+Shape::~Shape()
+{
+}
+
+//--------------------------------------------------------------------------------
+
+Sphere::Sphere()
+: rad(1.f), p(), c(1.f, 1.f, 1.f), refl(DIFF)
+{
+}
+
+Sphere::Sphere(const Sphere& sphere)
+: rad(sphere.rad), p(sphere.p), c(sphere.c), refl(sphere.refl)
+{
+}
+
+Sphere::Sphere(real rad_, Vec3 p_, Vec3 c_, Refl_t refl_)
  : rad(rad_), p(p_), c(c_), refl(refl_)
+{
+}
+
+Sphere::~Sphere()
 {
 }
 
 // returns distance, 0 if nohit
 bool Sphere::intersect(const Ray &r, HitRecord& rec) const
 {
-    Vec op = p-r.o; // Solve t^2*d.d + 2*t*(o-p).d + (o-p).(o-p)-R^2 = 0
+    Vec3 op = p-r.o; // Solve t^2*d.d + 2*t*(o-p).d + (o-p).(o-p)-R^2 = 0
     real t;
     real b = op.dot(r.d);
     real det = b * b - op.dot(op) + rad * rad;
@@ -43,8 +63,22 @@ bool Sphere::intersect(const Ray &r, HitRecord& rec) const
 
 
 //--------------------------------------------------------------------------------
-Triangle::Triangle(const Vec& _p0, const Vec& _p1, const Vec& _p2, const RGB& _color, Refl_t _refl)
+Triangle::Triangle(const Vec3& _p0, const Vec3& _p1, const Vec3& _p2, const RGB& _color, Refl_t _refl)
     : p0(_p0), p1(_p1), p2(_p2), color(_color), refl(_refl)
+{
+    CalcNormal();
+}
+
+Triangle::Triangle()
+{
+    CalcNormal();
+}
+
+Triangle::~Triangle()
+{
+}
+
+void Triangle::CalcNormal()
 {
     normal = ((p1 - p0) % (p2 - p0)).normalize();
 }
@@ -117,7 +151,7 @@ bool Triangle::intersect(const Ray& r, HitRecord& rec) const
     if (t <= EPSILON) return false;
     
     // 光源の向こうなら交差しない（光源の光線方向と交点→ライトへのベクトルが対向しているか見る手もある）
-    Vec x = r.o + r.d * t;
+    Vec3 x = r.o + r.d * t;
     
     // pが各辺の内側にあるか判定
     if (((p1-p0) % (x-p0)).dot(normal) >= 0
@@ -142,22 +176,22 @@ bool Triangle::intersect(const Ray& r, HitRecord& rec) const
 // 表しか当たらない。
 bool Triangle::intersect(const Ray& r, HitRecord& rec) const
 {
-    Vec ab = p1 - p0;
-    Vec ac = p2 - p0;
-    Vec qp = r.o - (r.o + r.d*100000);
+    Vec3 ab = p1 - p0;
+    Vec3 ac = p2 - p0;
+    Vec3 qp = r.o - (r.o + r.d*100000);
     
-    Vec n = ab % ac; // 正規化しない
+    Vec3 n = ab % ac; // 正規化しない
     
     // d < 0なら三角形から離れていく, d == 0なら三角形と平行
     real d = qp.dot(n);
     if (d <= 0.0) return 0;
     
-    Vec ap = r.o - p0;
+    Vec3 ap = r.o - p0;
     real t = ap.dot(n);
     if (t < 0.0) return false;
     
     // 重心座標の成分を計算し範囲内にあるか判定
-    Vec e = qp % ap;
+    Vec3 e = qp % ap;
     real v = ac.dot(e);
     
     if (v < 0.0 || v > d) return false;
@@ -174,7 +208,7 @@ bool Triangle::intersect(const Ray& r, HitRecord& rec) const
     //real u = 1.0 - v - w;
     
     rec.t = t;
-    rec.normal = Vec(0, 0, 1);
+    rec.normal = Vec3(0, 0, 1);
     rec.color = color;
     rec.refl = refl;
     return true;
@@ -185,9 +219,9 @@ bool Triangle::intersect(const Ray& r, HitRecord& rec) const
 // based PHISICALLY BASED RENDERING 2ND EDITION, 3.6.2
 bool Triangle::intersect(const Ray& r, HitRecord& rec) const
 {
-    Vec e1 = p1 - p0;
-    Vec e2 = p2 - p0;
-    Vec s1 = r.d % e2;
+    Vec3 e1 = p1 - p0;
+    Vec3 e2 = p2 - p0;
+    Vec3 s1 = r.d % e2;
     real divisor = s1.dot(e1);
     
     if (divisor == 0.0f)
@@ -196,12 +230,12 @@ bool Triangle::intersect(const Ray& r, HitRecord& rec) const
     real invDivisor = 1.0f / divisor;
     
     // 重心座標を算出して範囲内にあるかチェック
-    Vec d = r.o - p0;
+    Vec3 d = r.o - p0;
     real b1 = d.dot(s1) * invDivisor;
     if (b1 < 0.0f || b1 > 1.0f)
         return false;
     
-    Vec s2 = d % e1;
+    Vec3 s2 = d % e1;
     real b2 = r.d.dot(s2) * invDivisor;
     if (b2 < 0.0f || b1 + b2 > 1.0f)
         return false;
@@ -236,12 +270,12 @@ MeshTriangle::~MeshTriangle()
 
 bool MeshTriangle::intersect(const Ray &r, HitRecord &rec) const
 {
-    Vec p0 = pMesh->pVertices[indices[0]].pos;
-    Vec p1 = pMesh->pVertices[indices[1]].pos;
-    Vec p2 = pMesh->pVertices[indices[2]].pos;
-    Vec e1 = p1 - p0;
-    Vec e2 = p2 - p0;
-    Vec s1 = r.d % e2;
+    Vec3 p0 = pMesh->pVertices[indices[0]].pos;
+    Vec3 p1 = pMesh->pVertices[indices[1]].pos;
+    Vec3 p2 = pMesh->pVertices[indices[2]].pos;
+    Vec3 e1 = p1 - p0;
+    Vec3 e2 = p2 - p0;
+    Vec3 s1 = r.d % e2;
     real divisor = s1.dot(e1);
     
     if (divisor == 0.0)
@@ -250,12 +284,12 @@ bool MeshTriangle::intersect(const Ray &r, HitRecord &rec) const
     real invDivisor = 1.0f / divisor;
     
     // 重心座標を算出して範囲内にあるかチェック
-    Vec d = r.o - p0;
+    Vec3 d = r.o - p0;
     real b1 = d.dot(s1) * invDivisor;
     if (b1 < 0.0f || b1 > 1.0f)
         return false;
     
-    Vec s2 = d % e1;
+    Vec3 s2 = d % e1;
     real b2 = r.d.dot(s2) * invDivisor;
     if (b2 < 0.0f || b1 + b2 > 1.0f)
         return false;
@@ -308,6 +342,11 @@ bool Mesh::intersect(const Ray &r, HitRecord &out) const
     return out.t != inf;
 }
 
+void Mesh::scale(Vec3 scl)
+{
+    scale(scl.x, scl.y, scl.z);
+}
+
 void Mesh::scale(real x, real y, real z)
 {
     for (u32 i=0; i<nVertices; i++) {
@@ -315,6 +354,11 @@ void Mesh::scale(real x, real y, real z)
         pVertices[i].pos.y *= y;
         pVertices[i].pos.z *= z;
     }
+}
+
+void Mesh::translate(Vec3 transl)
+{
+    translate(transl.x, transl.y, transl.z);
 }
 
 void Mesh::translate(real x, real y, real z)
@@ -326,4 +370,27 @@ void Mesh::translate(real x, real y, real z)
     }
 }
 
+//--------------------------------------------------------------------------------
+Scene::Scene()
+{
+}
 
+Scene::~Scene()
+{
+    for (int i=0; i<litSrcs_.size(); i++) {
+        delete litSrcs_[i];
+    }
+    for (int i=0; i<shapes_.size(); i++) {
+        delete shapes_[i];
+    }
+}
+
+void Scene::AddLightSource(const LightSource* pLitSrc)
+{
+    litSrcs_.push_back(pLitSrc);
+}
+
+void Scene::AddShape(const Shape* pShape)
+{
+    shapes_.push_back(pShape);
+}

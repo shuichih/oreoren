@@ -7,6 +7,9 @@
 #define USE_FLOAT
 
 //----------------------------------------------------------------
+#define ARRAY_SZ(a) sizeof(a) / sizeof(a[0])
+
+//----------------------------------------------------------------
 
 typedef char                i8;
 typedef short               i16;
@@ -27,7 +30,7 @@ const double REAL_MIN = DBL_MIN;
 #endif
 
 //----------------------------------------------------------------
-struct Vec {
+struct Vec3 {
     
     union
     {
@@ -38,7 +41,7 @@ struct Vec {
         real e[3];
     };
 
-    inline Vec(real x_=0, real y_=0, real z_=0)
+    inline Vec3(real x_=0, real y_=0, real z_=0)
         : x(x_), y(y_), z(z_)
     {
         x=x_;
@@ -46,33 +49,38 @@ struct Vec {
         z=z_;
     }
     
-    inline Vec operator+(const Vec &b) const
+    inline Vec3 operator+(const Vec3 &b) const
     {
-        return Vec(x+b.x,y+b.y,z+b.z);
+        return Vec3(x+b.x,y+b.y,z+b.z);
     }
    
-    inline Vec operator-(const Vec &b) const
+    inline Vec3 operator-(const Vec3 &b) const
     {
-        return Vec(x-b.x,y-b.y,z-b.z);
+        return Vec3(x-b.x,y-b.y,z-b.z);
     }
     
-    inline Vec operator*(real b) const
+    inline Vec3 operator*(real b) const
     {
-        return Vec(x*b,y*b,z*b);
+        return Vec3(x*b,y*b,z*b);
     }
     
-    inline Vec operator/(real b) const
+    inline Vec3 operator/(real b) const
     {
         real bi = 1.0f / b;
-        return Vec(x*bi, y*bi, z*bi);
+        return Vec3(x*bi, y*bi, z*bi);
     }
     
-    inline Vec mult(const Vec &b) const
+    inline Vec3 mult(const Vec3 &b) const
     {
-        return Vec(x*b.x,y*b.y,z*b.z);
+        return Vec3(x*b.x,y*b.y,z*b.z);
     }
     
-    inline Vec& operator+=(const Vec &b)
+    inline real sum() const
+    {
+        return x + y + z;
+    }
+    
+    inline Vec3& operator+=(const Vec3 &b)
     {
         x += b.x;
         y += b.y;
@@ -80,7 +88,7 @@ struct Vec {
         return *this;
     }
     
-    inline Vec& operator-=(const Vec& b)
+    inline Vec3& operator-=(const Vec3& b)
     {
         x -= b.x;
         y -= b.y;
@@ -88,7 +96,7 @@ struct Vec {
         return *this;
     } 
     
-    inline Vec& operator*=(real b)
+    inline Vec3& operator*=(real b)
     {
         x *= b;
         y *= b;
@@ -96,7 +104,7 @@ struct Vec {
         return *this;
     }
     
-    inline Vec& operator/=(real b)
+    inline Vec3& operator/=(real b)
     {
         real bInv = 1.0f / b;
         x *= bInv;
@@ -105,30 +113,30 @@ struct Vec {
         return *this;
     }
     
-    inline Vec& normalize()
+    inline Vec3& normalize()
     {
         return *this = *this * (1.f/sqrtf(x*x+y*y+z*z));
     }
     
-    inline real dot(const Vec &b) const
+    inline real dot(const Vec3 &b) const
     {
         return x*b.x+y*b.y+z*b.z;
     }
     
     // cross:
-    Vec operator%(const Vec&b) const
+    Vec3 operator%(const Vec3&b) const
     {
-        return Vec(y*b.z-z*b.y, z*b.x-x*b.z, x*b.y-y*b.x);
+        return Vec3(y*b.z-z*b.y, z*b.x-x*b.z, x*b.y-y*b.x);
     }
 };
 
 struct Ray
 {
-    Vec o, d;
-    Ray(Vec o_, Vec d_) : o(o_), d(d_) {}
+    Vec3 o, d;
+    Ray(Vec3 o_, Vec3 d_) : o(o_), d(d_) {}
 };
 
-typedef Vec RGB;
+typedef Vec3 RGB;
 
 #endif
 
