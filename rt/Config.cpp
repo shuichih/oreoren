@@ -397,6 +397,7 @@ Config::Config()
         { "maxPhotonBounce", IVT_INT, &photonMapConf.maxPhotonBounce },
         { "maxRayBounce", IVT_INT, &photonMapConf.maxRayBounce },
         { "useBVH", IVT_BOOL, &photonMapConf.useBVH },
+        { "nTracePhotonsPerThread", IVT_INT, &photonMapConf.nTracePhotonsPerThread},
     };
     ItemDesc postEffectDesc[] = {
         { "toneMap.enabled", IVT_BOOL, &postEffect.toneMapEnabled },

@@ -1,0 +1,71 @@
+# details at:
+# http://www.graphics.cornell.edu/online/box/data.html
+#
+# there are non-standard definitions at the bottom for
+# the camera and light data
+
+mtllib ./cornell_box.mtl
+
+#floor
+v 552.8 0.0   0.0   
+v 0.0 0.0   0.0
+v 0.0 0.0 559.2
+v 549.6 0.0 559.2
+usemtl floor
+f 1 2 3
+f 1 3 4
+
+#ceiling
+v 556.0 548.8 0.0   
+v 556.0 548.8 559.2
+v 0.0 548.8 559.2
+v 0.0 548.8   0.0
+usemtl ceiling
+f 5 6 7
+f 5 7 8
+
+#back wall
+v 549.6   0.0 559.2 
+v 0.0   0.0 559.2
+v 0.0 548.8 559.2
+v 556.0 548.8 559.2
+usemtl back
+f 9 10 11
+f 9 11 12
+
+#right wall
+v 0.0   0.0 559.2   
+v 0.0   0.0   0.0
+v 0.0 548.8   0.0
+v 0.0 548.8 559.2
+usemtl green
+f 13 14 15
+f 13 15 16
+
+#left wall
+v 552.8   0.0   0.0 
+v 549.6   0.0 559.2
+v 556.0 548.8 559.2
+v 556.0 548.8   0.0
+usemtl red
+f 17 18 19
+f 17 19 20
+
+# light
+v 343 548.8 227
+v 343 548.8 332
+v 213 548.8 332
+v 213 548.8 227
+
+usemtl light
+f -1 -2 -3 -4
+
+#camera
+v  278 273 -800
+v  278 273 0
+vn  0 1 0
+
+g Camera
+c -2 -1 -1
+
+

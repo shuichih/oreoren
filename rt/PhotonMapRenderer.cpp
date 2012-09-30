@@ -363,19 +363,36 @@ void PhotonMapRenderer::Run(Vec3* pColorBuf, const Scene& scene, BVH* pBVH)
         const LightSource* pLit = pScene_->litSrcs_[i];
         float nPhotonRatio = (float)(pLit->intensity_.sum() / sumIntensity);
         u32 nPhotons = (u32)(pPmConfig_->nPhotons * nPhotonRatio);
+        
+        const int nPhotonsPerThread =
+            pPmConfig_->nTracePhotonsPerThread > 0 ? pPmConfig_->nTracePhotonsPerThread : nPhotons;
+        int nThread = ceilf(nPhotons / (float)nPhotonsPerThread);
+        
         #pragma omp parallel for num_threads(4) schedule(dynamic, 1)
-        for (int j=0; j<nPhotons; j++, iPhoton++) {
-            if (iPhoton % (pPmConfig_->nPhotons / 100) == 0) {
-                #pragma omp critical
-                {
-                    fprintf(stderr, "PhotonTracing %5.2f%%\n", 100. * iPhoton / pPmConfig_->nPhotons);
+        for (int t=0; t<nThread; t++) {
+            int nPhotonThisThread = (t == nThread-1) ?
+                (nPhotons-((nThread-1)*nPhotonsPerThread)) : nPhotonsPerThread;
+                 
+            for (int j=0; j<nPhotonThisThread; j++) {
+                #pragma omp atomic
+                iPhoton++;
+                
+                if (iPhoton % (pPmConfig_->nPhotons / 100) == 0) {
+                    #pragma omp critical
+                    {
+                        fprintf(stderr, "PhotonTracing %5.2f%%\n", 100. * iPhoton / pPmConfig_->nPhotons);
+                    }
                 }
+                
+                
+                Ray ray = pLit->GenerateRay();
+                Vec3 power = pLit->intensity_;
+                PhotonTracing(ray, power.e, 0);
             }
-            
-            Ray ray = pLit->GenerateRay();
-            Vec3 power = pLit->intensity_;
-            PhotonTracing(ray, power.e, 0);
         }
+        
+        printf("%d photons traced.\n", iPhoton);
+        
         pPhotonMap_->scale_photon_power(1.0f / nPhotons); // 前回スケールした範囲は除外される
     }
     pPhotonMap_->balance();

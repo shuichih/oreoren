@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B2013FE016181376008BF6F7 /* Timer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2013FDE16181376008BF6F7 /* Timer.cpp */; };
 		B209617D1483117300863694 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B209617C1483117300863694 /* main.cpp */; };
 		B20FAF56150FCEE500846A20 /* PhotonFilter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B20FAF54150FCEE500846A20 /* PhotonFilter.cpp */; };
 		B263223614E7893A00158AF5 /* PhotonMapRenderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B263223414E7893A00158AF5 /* PhotonMapRenderer.cpp */; };
@@ -45,6 +46,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		B2013FDE16181376008BF6F7 /* Timer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Timer.cpp; sourceTree = "<group>"; };
+		B2013FDF16181376008BF6F7 /* Timer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Timer.h; sourceTree = "<group>"; };
+		B2013FE21618245F008BF6F7 /* from.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = from.txt; path = objLoader/from.txt; sourceTree = "<group>"; };
 		B20961781483117300863694 /* rt */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = rt; sourceTree = BUILT_PRODUCTS_DIR; };
 		B209617C1483117300863694 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		B20FAF54150FCEE500846A20 /* PhotonFilter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PhotonFilter.cpp; sourceTree = "<group>"; };
@@ -130,6 +134,8 @@
 		B209617B1483117300863694 /* rt */ = {
 			isa = PBXGroup;
 			children = (
+				B2013FDE16181376008BF6F7 /* Timer.cpp */,
+				B2013FDF16181376008BF6F7 /* Timer.h */,
 				B26B252A1616DCC700560892 /* IRenderer.h */,
 				B26B25261616D72E00560892 /* RayTracingRenderer.cpp */,
 				B26B25271616D72E00560892 /* RayTracingRenderer.h */,
@@ -175,6 +181,7 @@
 		B282457515AEF2EC006A3DC1 /* objLoader */ = {
 			isa = PBXGroup;
 			children = (
+				B2013FE21618245F008BF6F7 /* from.txt */,
 				B282457615AEF472006A3DC1 /* list.cpp */,
 				B282457715AEF472006A3DC1 /* list.h */,
 				B282457815AEF472006A3DC1 /* obj_parser.cpp */,
@@ -267,6 +274,7 @@
 				B2A36AC315FB319300262567 /* BBox.cpp in Sources */,
 				B2A36AC515FB5C5C00262567 /* Common.cpp in Sources */,
 				B26B25281616D72E00560892 /* RayTracingRenderer.cpp in Sources */,
+				B2013FE016181376008BF6F7 /* Timer.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

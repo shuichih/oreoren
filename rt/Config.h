@@ -120,6 +120,7 @@ struct PhotonMapConfig
     u32 maxPhotonBounce;
     u32 maxRayBounce;
     bool useBVH;
+    u32 nTracePhotonsPerThread;
 };
 
 //--------------------------------------------------------------------------------
