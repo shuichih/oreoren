@@ -12,6 +12,8 @@
 #include "Config.h"
 
 class Photon_map;
+class BVH;
+class IRenderer;
 
 class App
 {
@@ -20,14 +22,23 @@ public:
     App();
     ~App();
     void Run(int argc, const char * argv[]);
+    void Render();
+    void RenderScene(Vec3* pRealColorBuf);
+    void DrawToBuffer(u8* pRealColorBuf);
+    
+private:
     void Init(int argc, const char * argv[]);
-    void Update();
+    void BuildBVH();
+    void ConvertToUint(u8* pColorBuf, Vec3* pRealColorBuf);
+    void DrawBVH();
+    void DrawBVH_(const Shape* pShape, int level);
     
 private:
     
     Config config;
     Photon_map* pPhotonMap_;
-    PhotonMapRenderer renderer_;
+    IRenderer* pRenderer_;
+    BVH* pBVH_;
 };
 
 #endif

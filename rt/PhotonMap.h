@@ -2,6 +2,8 @@
 //   Realistic Image Synthesis using Photon Mapping (Japanese Edition)
 //   http://ssl.ohmsha.co.jp/cgi-bin/menu.cgi?ISBN=4-274-07950-3
 
+#include "Common.h"
+
 class PhotonFilter;
 
 //
@@ -27,7 +29,7 @@ typedef struct NearestPhotons {
 	int found;
 	int got_heap;
 	float pos[3];
-    float normal[3];
+    Vec3 normal;
 	float *dist2;
 	const Photon **index;
 } NearestPhotons;
@@ -42,6 +44,7 @@ public:
 	~Photon_map();
 
     void SetFilter(const PhotonFilter* pFilter);
+    void SetEstimateEllipseScale(float scale); // ellapse for estimate
     
 	void store(
 		const float power[3],		// photon power
@@ -56,7 +59,7 @@ public:
 	void irradiance_estimate(
 		float irrad[3],				// returned irradiance
 		const float pos[3],			// surface position
-		const float normal[3],		// surface normal at pos
+		const Vec3& normal,		    // surface normal at pos
 		const float max_dist,		// max distance to look for photons
 		const int nphotons) const;	// number of photon to use
 	
@@ -100,5 +103,6 @@ private:
 	float bbox_max[3];		// photons全体のbbox_max
     
     const PhotonFilter* pFilter_;
+    float estimateEllipseScaleInv_;
 };
 

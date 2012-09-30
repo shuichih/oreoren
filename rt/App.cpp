@@ -6,6 +6,7 @@
 //  Copyright 2011 __MyCompanyName__. All rights reserved.
 //
 
+#include <OpenGL/OpenGL.h>
 #include <GLUT/glut.h>
 #include <algorithm>
 #include "App.h"
@@ -14,13 +15,15 @@
 #include "PhotonMapRenderer.h"
 #include "PostEffect.h"
 #include "Scene.h"
+#include "BVH.h"
+#include "RayTracingRenderer.h"
 
 
 using namespace std;
 
 static App* s_pApp = 0;
 
-void DrawScene();
+void Display();
 void Idle();
 
 //
@@ -42,12 +45,14 @@ inline int toInt(real x)
 //
 
 App::App()
+: pBVH_(NULL)
 {
 
 }
 
 App::~App()
 {
+    delete pBVH_;
 }
 
 
@@ -62,48 +67,45 @@ void App::Run(int argc, const char * argv[])
 
 void App::Init(int argc, const char * argv[])
 {
-    const char* path = (argc >= 2) ? argv[1] : "~/Dev/rt/rt/SceneFiles/cornell_box.scene";
+    // Configロード
+    //const char* path = (argc >= 2) ? argv[1] : "~/Dev/rt/rt/SceneFiles/cornell_box.scene";
+    const char* path = (argc >= 2) ? argv[1] : "~/Dev/rt/rt/SceneFiles/venus.scene";
     config.Load(path);
     
+    // GL初期化
     glutInit(&argc, (char**)argv);
 	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
 	glutInitWindowSize(config.windowWidth, config.windowHeight);
 	glutCreateWindow("Renderer");
-	glutDisplayFunc(DrawScene);
+	glutDisplayFunc(Display);
     //glutIdleFunc(Idle);
     
-    PhotonMapRenderer::Config pmconfig = renderer_.GetDefaultConfig();
-    config.ApplyTo(pmconfig);
-    renderer_.SetConfig(pmconfig);
-    Ray cam(config.camera.position, config.camera.direction);
-    renderer_.SetCamera(cam, config.camera.fovY);
+    // レンダラにConfig内容を設定
+    if (config.rendererType == RTYPE_SIMPLE_RT) {
+        pRenderer_ = new RayTracingRenderer();
+    }
+    else if (config.rendererType == RTYPE_PHOTON_MAP) {
+        pRenderer_ = new PhotonMapRenderer();
+    }
+    pRenderer_->SetConfig(config);
 }
-    
 
-void App::Update()
+void App::BuildBVH()
 {
-    static u8* pColorBuf = 0;
+    if (config.buildBVH) {
+        printf("Building BVH...\n");
+        std::vector<const Shape*>& shapes = config.scene.shapes_;
+        delete pBVH_;
+        pBVH_ = new BVH(&shapes[0], (int)shapes.size());
+        //pBVH_->LimitMinScale(0.01f);
+    }
+}
 
+void App::ConvertToUint(u8* pColorBuf, Vec3* pRealColorBuf)
+{
+    // Convert to u8 format
     int w = config.windowWidth;
     int h = config.windowHeight;
-    
-    // Render using photonmap
-    
-    time_t startTime, endTime;
-    time(&startTime);
-    
-    Vec3* pRealColorBuf = renderer_.Run(config.scene);
-    
-    // Tone Mapping
-    if (config.postEffect.toneMapEnabled) {
-        ToneMap toneMap;
-        toneMap.SetKeyValue(config.postEffect.toneMapKeyValue);
-        toneMap.Apply(pRealColorBuf, w, h);
-    }
-    
-    // Convert to u8 format
-    delete pColorBuf;
-    pColorBuf = new u8[w * h * sizeof(char)*4];
     for (int i = 0, j=0; i < (w*h); ++i, j+=4)
     {
         pColorBuf[j+0] = (u8)(toInt(pRealColorBuf[i].x)); // including Gamma Correction
@@ -111,12 +113,60 @@ void App::Update()
         pColorBuf[j+2] = (u8)(toInt(pRealColorBuf[i].z));
         pColorBuf[j+3] = 255;
     }
+    
+}
+
+void App::Render()
+{
+    int w = config.windowWidth;
+    int h = config.windowHeight;
+    
+    Vec3* pRealColorBuf = new Vec3[w * h];
+    u8* pColorBuf = new u8[w * h * sizeof(char)*4];
+    
+    BuildBVH();
+    
+    RenderScene(pRealColorBuf);
+    ConvertToUint(pColorBuf, pRealColorBuf);
+    DrawToBuffer(pColorBuf);
+    DrawBVH();
+    
+    glutSwapBuffers();
+    
     delete [] pRealColorBuf;
+    delete [] pColorBuf;
+}
+
+void App::RenderScene(Vec3* pRealColorBuf)
+{
+    time_t startTime, endTime;
+    time(&startTime);
+    
     
     time(&endTime);
     u32 elapsed = (u32)difftime(endTime, startTime);
+    printf("BVH build time = %dm %ds\n", elapsed/60, elapsed%60);
+    
+    // Render using photonmap
+    pRenderer_->Run(pRealColorBuf, config.scene, pBVH_);
+    
+    // Tone Mapping
+    if (config.postEffect.toneMapEnabled) {
+        ToneMap toneMap;
+        toneMap.SetKeyValue(config.postEffect.toneMapKeyValue);
+        toneMap.Apply(pRealColorBuf, config.windowWidth, config.windowHeight);
+    }
+    
+    time(&endTime);
+    elapsed = (u32)difftime(endTime, startTime);
     printf("rendering time = %dm %ds\n", elapsed/60, elapsed%60);
+}
 
+void App::DrawToBuffer(u8* pColorBuf)
+{
+    int w = config.windowWidth;
+    int h = config.windowHeight;
+    
     // Display
     glMatrixMode(GL_PROJECTION);
     glOrtho(0, w, h, 0, -1, 1);
@@ -151,14 +201,68 @@ void App::Update()
     
     glDisable(GL_TEXTURE_2D);
 
-    glutSwapBuffers();
 }
 
-void DrawScene()
+void App::DrawBVH()
 {
-    if (s_pApp) {
-        s_pApp->Update();
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    float aspect = config.windowWidth / (float)config.windowHeight;
+    
+    float fov = (float)atan2(0.5135, (double)config.camera.direction.length());
+    float fov_deg = Rad2Deg(fov);
+    gluPerspective(fov_deg, aspect, 1.0, 1000.0);
+    
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    Vec3 pos = config.camera.position;
+    Vec3 at = pos + config.camera.direction;
+    gluLookAt(pos.x, pos.y, pos.z, at.x, at.y, at.z, 0.0, 1.0, 0.0);
+
+    glDisable(GL_LIGHTING);
+    
+    if (config.drawBVH) {
+        DrawBVH_(pBVH_, 0);
     }
+    
+   // glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+    
+}
+
+void App::DrawBVH_(const Shape* pShape, int depth)
+{
+    if (pShape == NULL || depth >= config.drawBVHDepth) {
+        return;
+    }
+    
+    GLfloat color[4];
+    if (pShape->IsBVH()) {
+        color[0] = 0.f; color[1] = 0.f; color[2] = 1.f; color[3] = 1.f;
+    } else {
+        color[0] = 1.f; color[1] = 0.f; color[2] = 0.f; color[3] = 1.f;
+    }
+    const BBox& bbox = pShape->BoundingBox();
+    Vec3 center = bbox.Center();
+    Vec3 size = bbox.Size();
+    
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glColor3f(color[0], color[1], color[2]);
+    glTranslatef(center.x, center.y, center.z);
+    glScalef(size.x, size.y, size.z);
+    glutWireCube(1);
+    glPopMatrix();
+    
+    if (pShape->IsBVH()) {
+        BVH* pBVH = (BVH*)pShape;
+        DrawBVH_(pBVH->pLeft_, depth+1);
+        DrawBVH_(pBVH->pRight_, depth+1);
+    }
+}
+
+void Display()
+{
+    s_pApp->Render();
 }
 
 void Idle()

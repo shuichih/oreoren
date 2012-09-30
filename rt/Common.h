@@ -8,6 +8,13 @@
 
 //----------------------------------------------------------------
 #define ARRAY_SZ(a) sizeof(a) / sizeof(a[0])
+#ifdef USE_FLOAT
+#define Deg2Rad(deg) ((deg) * ((float)M_PI) / 180)
+#define Rad2Deg(rad) ((rad) * 180 / ((float)M_PI))
+#else
+#define Deg2Rad(deg) ((deg) * M_PI / 180)
+#define Rad2Deg(rad) ((rad) * 180 / M_PI)
+#endif
 
 //----------------------------------------------------------------
 
@@ -23,10 +30,12 @@ typedef unsigned long long  u64;
 typedef float               real;
 const float REAL_MAX = FLT_MAX;
 const float REAL_MIN = FLT_MIN;
+const float EPSILON = 4e-3f;
 #else
 typedef double              real;
 const double REAL_MAX = DBL_MAX;
 const double REAL_MIN = DBL_MIN;
+const double EPSILON = 2e-4;
 #endif
 
 //----------------------------------------------------------------
@@ -41,7 +50,11 @@ struct Vec3 {
         real e[3];
     };
 
-    inline Vec3(real x_=0, real y_=0, real z_=0)
+    inline Vec3()
+        : x(0), y(0), z(0)
+    {}
+    
+    inline Vec3(real x_, real y_, real z_)
         : x(x_), y(y_), z(z_)
     {
         x=x_;
@@ -51,7 +64,7 @@ struct Vec3 {
     
     inline Vec3 operator+(const Vec3 &b) const
     {
-        return Vec3(x+b.x,y+b.y,z+b.z);
+        return Vec3(x+b.x, y+b.y, z+b.z);
     }
    
     inline Vec3 operator-(const Vec3 &b) const
@@ -59,6 +72,16 @@ struct Vec3 {
         return Vec3(x-b.x,y-b.y,z-b.z);
     }
     
+    inline Vec3 operator+(const real b) const
+    {
+        return Vec3(x+b, y+b, z+b);
+    }
+    
+    inline Vec3 operator-(const real b) const
+    {
+        return Vec3(x-b, y-b, z-b);
+    }
+        
     inline Vec3 operator*(real b) const
     {
         return Vec3(x*b,y*b,z*b);
@@ -113,9 +136,19 @@ struct Vec3 {
         return *this;
     }
     
+    inline real square_length()
+    {
+        return x * x + y * y + z * z;
+    }
+    
+    inline real length()
+    {
+        return sqrtf(x * x + y * y + z * z);
+    }
+    
     inline Vec3& normalize()
     {
-        return *this = *this * (1.f/sqrtf(x*x+y*y+z*z));
+        return *this = *this / length();
     }
     
     inline real dot(const Vec3 &b) const
@@ -130,11 +163,35 @@ struct Vec3 {
     }
 };
 
+Vec3 operator*(const float f, const Vec3& v);
+
 struct Ray
 {
-    Vec3 o, d;
-    Ray(Vec3 o_, Vec3 d_) : o(o_), d(d_) {}
+    Vec3 o;
+    Vec3 d;
+    Vec3 invDir;
+    i32 dirSign[3]; // dirの符号 0:positive 1:negative
+    
+    Ray(Vec3 o_, Vec3 d_) : o(o_), d(d_)
+    {
+        SetDirection(d_);
+    }
+    
+    void SetDirection(const Vec3& dir)
+    {
+        d = dir;
+        invDir = Vec3(1.0f / dir.x, 1.0f / dir.y, 1.0f / dir.z);
+        dirSign[0] = (dir.x > 0) ? 0 : 1;
+        dirSign[1] = (dir.y > 0) ? 0 : 1;
+        dirSign[2] = (dir.z > 0) ? 0 : 1;
+    }
+
+    Vec3 PointAtParameter(float t) const
+    {
+        return o + t * d;
+    }
 };
+
 
 typedef Vec3 RGB;
 

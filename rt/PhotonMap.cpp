@@ -38,6 +38,7 @@ balance()
 #include <cmath>
 #include "PhotonMap.h"
 #include "PhotonFilter.h"
+#include "Common.h"
 
 /**
  * This is the constructor for the photon map.
@@ -82,6 +83,11 @@ void Photon_map::SetFilter(const PhotonFilter* pFilter)
 {
     pFilter_ = pFilter;
 }
+
+void Photon_map::SetEstimateEllipseScale(float scale)
+{
+    estimateEllipseScaleInv_ = 1.f / scale;
+}
                            
 /**
  * photon_dir returns the direction of a photon
@@ -100,7 +106,7 @@ void Photon_map::photon_dir(float* dir, const Photon* p) const
 void Photon_map::irradiance_estimate(
 	float irrad[3],				// returned irradiance
 	const float pos[3],    		// surface position
-	const float normal[3],		// surface normal at pos
+	const Vec3& normal,   		// surface normal at pos
 	const float max_dist,   	// max distance to look for photons
 	const int nphotons) const 	// number of photons to use
 {
@@ -112,7 +118,7 @@ void Photon_map::irradiance_estimate(
 	np.index = (const Photon**)alloca(sizeof(Photon*) * (nphotons+1));
 	
 	np.pos[0] = pos[0]; np.pos[1] = pos[1]; np.pos[2] = pos[2];
-    np.normal[0] = normal[0]; np.normal[1] = normal[1]; np.normal[2] = normal[2];
+    np.normal = normal;
 	np.max = nphotons;
 	np.found = 0;
 	np.got_heap = 0;
@@ -137,7 +143,7 @@ void Photon_map::irradiance_estimate(
         // if the scene does not have any thin surfaces
         // 面の裏にくっついたフォトンを採らないようにしている
         photon_dir(pdir, p);
-        if ((pdir[0]*normal[0] + pdir[1]*normal[1] + pdir[2]*normal[2]) < 0.0f) {
+        if ((pdir[0]*normal.e[0] + pdir[1]*normal.e[1] + pdir[2]*normal.e[2]) < 0.0f) {
             float w = 1.f;
             if (pFilter_) // ループ内で何度もチェックするのが無駄
             {
@@ -152,7 +158,7 @@ void Photon_map::irradiance_estimate(
 
     // BRDFの1/π掛けてないけど、それはきっとこの関数の呼び出し元で
     // 任意のBRDFを掛けるから
-    float tmp = (1.0f/(float)M_PI) / (np.dist2[0]);  // estimate of density
+    float tmp = 1.0f / (float)(M_PI * np.dist2[0]);  // estimate of density
     if (pFilter_)
         tmp *= pFilter_->Normalizer();
     irrad[0] *= tmp;
@@ -189,31 +195,27 @@ void Photon_map::locate_photons(
 	}
 
 	// compute squared distance between current photon and np->pos
-	// フォトンへの2乗距離を計算
-	float dx = p->pos[0] - np->pos[0];
-	float dy = p->pos[1] - np->pos[1];
-	float dz = p->pos[2] - np->pos[2];
-	float dist2 = dx * dx + dy * dy + dz * dz;
+	// 推定する点からフォトンへの2乗距離を計算
+    Vec3 d(p->pos[0] - np->pos[0], p->pos[1] - np->pos[1], p->pos[2] - np->pos[2]);
+    float dist2 = d.square_length();
     
     // 楕円の範囲内のフォトンを集める
-    float nrm_pos[3] = { dx * np->normal[0], dy * np->normal[1], dz * np->normal[2] }; // parallel
-    float nrm_pp_pos[3] = { dx - nrm_pos[0], dy - nrm_pos[1], dz - nrm_pos[2] }; // perpendicular
-    nrm_pos[0] *= 10.f;
-    nrm_pos[1] *= 10.f;
-    nrm_pos[2] *= 10.f;
-    dx = nrm_pos[0] + nrm_pp_pos[0];
-    dy = nrm_pos[1] + nrm_pp_pos[1];
-    dz = nrm_pos[2] + nrm_pp_pos[2];
-	float dist2_ellipse = dx * dx + dy * dy + dz * dz;
+    Vec3 nd = np->normal * d.dot(np->normal); // 法線に平行な成分
+    Vec3 pn = nd - d; // 法線に垂直な成分
+    nd *= estimateEllipseScaleInv_; // 垂直方向にだけスケール
+    d = nd + pn;
+	float dist2_ellipse = d.square_length();
 
+	//if (dist2_ellipse < np->dist2[0]) {
 	if (dist2_ellipse < np->dist2[0]) {
-		// we found a photon :) Insert it in the candidate list
+        // we found a photon :) Insert it in the candidate list
 
 		if (np->found < np->max) { // np->maxは集めるフォトンの数
 			// heap is not full; use array
 			np->found++;
 			np->dist2[np->found] = dist2;
 			np->index[np->found] = p;
+//			np->dist2_ellipse[np->found] = dist2_ellipse;
 		} else {
 			int j, parent;
 
@@ -282,8 +284,10 @@ void Photon_map::store(
         printf("[WARNING] over max_photons\n");
 		return;
     }
-	
+    
+    #pragma omp atomic
 	stored_photons++;
+    
 	Photon* const node = &photons[stored_photons];
 
 	for (int i=0; i<3; i++) {

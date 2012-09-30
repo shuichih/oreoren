@@ -5,7 +5,9 @@
 
 #include "Common.h"
 #include "LightSource.h"
+#include "BBox.h"
 #include <vector>
+
 
 enum Refl_t
 {
@@ -24,7 +26,12 @@ class Shape
 {
 public:
     virtual ~Shape();
-    virtual bool intersect(const Ray& r, HitRecord& rec) const = 0;
+    
+    virtual BBox BoundingBox() const = 0;
+    virtual bool Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) const = 0;
+    virtual bool IsBVH() const { return false; };
+    virtual int GetChildNum() const { return 0; }
+    virtual const Shape** GetChildren() const { return NULL; }
 };
 
 class Sphere : public Shape
@@ -34,8 +41,10 @@ public:
     Sphere(const Sphere& rhs);
     Sphere(real rad_, Vec3 p_, Vec3 c_, Refl_t refl_);
     virtual ~Sphere();
-    virtual bool intersect(const Ray &r, HitRecord& rec) const;
-
+    
+    virtual BBox BoundingBox() const;
+    virtual bool Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) const;
+    
     real rad;   // radius
     Vec3 p;      // position
     Vec3 c;      // color
@@ -45,10 +54,12 @@ public:
 class Triangle : public Shape
 {
 public:
-    Triangle(const Vec3& _p0, const Vec3& _p1, const Vec3& _p2, const RGB& _color, Refl_t _refl);
     Triangle();
+    Triangle(const Vec3& _p0, const Vec3& _p1, const Vec3& _p2, const RGB& _color, Refl_t _refl);
     virtual ~Triangle();
-    virtual bool intersect(const Ray& r, HitRecord& rec) const;
+    
+    virtual BBox BoundingBox() const;
+    virtual bool Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) const;
     void CalcNormal();
     
     Vec3 p0;
@@ -73,7 +84,9 @@ public:
     MeshTriangle();
     virtual ~MeshTriangle();
 
-    virtual bool intersect(const Ray& r, HitRecord& rec) const;
+    void CalcFaceNormal();
+    virtual BBox BoundingBox() const;
+    virtual bool Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) const;
     
     u32 indices[3];
     Vec3 normal;
@@ -86,7 +99,12 @@ public:
     Mesh(u32 nVertices, u32 nFaces);
     virtual ~Mesh();
 
-    virtual bool intersect(const Ray& r, HitRecord& rec) const;
+    void CalcFaceNormals();
+    void CalcBoundingBox();
+    virtual BBox BoundingBox() const;
+    virtual bool Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) const;
+    virtual int GetChildNum() const;
+    virtual const Shape** GetChildren() const;  // for BVH
     
     void scale(Vec3 scl);
     void scale(real x, real y, real z);
@@ -95,8 +113,10 @@ public:
 
     Vertex*         pVertices;
     MeshTriangle*   pFaces;
+    const Shape**   ppFaces; // for BVH
     u32             nVertices;
     u32             nFaces;
+    BBox            bbox_;
 };
 
 class Scene

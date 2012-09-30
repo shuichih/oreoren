@@ -1,85 +1,77 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <cassert>
 #include "Common.h"
 #include "Scene.h"
-#include "SceneData.h"
 #include "PhotonMap.h"
 #include "LightSource.h"
 #include "PhotonMapRenderer.h"
 #include "PhotonFilter.h"
+#include "BVH.h"
+#include "Config.h"
 
 using namespace std;
 
 //----------------------------------------------------------------
 PhotonMapRenderer::PhotonMapRenderer()
-: camera_(Vec3(50.f, 52.f, 295.6f), Vec3(0.f, -0.042612f, -1.f).normalize())
-, fovY_(0.5135f)
+: pBVH_(NULL)
+, pPhotonMap_(NULL)
+, pFilter_(NULL)
 {
-    defaultConfig_.screenWidth = 256;
-    defaultConfig_.screenHeight = 256;
-    defaultConfig_.nSubPixelsSqrt = 2;
-    defaultConfig_.nPhotons = 100000;
-    defaultConfig_.nEstimatePhotons = 100;
-    defaultConfig_.estimateDist = 10.f;
-    defaultConfig_.coneFilterK = 1.1f;
-    
-    config_ = defaultConfig_;
-    
-    pPhotonMap_ = new Photon_map(config_.nPhotons);
-    pFilter_ = new ConeFilter(defaultConfig_.coneFilterK);
-    pPhotonMap_->SetFilter(pFilter_);
 }
 
 PhotonMapRenderer::~PhotonMapRenderer()
 {
-    delete pFilter_;
     delete pPhotonMap_;
     delete pFilter_;
 }
 
-PhotonMapRenderer::Config PhotonMapRenderer::GetDefaultConfig()
+void PhotonMapRenderer::SetConfig(const Config& config)
 {
-    return defaultConfig_;
-}
-
-void PhotonMapRenderer::SetConfig(const PhotonMapRenderer::Config &config)
-{
-    config_ = config;
-    ((ConeFilter*)pFilter_)->SetK(config_.coneFilterK);
+    pConfig_ = &config;
+    pPmConfig_ = &pConfig_->photonMapConf;
     
-    delete pPhotonMap_;
-    pPhotonMap_ = new Photon_map(config_.nPhotons * config_.maxPhotonBounce); // ちと多め
-    pPhotonMap_->SetFilter(pFilter_);
-}
-
-void PhotonMapRenderer::SetCamera(const Ray& camera, real fovY)
-{
-    camera_ = camera;
-    fovY_ = fovY;
-}
-
-bool PhotonMapRenderer::Intersect(const Ray& r, HitRecord& out)
-{
-    real inf = REAL_MAX;
-    out.t = inf;
+    if (pPhotonMap_ != NULL) delete pPhotonMap_;
+    pPhotonMap_ = new Photon_map(pPmConfig_->nPhotons * pPmConfig_->maxPhotonBounce); // ちと多め
     
-    HitRecord rec;
-    size_t nShapes = pScene_->shapes_.size();
-    const vector<const Shape*>& shapes = pScene_->shapes_;
-    for (size_t i=nShapes; i--;) {
-        if(shapes[i]->intersect(r, rec) && (rec.t < out.t)) {
-            out = rec;
-        }
+    if (pFilter_ != NULL) delete pFilter_;
+    if (pPmConfig_->enableConeFilter) {
+        pFilter_ = new ConeFilter(pPmConfig_->coneFilterK);
+        ((ConeFilter*)pFilter_)->SetK(pPmConfig_->coneFilterK);
+        pPhotonMap_->SetFilter(pFilter_);
+    }
+    else {
+        pPhotonMap_->SetFilter(NULL);
     }
     
-    return out.t < inf;
+    pPhotonMap_->SetEstimateEllipseScale(pPmConfig_->estimateEllipseScale);
+}
+
+bool PhotonMapRenderer::Intersect(const Ray& r, HitRecord& rec)
+{
+    if (pPmConfig_->useBVH && pBVH_) {
+        return pBVH_->Intersect(r, EPSILON, REAL_MAX, rec);
+    }
+    else {
+        rec.t = REAL_MAX;
+        size_t nShapes = pScene_->shapes_.size();
+        const vector<const Shape*>& shapes = pScene_->shapes_;
+        for (size_t i=nShapes; i--;) {
+            shapes[i]->Intersect(r, EPSILON, rec.t, rec);
+        }
+        
+        return rec.t < REAL_MAX;
+    }
+    
+    assert(true);
+    return false;
 }
 
 void PhotonMapRenderer::PhotonTracing(const Ray& r, float power[3], int depth)
 {
     // max refl
-    if (++depth > 5)
+    if (++depth > pPmConfig_->maxPhotonBounce)
     {
         return;
     }
@@ -103,11 +95,12 @@ void PhotonMapRenderer::PhotonTracing(const Ray& r, float power[3], int depth)
         float ave_refl = (color.x + color.y + color.z) / 3.f;
         if ((real)erand48(xi_) < ave_refl)
         {
+            // @todo importance samplingになってる？
             real r1 = 2.f*(real)(M_PI*erand48(xi_));
             real r2 = (real)erand48(xi_); // => 1-cos^2θ = 1-sqrt(1-r_2)^2 = r_2
             real r2s = sqrtf(r2);    // => sinθ = sqrt(1-cos^2θ) = sqrt(r_2)
             Vec3 w = nl; // normal
-            Vec3 u = ((fabs(w.x) > .1f ? Vec3(0.f, 1.f) : Vec3(1.f)) % w).normalize(); // binormal
+            Vec3 u = ((fabs(w.x) > .1f ? Vec3(0.f, 1.f, 0.f) : Vec3(1.f, 0.f, 0.f)) % w).normalize(); // binormal
             Vec3 v = w % u; // tangent
             
             // ucosφsinθ + vsinφsinθ + wcosθ
@@ -138,7 +131,7 @@ void PhotonMapRenderer::PhotonTracing(const Ray& r, float power[3], int depth)
         real ry = sinf(r1) * sinTheta;
         real rz = cosTheta;
         Vec3 w = r.d - n * 2.f * n.dot(r.d); // reflected ray
-        Vec3 u = ((fabs(w.x) > .1f ? Vec3(0.f, 1.f) : Vec3(1.f)) % w).normalize(); // binormal
+        Vec3 u = ((fabs(w.x) > .1f ? Vec3(0.f, 1.f, 0.f) : Vec3(1.f, 0.f, 0.f)) % w).normalize(); // binormal
         Vec3 v = w % u; // tangent
         
         // ucosφsinθ + vsinφsinθ + wcosθ
@@ -188,7 +181,7 @@ void PhotonMapRenderer::PhotonTracing(const Ray& r, float power[3], int depth)
 Vec3 PhotonMapRenderer::Irradiance(const Ray &r, int depth)
 {
     // max refl
-    if (++depth > 5)
+    if (++depth > pPmConfig_->maxRayBounce)
     {
         return Vec3();
     }
@@ -207,9 +200,8 @@ Vec3 PhotonMapRenderer::Irradiance(const Ray &r, int depth)
     // Ideal DIFFUSE reflection
     if (refl == DIFF){
         float pos[3] = { x.x, x.y, x.z };
-        float nrm[3] = { nl.x, nl.y, nl.z };
         float irrad[3] = { 0.f, 0.f, 0.f };
-        pPhotonMap_->irradiance_estimate(irrad, pos, nrm, config_.estimateDist, config_.nEstimatePhotons);
+        pPhotonMap_->irradiance_estimate(irrad, pos, nl, pPmConfig_->estimateDist, pPmConfig_->nEstimatePhotons);
         //fprintf(stderr, "irrad %f %f %f\r", irrad[0], irrad[1], irrad[2]);
         return Vec3(f.x * irrad[0], f.y * irrad[1], f.z * irrad[2]);
     }
@@ -230,7 +222,7 @@ Vec3 PhotonMapRenderer::Irradiance(const Ray &r, int depth)
             real ry = sinf(r1) * sinTheta;
             real rz = cosTheta;
             Vec3 w = r.d - n * 2.f * n.dot(r.d); // reflected ray
-            Vec3 u = ((fabs(w.x) > .1f ? Vec3(0.f, 1.f) : Vec3(1.f)) % w).normalize(); // binormal
+            Vec3 u = ((fabs(w.x) > .1f ? Vec3(0.f, 1.f, 0.f) : Vec3(1.f, 0.f, 0.f)) % w).normalize(); // binormal
             Vec3 v = w % u; // tangent
             
             // ucosφsinθ + vsinφsinθ + wcosθ
@@ -267,22 +259,34 @@ Vec3 PhotonMapRenderer::Irradiance(const Ray &r, int depth)
     return Irradiance(reflRay, depth) * fresnel + Irradiance(Ray(x,tdir), depth) * Tr;
 }
 
-Vec3* PhotonMapRenderer::RayTracing()
+void PhotonMapRenderer::RayTracing(Vec3* pColorBuf)
 {
-    const u32 w = config_.screenWidth;
-    const u32 h = config_.screenHeight;
-    const u32 nSub = config_.nSubPixelsSqrt;
+    const u32 w = pConfig_->windowWidth;
+    const u32 h = pConfig_->windowHeight;
+    const u32 nSub = pPmConfig_->nSubPixelsSqrt;
     const real subPixelFactor = 1.0f / (real)(nSub*nSub);
     
-    const Vec3 cx = Vec3(w * fovY_ / h);
-    const Vec3 cy = (cx % camera_.d).normalize() * fovY_;
-    Vec3* c = new Vec3[w*h];
-
-    // Loop over image rows
-    // 355, 225, 187, 167
-    //#pragma omp parallel for num_threads(4) schedule(dynamic, 1)   // OpenMP
+    // バッファクリア
     for (int y=0; y<h; y++) {
-        fprintf(stderr, "RayTracing (%d spp) %5.2f%%\n", nSub*nSub, 100.f * y / (h-1));
+        for (int x=0; x<w; x++) {
+            pColorBuf[w*y + x] = Vec3();
+        }
+    }
+    
+    Ray camRay = Ray(pConfig_->camera.position, pConfig_->camera.direction);
+    real fovY = pConfig_->camera.fovY;
+    
+    // 投影面のXY軸
+    const Vec3 proj_plane_axis_x = Vec3(w * fovY / h, 0.f, 0.f);
+    const Vec3 proj_plane_axis_y = (proj_plane_axis_x % camRay.d).normalize() * fovY;
+    
+    // Loop over image rows
+    #pragma omp parallel for num_threads(4) schedule(dynamic, 1)
+    for (int y=0; y<h; y++) {
+        #pragma omp critical
+        {
+            fprintf(stderr, "RayTracing (%d spp) %5.2f%%\n", nSub*nSub, 100.f * y / (h-1));
+        }
 
         xi_[0] = 0;
         xi_[1] = 0;
@@ -312,50 +316,61 @@ Vec3* PhotonMapRenderer::RayTracing()
                     // (sx+.5 + dx)/2 = -0.25 to 0.75 or 0.25 to 1.25、前者0.25中心に+-0.5範囲の揺らぎ、後者0.75中心に+-0.5範囲のゆらぎ
                     // +x / w ピクセルの位置へ、0to1へ。 -.5 0to1から-0.5to0.5へ。
                     // cx* 投影面中心座標から+-0.5の範囲を走査するため
-                    Vec3 d = cx*( ( (sx+.5f + dx)/2.f + x)/w - .5f) +
-                            cy*( ( (sy+.5f + dy)/2.f + y)/h - .5f) + camera_.d;
-
-                    // 140は多分投影面までの距離
-                    Vec3 r = Irradiance(Ray(camera_.o + d * 140, d.normalize()), 0);
+                    // / 2.fはsx, dxが倍の
+                    //Vec3 d = cx*( ( (sx+.5f + dx)/2.f + x)/w - .5f) +
+                    //        cy*( ( (sy+.5f + dy)/2.f + y)/h - .5f) + camRay.d;
+                    const float toCenter = 0.5f;
+                    const float sx2 = (sx+toCenter + dx) / (float)nSub;
+                    const float sy2 = (sy+toCenter + dy) / (float)nSub;
+                    Vec3 d = proj_plane_axis_x * ((x + sx2) / w - .5f)
+                           + proj_plane_axis_y * ((y + sy2) / h - .5f)
+                           + camRay.d;
+                    
+                    // 140は視点から投影面までの距離
+                    Vec3 r = Irradiance(Ray(camRay.o + d * 140, d.normalize()), 0);
 
                     // Camera rays are pushed ^^^^^ forward to start in interior
                     // トーンマップとか特にやってない。クランプしてるだけ。
-                    c[i] += r * subPixelFactor;
+                    pColorBuf[i] += r * subPixelFactor;
                 }
             }
             //fprintf(stderr, "\r%f %f %f", c[i].x, c[i].y, c[i].z);
         }
     }
     
-    return c;
 }
 
-
-#include "MeshLoader.h"
-
-Vec3* PhotonMapRenderer::Run(const Scene& scene)
+void PhotonMapRenderer::Run(Vec3* pColorBuf, const Scene& scene, BVH* pBVH)
 {
     xi_[0] = 0;
 	xi_[1] = 0;
-	xi_[2] = (unsigned short)config_.nPhotons;
+	xi_[2] = (unsigned short)pPmConfig_->nPhotons;
     
     pScene_ = &scene;
+    pBVH_ = pBVH;
 
-	//LightSource litSrc(Vec3(50.0f, 81.0f, 111.6f), Vec3(10000, 10000, 10000));
+    // すべてのライトの合計の明るさを求める
     u32 nLit = (u32)pScene_->litSrcs_.size();
     double sumIntensity = 0;
     for (int i=0; i<nLit; i++) {
         const Vec3& intensity = pScene_->litSrcs_[i]->intensity_;
-        sumIntensity += intensity.sum(); // sumでなく輝度を使った方が正確になる
+        sumIntensity += intensity.sum(); // sumでなく輝度を使った方が精度が上がる
     }
+    
+    // 各ライトからライトの明るさに応じてフォトンをばらまく
     u32 iPhoton = 0;
     for (int i=0; i<nLit; i++) {
         const LightSource* pLit = pScene_->litSrcs_[i];
         float nPhotonRatio = (float)(pLit->intensity_.sum() / sumIntensity);
-        u32 nPhotons = (u32)(config_.nPhotons * nPhotonRatio);
+        u32 nPhotons = (u32)(pPmConfig_->nPhotons * nPhotonRatio);
+        #pragma omp parallel for num_threads(4) schedule(dynamic, 1)
         for (int j=0; j<nPhotons; j++, iPhoton++) {
-            if (iPhoton % (config_.nPhotons / 100) == 0)
-                fprintf(stderr, "PhotonTracing %5.2f%%\n", 100. * iPhoton / config_.nPhotons);
+            if (iPhoton % (pPmConfig_->nPhotons / 100) == 0) {
+                #pragma omp critical
+                {
+                    fprintf(stderr, "PhotonTracing %5.2f%%\n", 100. * iPhoton / pPmConfig_->nPhotons);
+                }
+            }
             
             Ray ray = pLit->GenerateRay();
             Vec3 power = pLit->intensity_;
@@ -365,6 +380,5 @@ Vec3* PhotonMapRenderer::Run(const Scene& scene)
     }
     pPhotonMap_->balance();
     
-    Vec3* pColorBuf = RayTracing();
-    return pColorBuf;
+    RayTracing(pColorBuf);
 }

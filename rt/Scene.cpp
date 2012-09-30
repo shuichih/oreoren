@@ -1,14 +1,7 @@
 #include "Scene.h"
 #include <cmath>
 #include <cstring>
-
-namespace {
-#ifdef USE_FLOAT
-    const real EPSILON = 4e-3f;
-#else
-    const real EPSILON = 2e-4;
-#endif
-}
+#include "BBox.h"
 
 //--------------------------------------------------------------------------------
 
@@ -37,11 +30,16 @@ Sphere::~Sphere()
 {
 }
 
-// returns distance, 0 if nohit
-bool Sphere::intersect(const Ray &r, HitRecord& rec) const
+BBox Sphere::BoundingBox() const
 {
-    Vec3 op = p-r.o; // Solve t^2*d.d + 2*t*(o-p).d + (o-p).(o-p)-R^2 = 0
-    real t;
+    return BBox(p - rad, p + rad);
+}
+
+// returns distance, 0 if nohit
+bool Sphere::Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) const
+{
+    // Solve t^2*d.d + 2*t*(o-p).d + (o-p).(o-p)-R^2 = 0
+    Vec3 op = p-r.o;
     real b = op.dot(r.d);
     real det = b * b - op.dot(op) + rad * rad;
     if (det <= 0.f) {
@@ -50,15 +48,19 @@ bool Sphere::intersect(const Ray &r, HitRecord& rec) const
     
     det = sqrtf(det);
     
-    if ((t=b-det) > EPSILON || ((t=b+det) > EPSILON)) {
-        rec.t = t;
-        rec.normal = ((r.o + r.d * t) - p).normalize();
-        rec.color = c;
-        rec.refl = refl;
-        return true;
+    float t = b - det;
+    if (t < tmin || t > tmax) {
+        t = b + det;
+        if (t < tmin || t > tmax) {
+            return false;
+        }
     }
     
-    return false;
+    rec.t = t;
+    rec.normal = ((r.o + r.d * t) - p).normalize();
+    rec.color = c;
+    rec.refl = refl;
+    return true;
 }
 
 
@@ -76,6 +78,18 @@ Triangle::Triangle()
 
 Triangle::~Triangle()
 {
+}
+
+BBox Triangle::BoundingBox() const
+{
+    return BBox(
+        std::min(std::min(p0.x, p1.x), p2.x),
+        std::min(std::min(p0.y, p1.y), p2.y),
+        std::min(std::min(p0.z, p1.z), p2.z),
+        std::max(std::max(p0.x, p1.x), p2.x),
+        std::max(std::max(p0.y, p1.y), p2.y),
+        std::max(std::max(p0.z, p1.z), p2.z)
+    );
 }
 
 void Triangle::CalcNormal()
@@ -217,7 +231,7 @@ bool Triangle::intersect(const Ray& r, HitRecord& rec) const
 
 #if 1
 // based PHISICALLY BASED RENDERING 2ND EDITION, 3.6.2
-bool Triangle::intersect(const Ray& r, HitRecord& rec) const
+bool Triangle::Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) const
 {
     Vec3 e1 = p1 - p0;
     Vec3 e2 = p2 - p0;
@@ -243,8 +257,8 @@ bool Triangle::intersect(const Ray& r, HitRecord& rec) const
     // t算出
     real t = e2.dot(s2) * invDivisor;
     
-    // 光線始点より後ろならヒットしない、EPSILONは自己ヒット抑止のため
-    if (t < EPSILON)
+    // 光線始点より後ろならヒットしない
+    if (t < tmin || t > tmax)
         return false;
     
     rec.t = t;
@@ -268,7 +282,30 @@ MeshTriangle::~MeshTriangle()
 {
 }
 
-bool MeshTriangle::intersect(const Ray &r, HitRecord &rec) const
+void MeshTriangle::CalcFaceNormal()
+{
+    Vec3& p0 = pMesh->pVertices[indices[0]].pos;
+    Vec3& p1 = pMesh->pVertices[indices[1]].pos;
+    Vec3& p2 = pMesh->pVertices[indices[2]].pos;
+    normal = ((p1 - p0) % (p2 - p0)).normalize();
+}
+
+BBox MeshTriangle::BoundingBox() const
+{
+    Vec3 p0 = pMesh->pVertices[indices[0]].pos;
+    Vec3 p1 = pMesh->pVertices[indices[1]].pos;
+    Vec3 p2 = pMesh->pVertices[indices[2]].pos;
+    return BBox(
+        std::min(std::min(p0.x, p1.x), p2.x),
+        std::min(std::min(p0.y, p1.y), p2.y),
+        std::min(std::min(p0.z, p1.z), p2.z),
+        std::max(std::max(p0.x, p1.x), p2.x),
+        std::max(std::max(p0.y, p1.y), p2.y),
+        std::max(std::max(p0.z, p1.z), p2.z)
+    );
+}
+
+bool MeshTriangle::Intersect(const Ray &r, float tmin, float tmax, HitRecord &rec) const
 {
     Vec3 p0 = pMesh->pVertices[indices[0]].pos;
     Vec3 p1 = pMesh->pVertices[indices[1]].pos;
@@ -278,7 +315,7 @@ bool MeshTriangle::intersect(const Ray &r, HitRecord &rec) const
     Vec3 s1 = r.d % e2;
     real divisor = s1.dot(e1);
     
-    if (divisor == 0.0)
+    if (divisor == 0.0f)
         return false;
     
     real invDivisor = 1.0f / divisor;
@@ -298,13 +335,19 @@ bool MeshTriangle::intersect(const Ray &r, HitRecord &rec) const
     real t = e2.dot(s2) * invDivisor;
     
     // 光線始点より後ろならヒットしない、EPSILONは自己ヒット抑止のため
-    if (t < EPSILON)
+    if (t < tmin || t > tmax)
         return false;
     
     rec.t = t;
-    rec.normal = normal;
+    real b0 = 1.f - b1 - b2;
+    rec.normal = ((pMesh->pVertices[indices[0]].normal * b0)
+               +  (pMesh->pVertices[indices[1]].normal * b1)
+               +  (pMesh->pVertices[indices[2]].normal * b2)).normalize();
+    //rec.normal = normal; // face normal
+    
+    // @todo Meshのマテリアル使用
     rec.color = RGB(1, 1, 1);
-    rec.refl = DIFF;
+    rec.refl = REFR;
     return true;
 }
 
@@ -313,11 +356,13 @@ Mesh::Mesh(u32 nVertices_, u32 nFaces_)
 {
     pVertices = new Vertex[nVertices_];
     pFaces = new MeshTriangle[nFaces_];
+    ppFaces = new const Shape*[nFaces_];
     nVertices = nVertices_;
     nFaces = nFaces_;
     
     for (int i=0; i<nFaces; i++) {
         pFaces[i].pMesh = this;
+        ppFaces[i] = &pFaces[i];
     }
 }
 
@@ -327,19 +372,60 @@ Mesh::~Mesh()
     delete [] pFaces;
 }
 
-bool Mesh::intersect(const Ray &r, HitRecord &out) const
+void Mesh::CalcFaceNormals()
 {
-    HitRecord rec;
-    const real inf = REAL_MAX;
-    out.t = inf;
-    
+    for (int i=0; i<nFaces; i++) {
+        pFaces[i].CalcFaceNormal();
+    }
+}
+
+void Mesh::CalcBoundingBox()
+{
+    Vec3 minV(FLT_MAX, FLT_MAX, FLT_MAX);
+    Vec3 maxV(FLT_MIN, FLT_MIN, FLT_MIN);
     for (u32 i=0; i<nFaces; i++) {
-        if(pFaces[i].intersect(r, rec) && (rec.t < out.t)) {
-            out = rec;
+        for (u32 j=0; j<3; j++) {
+            u32 index = pFaces[i].indices[j];
+            Vec3 p = pVertices[index].pos;
+            minV.x = std::min(p.x, minV.x);
+            minV.y = std::min(p.y, minV.y);
+            minV.z = std::min(p.z, minV.z);
+            maxV.x = std::max(p.x, maxV.x);
+            maxV.y = std::max(p.y, maxV.y);
+            maxV.z = std::max(p.z, maxV.z);
         }
     }
     
-    return out.t != inf;
+    bbox_ = BBox(minV, maxV);
+}
+
+BBox Mesh::BoundingBox() const
+{
+    return bbox_;
+}
+
+bool Mesh::Intersect(const Ray &r, float tmin, float tmax, HitRecord& rec) const
+{
+    bool ret = false;
+    for (u32 i=0; i<nFaces; i++) {
+        if (pFaces[i].Intersect(r, tmin, tmax, rec)) {
+            ret = true;
+            tmax = rec.t;
+        }
+    }
+    
+    return ret;
+}
+
+int Mesh::GetChildNum() const
+{
+    return nFaces;
+    //return 0;
+}
+
+const Shape** Mesh::GetChildren() const
+{
+    return ppFaces;
 }
 
 void Mesh::scale(Vec3 scl)

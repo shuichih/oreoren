@@ -4,7 +4,7 @@
 
 LightSource::LightSource()
 : position_()
-, intensity_(10000)
+, intensity_(10000, 10000, 10000)
 {
 	xi_[0] = 0;
 	xi_[1] = 0;

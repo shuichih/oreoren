@@ -62,14 +62,13 @@ Mesh* ObjLoader::Load(const char* pFilePath)
         
         for (int iVert = 0; iVert < pFace->vertex_count; iVert++) {
             int vidx = pFace->vertex_index[iVert];
-            pVertNs[vidx] += pMesh->pFaces[i].normal;
+            pVertNs[vidx] += pFaceNs[i];
         }
     }
     for (int i = 0; i < pLoader->vertexCount; i++) {
         pVertNs[i].normalize();
     }
     
-    Vertex* pV = pMesh->pVertices;
     u32 iFace = 0;
     for (int i = 0; i < pLoader->faceCount; i++) {
         obj_face* pFace = pLoader->faceList[i];
@@ -80,9 +79,10 @@ Mesh* ObjLoader::Load(const char* pFilePath)
             for ( int iVert = 0; iVert < 3; iVert++ ) {
                 int vidx = pFace->vertex_index[iVert];
                 pMesh->pFaces[iFace].indices[iVert] = vidx;
+                Vertex* pV = &pMesh->pVertices[vidx];
                 
                 int nidx = pFace->normal_index[iVert];
-                if (nidx != -1 && nidx < pLoader->normalCount) {
+                if (nidx != -1 && nidx < pLoader->normalCount && false) {
                     obj_vector* pNorm = pLoader->normalList[nidx];
                     pV->normal.x = (float)pNorm->e[0];
                     pV->normal.y = (float)pNorm->e[1];
@@ -104,9 +104,10 @@ Mesh* ObjLoader::Load(const char* pFilePath)
             {
                 int vidx = pFace->vertex_index[iVert];
                 pMesh->pFaces[iFace].indices[iVert] = vidx;
+                Vertex* pV = &pMesh->pVertices[vidx];
                 
                 int nidx = pFace->normal_index[iVert];
-                if (nidx != -1 && nidx < pLoader->normalCount) {
+                if (nidx != -1 && nidx < pLoader->normalCount && false) {
                     obj_vector* pNorm = pLoader->normalList[nidx];
                     pV->normal.x = (float)pNorm->e[0];
                     pV->normal.y = (float)pNorm->e[1];
@@ -114,8 +115,6 @@ Mesh* ObjLoader::Load(const char* pFilePath)
                 } else {
                     pV->normal = pVertNs[vidx];
                 }
-                
-                pV++;
             }
             iFace++;
             
@@ -127,18 +126,18 @@ Mesh* ObjLoader::Load(const char* pFilePath)
                 int vertLocalIdx = vertLocalIndices[iVert];
                 int vidx = pFace->vertex_index[vertLocalIdx];
                 pMesh->pFaces[iFace].indices[iVert] = vidx;
+                Vertex* pV = &pMesh->pVertices[vidx];
                 
                 int nidx = pFace->normal_index[vertLocalIdx];
-                if (nidx != -1 && nidx < pLoader->normalCount) {
+                if (nidx != -1 && nidx < pLoader->normalCount && false) {
                     obj_vector* pNorm = pLoader->normalList[nidx];
                     pV->normal.x = (float)pNorm->e[0];
                     pV->normal.y = (float)pNorm->e[1];
                     pV->normal.z = (float)pNorm->e[2];
+                    pV->normal.normalize();
                 } else {
                     pV->normal = pVertNs[vidx];
                 }
-                
-                pV++;
             }
             iFace++;
         }
@@ -147,6 +146,11 @@ Mesh* ObjLoader::Load(const char* pFilePath)
             assert( false );
         }
     }
+    
+    printf("%d faces, %d vertices.\n", pMesh->nFaces, pMesh->nVertices);
+    // Bounding BoxとNormal計算
+    pMesh->CalcBoundingBox();
+    pMesh->CalcFaceNormals();
     
     return pMesh;
 }
