@@ -24,10 +24,26 @@ public:
 
 private:
     
-    void PhotonTracing(const Ray& r, float power[3], int depth);
+    struct PathInfo
+    {
+        int depth;
+        int diffuseDepth;
+        int glossyDepth;
+        int specularDepth;
+        PathInfo()
+        : depth(0)
+        , diffuseDepth(0)
+        , glossyDepth(0)
+        , specularDepth(0)
+        {}
+    };
+    void PhotonTracing();
+    void TracePhoton(const Ray& r, float power[3], PathInfo& pathInfo);
     bool Intersect(const Ray& r, HitRecord& rec);
+    Vec3 CosImportanceSamplingRay(const Vec3& n);
+    Vec3 GlossyRay(const Vec3& w, float exponent);
     void RayTracing(Vec3* pColorBuf);
-    Vec3 Irradiance(const Ray &r, int depth);
+    Vec3 Irradiance(const Ray &r, PathInfo& pathInfo);
     
     const Config* pConfig_;
     const PhotonMapConfig* pPmConfig_;

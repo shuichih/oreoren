@@ -24,11 +24,12 @@ RayTracingRenderer::~RayTracingRenderer()
 void RayTracingRenderer::SetConfig(const Config& config)
 {
     pConfig_ = &config;
+    pRtConfig_ = &config.rayTracingConf;
 }
 
 bool RayTracingRenderer::Intersect(const Ray& r, HitRecord& rec)
 {
-    if (/*pPmConfig_->useBVH && */pBVH_) { // @todo
+    if (pRtConfig_->useBVH && pBVH_) {
         return pBVH_->Intersect(r, EPSILON, REAL_MAX, rec);
     }
     else {
@@ -49,7 +50,7 @@ bool RayTracingRenderer::Intersect(const Ray& r, HitRecord& rec)
 Vec3 RayTracingRenderer::Irradiance(const Ray &r, int depth)
 {
     // max refl
-    if (++depth > 5) // @todo 5 => config
+    if (++depth > pRtConfig_->maxRayBounce)
     {
         return Vec3();
     }
@@ -130,7 +131,7 @@ void RayTracingRenderer::RayTracing(Vec3* pColorBuf)
 {
     const u32 w = pConfig_->windowWidth;
     const u32 h = pConfig_->windowHeight;
-    const u32 nSub = 1; // @todo
+    const u32 nSub = pRtConfig_->nSubPixelsSqrt;
     const real subPixelFactor = 1.0f / (real)(nSub*nSub);
     
     // バッファクリア
@@ -149,7 +150,7 @@ void RayTracingRenderer::RayTracing(Vec3* pColorBuf)
     
     // Loop over image rows
     // 355, 225, 187, 167
-#pragma omp parallel for num_threads(4) schedule(dynamic, 1)   // OpenMP
+    #pragma omp parallel for num_threads(4) schedule(dynamic, 1)   // OpenMP
     for (int y=0; y<h; y++) {
         fprintf(stderr, "RayTracing (%d spp) %5.2f%%\n", nSub*nSub, 100.f * y / (h-1));
         
@@ -166,13 +167,7 @@ void RayTracingRenderer::RayTracing(Vec3* pColorBuf)
                     
                     // r1, r2 = 0 to 2
                     // dx, dy = -1 to 1  中心に集まったサンプリング --> tent filter
-#if USE_TENT_FILTER
-                    real r1 = 2*erand48(xi_), dx = (r1 < 1) ? sqrtf(r1)-1 : 1-sqrtf(2-r1);
-                    real r2 = 2*erand48(xi_), dy = (r2 < 1) ? sqrtf(r2)-1 : 1-sqrtf(2-r2);
-#else
-                    real dx = 0;
-                    real dy = 0;
-#endif
+                    
                     // sx = 0 or 1  (...nSub == 2の場合)
                     // dx = -1 to 1
                     // (sx+.5 + dx)/2 --> .5でサブピクセルの中心に。dxでフィルタの揺らぎ。
@@ -184,6 +179,18 @@ void RayTracingRenderer::RayTracing(Vec3* pColorBuf)
                     // / 2.fはsx, dxが倍の
                     //Vec3 d = cx*( ( (sx+.5f + dx)/2.f + x)/w - .5f) +
                     //        cy*( ( (sy+.5f + dy)/2.f + y)/h - .5f) + camRay.d;
+                    real dx = 0;
+                    real dy = 0;
+                    if (pRtConfig_->useTentFilter) {
+                        real r1 = (float)(2*erand48(xi_));
+                        real r2 = (float)(2*erand48(xi_));
+                        dx = (r1 < 1) ? sqrtf(r1)-1 : 1-sqrtf(2-r1);
+                        dy = (r2 < 1) ? sqrtf(r2)-1 : 1-sqrtf(2-r2);
+                    } else {
+                        dx = 0;
+                        dy = 0;
+                    }
+                    
                     const float toCenter = 0.5f;
                     const float sx2 = (sx+toCenter + dx) / (float)nSub;
                     const float sy2 = (sy+toCenter + dy) / (float)nSub;
@@ -191,8 +198,7 @@ void RayTracingRenderer::RayTracing(Vec3* pColorBuf)
                          + proj_plane_axis_y * ((y + sy2) / h - .5f)
                          + camRay.d;
                     
-                    // 140は視点から投影面までの距離
-                    Vec3 r = Irradiance(Ray(camRay.o + d * 140, d.normalize()), 0);
+                    Vec3 r = Irradiance(Ray(camRay.o + d * pRtConfig_->distanceToProjPlane, d.normalize()), 0);
                     
                     // Camera rays are pushed ^^^^^ forward to start in interior
                     // トーンマップとか特にやってない。クランプしてるだけ。
@@ -209,7 +215,7 @@ void RayTracingRenderer::Run(Vec3* pColorBuf, const Scene& scene, BVH* pBVH)
 {
     xi_[0] = 0;
 	xi_[1] = 0;
-	xi_[2] = 100; // テキトウ
+	xi_[2] = pConfig_->windowWidth * pConfig_->windowHeight; // テキトウ
     
     pScene_ = &scene;
     pBVH_ = pBVH;

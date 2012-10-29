@@ -71,6 +71,7 @@ void App::Init(int argc, const char * argv[])
     //const char* path = (argc >= 2) ? argv[1] : "~/Dev/rt/rt/SceneFiles/cornell_box.scene";
     const char* path = (argc >= 2) ? argv[1] : "~/Dev/rt/rt/SceneFiles/venus.scene";
     config.Load(path);
+    printf("--------------------------------\n\n");
     
     // GL初期化
     glutInit(&argc, (char**)argv);
@@ -93,11 +94,13 @@ void App::Init(int argc, const char * argv[])
 void App::BuildBVH()
 {
     if (config.buildBVH) {
+        Timer timer;
         printf("Building BVH...\n");
         std::vector<const Shape*>& shapes = config.scene.shapes_;
         delete pBVH_;
         pBVH_ = new BVH(&shapes[0], (int)shapes.size());
         //pBVH_->LimitMinScale(0.01f);
+        printf("BVH Build Time: %ld ms\n", timer.Elapsed());
     }
 }
 
@@ -118,35 +121,40 @@ void App::ConvertToUint(u8* pColorBuf, Vec3* pRealColorBuf)
 
 void App::Render()
 {
+    static bool first = true;
+    
+    if (!first) return;
+    
     int w = config.windowWidth;
     int h = config.windowHeight;
     
     Vec3* pRealColorBuf = new Vec3[w * h];
     u8* pColorBuf = new u8[w * h * sizeof(char)*4];
     
-    BuildBVH();
+    {
+        Timer timer;
+        
+        BuildBVH();
+       
+        RenderScene(pRealColorBuf);
+        
+        timer.PrintElapsed("Total rendering time: ");
+    }
     
-    RenderScene(pRealColorBuf);
     ConvertToUint(pColorBuf, pRealColorBuf);
     DrawToBuffer(pColorBuf);
-    DrawBVH();
+    DrawDebugStuff();
     
     glutSwapBuffers();
     
     delete [] pRealColorBuf;
     delete [] pColorBuf;
+    
+    first = false;
 }
 
 void App::RenderScene(Vec3* pRealColorBuf)
 {
-    time_t startTime, endTime;
-    time(&startTime);
-    
-    
-    time(&endTime);
-    u32 elapsed = (u32)difftime(endTime, startTime);
-    printf("BVH build time = %dm %ds\n", elapsed/60, elapsed%60);
-    
     // Render using photonmap
     pRenderer_->Run(pRealColorBuf, config.scene, pBVH_);
     
@@ -156,10 +164,6 @@ void App::RenderScene(Vec3* pRealColorBuf)
         toneMap.SetKeyValue(config.postEffect.toneMapKeyValue);
         toneMap.Apply(pRealColorBuf, config.windowWidth, config.windowHeight);
     }
-    
-    time(&endTime);
-    elapsed = (u32)difftime(endTime, startTime);
-    printf("rendering time = %dm %ds\n", elapsed/60, elapsed%60);
 }
 
 void App::DrawToBuffer(u8* pColorBuf)
@@ -203,7 +207,7 @@ void App::DrawToBuffer(u8* pColorBuf)
 
 }
 
-void App::DrawBVH()
+void App::DrawDebugStuff()
 {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -211,25 +215,34 @@ void App::DrawBVH()
     
     float fov = (float)atan2(0.5135, (double)config.camera.direction.length());
     float fov_deg = Rad2Deg(fov);
-    gluPerspective(fov_deg, aspect, 1.0, 1000.0);
-    
+    //fov_deg = 29;
+    gluPerspective(fov_deg, aspect, 140.0, 1000.0);
+//    
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     Vec3 pos = config.camera.position;
     Vec3 at = pos + config.camera.direction;
+    
+   // Vec3 up
+   // const Vec3 proj_plane_axis_x = Vec3(fovY, 0.f, 0.f);
+   // const Vec3 proj_plane_axis_y = (proj_plane_axis_x % camRay.d).normalize() * fovY;
+    
     gluLookAt(pos.x, pos.y, pos.z, at.x, at.y, at.z, 0.0, 1.0, 0.0);
 
     glDisable(GL_LIGHTING);
     
     if (config.drawBVH) {
-        DrawBVH_(pBVH_, 0);
+        DrawBVH(pBVH_, 0);
+    }
+    if (config.drawBBox) {
+        DrawBBox();
     }
     
    // glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
     
 }
 
-void App::DrawBVH_(const Shape* pShape, int depth)
+void App::DrawBVH(const Shape* pShape, int depth)
 {
     if (pShape == NULL || depth >= config.drawBVHDepth) {
         return;
@@ -239,7 +252,7 @@ void App::DrawBVH_(const Shape* pShape, int depth)
     if (pShape->IsBVH()) {
         color[0] = 0.f; color[1] = 0.f; color[2] = 1.f; color[3] = 1.f;
     } else {
-        color[0] = 1.f; color[1] = 0.f; color[2] = 0.f; color[3] = 1.f;
+        color[0] = 0.f; color[1] = 1.f; color[2] = 0.f; color[3] = 1.f;
     }
     const BBox& bbox = pShape->BoundingBox();
     Vec3 center = bbox.Center();
@@ -255,8 +268,28 @@ void App::DrawBVH_(const Shape* pShape, int depth)
     
     if (pShape->IsBVH()) {
         BVH* pBVH = (BVH*)pShape;
-        DrawBVH_(pBVH->pLeft_, depth+1);
-        DrawBVH_(pBVH->pRight_, depth+1);
+        DrawBVH(pBVH->pLeft_, depth+1);
+        DrawBVH(pBVH->pRight_, depth+1);
+    }
+}
+
+void App::DrawBBox()
+{
+    std::vector<const Shape*>& shapes = config.scene.shapes_;
+    for (int i=0; i<shapes.size(); i++) {
+        if (!shapes[i]->IsBVH()) {
+            const BBox& bbox = shapes[i]->BoundingBox();
+            Vec3 center = bbox.Center();
+            Vec3 size = bbox.Size();
+            
+            glMatrixMode(GL_MODELVIEW);
+            glPushMatrix();
+            glColor3f(1, 0, 0);
+            glTranslatef(center.x, center.y, center.z);
+            glScalef(size.x, size.y, size.z);
+            glutWireCube(1);
+            glPopMatrix();
+        }
     }
 }
 

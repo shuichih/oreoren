@@ -87,6 +87,7 @@ public:
     void CalcFaceNormal();
     virtual BBox BoundingBox() const;
     virtual bool Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) const;
+    //void Reverse();
     
     u32 indices[3];
     Vec3 normal;
@@ -110,13 +111,15 @@ public:
     void scale(real x, real y, real z);
     void translate(Vec3 transl);
     void translate(real x, real y, real z);
-
+    //void ReverseFaces();
+    
     Vertex*         pVertices;
     MeshTriangle*   pFaces;
     const Shape**   ppFaces; // for BVH
     u32             nVertices;
     u32             nFaces;
     BBox            bbox_;
+    Refl_t          material_;
 };
 
 class Scene

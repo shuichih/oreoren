@@ -4,7 +4,7 @@
 #include "Common.h"
 
 /**
- * Bounding Volume Hierarchy
+ * Axis-aligned bounding box.
  */
 class BBox
 {

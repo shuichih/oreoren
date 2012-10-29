@@ -56,8 +56,6 @@ bool SectionParser::OnParseLine(const char* pStr)
         return false;
     };
     
-//    SectionDesc& currSecDesc = pSectionDescs_[currSection];
-//    ItemDesc* pItemDesc = currSecDesc.paryItemDesc;
     for (int i=0; i<nItem_; i++) {
         ItemDesc& item = paryItemDesc_[i];
         if (key == item.pName) {
@@ -336,6 +334,8 @@ SceneImportParser::SceneImportParser(const char* pName, Scene* pScene)
         { "path", IVT_STR, &conf_.path },
         { "scale", IVT_VEC3, &conf_.scale },
         { "translate", IVT_VEC3, &conf_.translate },
+        { "material", IVT_MTL, &conf_.material },
+        { "faceReverse", IVT_BOOL, &conf_.faceReverse },
     };
     paryItemDesc_ = CreateItemDesc(itemDesc, ARRAY_SZ(itemDesc));
     nItem_ = ARRAY_SZ(itemDesc);
@@ -350,6 +350,8 @@ SceneImportParser::~SceneImportParser()
 bool SceneImportParser::OnLeave()
 {
     ObjLoader loader;
+    loader.SetFaceReverse(conf_.faceReverse);
+    
     Mesh* pMesh = loader.Load(conf_.path.c_str());
     if (pMesh == NULL)
     {
@@ -357,10 +359,16 @@ bool SceneImportParser::OnLeave()
         return false;
     }
     printf("obj file %s is loaded.\n", conf_.path.c_str());
+    
     pMesh->scale(conf_.scale);
     pMesh->translate(conf_.translate);
     pScene_->AddShape(pMesh);
     pMesh->CalcBoundingBox();
+    pMesh->material_ = conf_.material;
+    
+    // Bounding BoxとNormal計算
+    pMesh->CalcBoundingBox();
+    pMesh->CalcFaceNormals();
     
     return true;
 }
@@ -371,17 +379,17 @@ Config::Config()
     : windowWidth(256)
     , windowHeight(256)
     , buildBVH(true)
+    , drawBBox(false)
     , drawBVH(false)
     , drawBVHDepth(10)
     , rendererType(RTYPE_SIMPLE_RT)
     , pCurrParser_(NULL)
-//    , pCurrFunc(NULL)
-//    , currSection(SEC_NUM)
 {
     ItemDesc generalDesc[] = {
         { "windowWidth", IVT_INT, &windowWidth },
         { "windowHeight", IVT_INT, &windowHeight },
         { "buildBVH", IVT_BOOL, &buildBVH },
+        { "drawBBox", IVT_BOOL, &drawBBox },
         { "drawBVH", IVT_BOOL, &drawBVH },
         { "drawBVHDepth", IVT_INT, &drawBVHDepth },
         { "rendererType", IVT_INT, &rendererType }
@@ -397,7 +405,20 @@ Config::Config()
         { "maxPhotonBounce", IVT_INT, &photonMapConf.maxPhotonBounce },
         { "maxRayBounce", IVT_INT, &photonMapConf.maxRayBounce },
         { "useBVH", IVT_BOOL, &photonMapConf.useBVH },
-        { "nTracePhotonsPerThread", IVT_INT, &photonMapConf.nTracePhotonsPerThread},
+        { "nTracePhotonsPerThread", IVT_INT, &photonMapConf.nTracePhotonsPerThread },
+        { "useTentFilter", IVT_BOOL, &photonMapConf.useTentFilter },
+        { "distanceToProjPlane", IVT_FLOAT, &photonMapConf.distanceToProjPlane },
+        { "finalGethering", IVT_BOOL, &photonMapConf.finalGethering },
+        { "nFinalGetheringRays", IVT_INT, &photonMapConf.nFinalGetheringRays },
+        { "nMaxGlossyBounce", IVT_INT, &photonMapConf.nMaxGlossyBounce },
+        { "nGlossyRays", IVT_INT, &photonMapConf.nGlossyRays }
+    };
+    ItemDesc rayTracingDesc[] = {
+        { "nSubPixelSqrt", IVT_INT, &rayTracingConf.nSubPixelsSqrt },
+        { "maxRayBounce", IVT_INT, &rayTracingConf.maxRayBounce },
+        { "useBVH", IVT_BOOL, &rayTracingConf.useBVH },
+        { "useTentFilter", IVT_BOOL, &rayTracingConf.useTentFilter },
+        { "distanceToProjPlane", IVT_FLOAT, &rayTracingConf.distanceToProjPlane }
     };
     ItemDesc postEffectDesc[] = {
         { "toneMap.enabled", IVT_BOOL, &postEffect.toneMapEnabled },
@@ -411,11 +432,13 @@ Config::Config()
     
     ItemDesc* pGeneralItemDesc = CreateItemDesc(generalDesc, ARRAY_SZ(generalDesc));
     ItemDesc* pPhotonMapItemDesc = CreateItemDesc(photonMapDesc, ARRAY_SZ(photonMapDesc));
+    ItemDesc* pRayTracingItemDesc = CreateItemDesc(rayTracingDesc, ARRAY_SZ(rayTracingDesc));
     ItemDesc* pPostEffectItemDesc = CreateItemDesc(postEffectDesc, ARRAY_SZ(postEffectDesc));
     ItemDesc* pCameraItemDesc = CreateItemDesc(cameraDesc, ARRAY_SZ(cameraDesc));
-    
+ 
     parsers_[SEC_GENERAL]     = new SectionParser("[General]",     pGeneralItemDesc, ARRAY_SZ(generalDesc));
     parsers_[SEC_PHOTONMAP]   = new SectionParser("[PhotonMap]",   pPhotonMapItemDesc, ARRAY_SZ(photonMapDesc));
+    parsers_[SEC_RAYTRACING]  = new SectionParser("[RayTracing]",  pRayTracingItemDesc, ARRAY_SZ(rayTracingDesc));
     parsers_[SEC_POSTEFFECT]  = new SectionParser("[PostEffect]",  pPostEffectItemDesc, ARRAY_SZ(postEffectDesc));
     parsers_[SEC_CAMERA]      = new SectionParser("[Camera]",      pCameraItemDesc, ARRAY_SZ(cameraDesc));
     parsers_[SEC_LIGHTSOURCE] = new LightSourceParser("[LightSource]", &scene);

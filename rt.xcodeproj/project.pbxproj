@@ -93,8 +93,6 @@
 		B2C152CD14851E8400245AD6 /* smallpt_fmt.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = smallpt_fmt.cpp; sourceTree = "<group>"; };
 		B2F4FECC15153359002EB635 /* LightSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LightSource.h; sourceTree = "<group>"; };
 		B2F4FECE15153367002EB635 /* LightSource.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LightSource.cpp; sourceTree = "<group>"; };
-		B2F74FCF14F8B861007135DE /* SceneData.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SceneData.cpp; sourceTree = "<group>"; };
-		B2F74FD114F8BB11007135DE /* SceneData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SceneData.h; sourceTree = "<group>"; };
 		B2F74FD214F8BB42007135DE /* Scene.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Scene.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		B2F7F6381518109900C3F71A /* PostEffect.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PostEffect.cpp; sourceTree = "<group>"; };
 		B2F7F6391518109900C3F71A /* PostEffect.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PostEffect.h; sourceTree = "<group>"; };
@@ -159,8 +157,6 @@
 				B20FAF55150FCEE500846A20 /* PhotonFilter.h */,
 				B2F74FD214F8BB42007135DE /* Scene.h */,
 				B282457215AE5E64006A3DC1 /* Scene.cpp */,
-				B2F74FD114F8BB11007135DE /* SceneData.h */,
-				B2F74FCF14F8B861007135DE /* SceneData.cpp */,
 				B2A36AC415FB5C5C00262567 /* Common.cpp */,
 				B263223914E7A5B700158AF5 /* Common.h */,
 				B263223814E78A5900158AF5 /* PhotonMap.h */,

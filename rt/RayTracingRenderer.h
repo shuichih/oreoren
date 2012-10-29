@@ -1,5 +1,5 @@
-#ifndef _RayTracingRenderer_
-#define _RayTracingRenderer_
+#ifndef RayTracingRenderer_h
+#define RayTracingRenderer_h
 
 #include "Common.h"
 #include "IRenderer.h"
@@ -13,8 +13,6 @@ class RayTracingRenderer : public IRenderer
 {
 public:
     
-    //
-    
     RayTracingRenderer();
     ~RayTracingRenderer();
     virtual void SetConfig(const Config& config);
@@ -27,6 +25,7 @@ private:
     Vec3 Irradiance(const Ray &r, int depth);
     
     const Config* pConfig_;
+    const RayTracingConfig* pRtConfig_;
     unsigned short xi_[3];
     const Scene* pScene_;
     BVH* pBVH_;

@@ -3,6 +3,9 @@
 
 #include <string>
 
+/**
+ * 文字列で与えられた簡単な四則演算を含む式を計算する
+ */
 class SimpleArithmetic
 {
 private:

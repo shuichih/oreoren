@@ -1,10 +1,18 @@
 [General]
-windowWidth=800
-windowHeight=800
+windowWidth=256
+windowHeight=256
 buildBVH=true
 drawBVH=false
+drawBBox=false
 drawBVHDepth=7
 rendererType=1
+
+[RayTracing]
+useBVH = true
+maxRayBounce = 6
+nSubPixelSqrt = 1
+useTentFilter = false
+distanceToProjPlane=140
 
 [PhotonMap]
 #nPhotons = 500000
@@ -13,41 +21,47 @@ rendererType=1
 #nSubPixelSqrt = 1
 #coneFilterK = 1.1   # kに比例してWeightが軽くなる
 
-nPhotons = 50000
-nEstimatePhotons = 500
-estimateDist = 12.0
+nPhotons = 100000
+nEstimatePhotons = 350
+estimateDist = 20.0
 estimateEllipseScale = 0.2
 nSubPixelSqrt = 1
 enableConeFilter = true
 coneFilterK = 1.1   # kに比例してWeightが軽くなる
 nTracePhotonsPerThread = 10000
 
-maxPhotonBounce = 5
-maxRayBounce = 5
+maxPhotonBounce = 6
+maxRayBounce = 6
 useBVH = true
+#finalGethering = true
+nFinalGetheringRays = 64
+
+nMaxGlossyBounce = 1
+nGlossyRays = 256
+
+#todo 壁を板にする
+#todo 面光源にして天井に直接光当たらないように
 
 [PostEffect]
 toneMap.enabled = false
 toneMap.keyValue = 0.045
 
 [Camera]
-camera.position = 50 52 300
+camera.position = 50 52 295.6
 camera.direction = 0 -0.042612 -1.0
 camera.fovY = 0.5135
 
-#[LightSource]
-#position = 50.0 81.0 111.6
-#intensity = 0 5000 10000
-
-#[LightSource]
-#position = 50.0 81.0 111.6
-#intensity = 10000 5000 0
-
 [LightSource]
-position = 50.0 81.0 111.6
-#position = 50.0 50.0 71.6
+type = POINT
+position = 50.0 80.0 71.6
 intensity = 10000 10000 10000
 
+#[LightSource]
+#type = RECT
+#p0 = 50-10, 80, 81.6+10
+#p1 = 50-10, 80, 81.6-10
+#p2 = 50+10, 80, 81.6-10
+#p3 = 50+10, 80, 81.6+10
 
 [Sphere] #Left
 	radius = 1e5
@@ -91,11 +105,11 @@ intensity = 10000 10000 10000
 #	emission = .999 .999 .999
 #	material = SPEC
 
-#[Sphere] #Glass
-#	radius = 16.5
-#	position = 73. 16.5 78
-#	emission = .999 .999 .999
-#	material = REFR
+[Sphere] #Glass
+	radius = 16.5
+	position = 23. 16.5 78
+	emission = .999 .999 .999
+	material = SPEC
     
 #[Sphere] #Diffuse
 #	radius = 16.5
@@ -115,13 +129,19 @@ intensity = 10000 10000 10000
 #    scale = -0.10 0.10 -0.10
 #	translate = 80 10 30
 
-[SceneImport]
-    path = "/Users/shuichih/Dev/rt/objs/venusm.obj"
-    scale = 0.02 0.02 0.02
-	translate = 52 0 95
-#	translate = 85 0 95
-
 #[SceneImport]
-#    path = "/Users/shuichih/Dev/rt/objs/sphere.obj"
-#    scale = 50 50 50
-#	translate = 55 0 30
+#    path = "/Users/shuichih/Dev/rt/objs/venusm.obj"
+#    scale = 0.02 0.02 0.02
+#	translate = 52 0 95
+#	translate = 85 0 95
+#    material = DIFF
+
+[SceneImport]
+    path = "/Users/shuichih/Dev/rt/objs/slime_objs/slime_simple_uhigh_tri.obj"
+    scale = 16 16 16
+#    translate = 78 50 78 #上
+    translate = 78 20 78 #下
+#    material = PHONGMETAL
+    material = REFR
+    faceReverse = true
+    

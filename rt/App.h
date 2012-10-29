@@ -10,6 +10,7 @@
 #define rt_App_h
 
 #include "Config.h"
+#include "Timer.h"
 
 class Photon_map;
 class BVH;
@@ -30,8 +31,9 @@ private:
     void Init(int argc, const char * argv[]);
     void BuildBVH();
     void ConvertToUint(u8* pColorBuf, Vec3* pRealColorBuf);
-    void DrawBVH();
-    void DrawBVH_(const Shape* pShape, int level);
+    void DrawDebugStuff();
+    void DrawBBox();
+    void DrawBVH(const Shape* pShape, int level);
     
 private:
     
@@ -39,6 +41,7 @@ private:
     Photon_map* pPhotonMap_;
     IRenderer* pRenderer_;
     BVH* pBVH_;
+    Timer timer_;
 };
 
 #endif

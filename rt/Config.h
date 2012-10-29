@@ -23,6 +23,7 @@ enum Section
 {
     SEC_GENERAL,
     SEC_PHOTONMAP,
+    SEC_RAYTRACING,
     SEC_POSTEFFECT,
     SEC_CAMERA,
     SEC_LIGHTSOURCE,
@@ -102,9 +103,12 @@ struct SceneImportConfig
     string path;
     Vec3 scale;
     Vec3 translate;
+    Refl_t material;
+    bool faceReverse;
     
     SceneImportConfig()
     : scale(1, 1, 1)
+    , faceReverse(false)
     {}
 };
 
@@ -121,7 +125,44 @@ struct PhotonMapConfig
     u32 maxRayBounce;
     bool useBVH;
     u32 nTracePhotonsPerThread;
+    bool useTentFilter;
+    float distanceToProjPlane;
+    bool finalGethering;
+    u32 nFinalGetheringRays;
+    u32 nMaxGlossyBounce;
+    u32 nGlossyRays;
+    
+    PhotonMapConfig()
+    : nSubPixelsSqrt(1)
+    , nPhotons(100000)
+    , nEstimatePhotons(200)
+    , estimateDist(15.f)
+    , estimateEllipseScale(0.2f)
+    , enableConeFilter(true)
+    , coneFilterK(1.1f)
+    , maxPhotonBounce(5)
+    , maxRayBounce(5)
+    , useBVH(true)
+    , nTracePhotonsPerThread(10000)
+    , useTentFilter(false)
+    , distanceToProjPlane(140)
+    , finalGethering(false)
+    , nFinalGetheringRays(64)
+    , nMaxGlossyBounce(1)
+    , nGlossyRays(64)
+    {
+    }
 };
+
+struct RayTracingConfig
+{
+    u32 nSubPixelsSqrt;
+    u32 maxRayBounce;
+    bool useBVH;
+    bool useTentFilter;
+    float distanceToProjPlane;
+};
+
 
 //--------------------------------------------------------------------------------
 // セクションパーサ
@@ -235,9 +276,11 @@ public:
     int windowHeight;
     bool buildBVH;
     bool drawBVH;
+    bool drawBBox;
     int drawBVHDepth;
     RendererType rendererType;
     PhotonMapConfig photonMapConf;
+    RayTracingConfig rayTracingConf;
     PostEffectConfig postEffect;
     CameraConfig camera;
     LightSourceConfig lightSource;

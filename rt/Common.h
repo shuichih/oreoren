@@ -31,11 +31,13 @@ typedef float               real;
 const float REAL_MAX = FLT_MAX;
 const float REAL_MIN = FLT_MIN;
 const float EPSILON = 4e-3f;
+const float PI = (float)M_PI;
 #else
 typedef double              real;
 const double REAL_MAX = DBL_MAX;
 const double REAL_MIN = DBL_MIN;
 const double EPSILON = 2e-4;
+const double PI = M_PI;
 #endif
 
 //----------------------------------------------------------------
@@ -146,7 +148,7 @@ struct Vec3 {
         return sqrtf(x * x + y * y + z * z);
     }
     
-    inline Vec3& normalize()
+    inline Vec3& normalize() // @todo change normalizeThis(DXUTとかに合わせる)
     {
         return *this = *this / length();
     }

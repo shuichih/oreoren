@@ -343,16 +343,24 @@ bool MeshTriangle::Intersect(const Ray &r, float tmin, float tmax, HitRecord &re
     rec.normal = ((pMesh->pVertices[indices[0]].normal * b0)
                +  (pMesh->pVertices[indices[1]].normal * b1)
                +  (pMesh->pVertices[indices[2]].normal * b2)).normalize();
+    //rec.normal*=-1;
     //rec.normal = normal; // face normal
     
-    // @todo Meshのマテリアル使用
     rec.color = RGB(1, 1, 1);
-    rec.refl = REFR;
+    rec.refl = pMesh->material_;
     return true;
 }
 
+//void MeshTriangle::Reverse()
+//{
+//    u32 tmp = indices[1];
+//    indices[1] = indices[2];
+//    indices[2] = tmp;
+//}
+
 //--------------------------------------------------------------------------------
 Mesh::Mesh(u32 nVertices_, u32 nFaces_)
+    : material_(DIFF)
 {
     pVertices = new Vertex[nVertices_];
     pFaces = new MeshTriangle[nFaces_];
@@ -455,6 +463,13 @@ void Mesh::translate(real x, real y, real z)
         pVertices[i].pos.z += z;
     }
 }
+
+//void Mesh::ReverseFaces()
+//{
+//    for (u32 i=0; i<nFaces; i++) {
+//        pFaces[i].Reverse();
+//    }
+//}
 
 //--------------------------------------------------------------------------------
 Scene::Scene()

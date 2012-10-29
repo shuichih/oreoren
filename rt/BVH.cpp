@@ -111,7 +111,7 @@ bool BVH::Intersect(const Ray &r, float tmin, float tmax, HitRecord& rec) const
     return (isahit1 || isahit2);
 }
 
-// 直接照明実装するとき使用
+// 直接照明実装するとき使用?
 //bool BVH::ShadowHit(const Ray &r, float tmin, float tmax)
 //{
 //    if (!(bbox.RayIntersect(const Ray &r, float tmin, float tmax)))
