@@ -29,6 +29,7 @@ enum Section
     SEC_LIGHTSOURCE,
     SEC_SPHERE,
     SEC_TRIANGLE,
+    SEC_RECTANGLE,
     SEC_SCENEIMPORT,
     SEC_NUM,
 };
@@ -82,12 +83,20 @@ struct PostEffectConfig
 
 struct LightSourceConfig
 {
+    string typeStr;
+    Vec3 p[4];
     Vec3 position;
-    real intensity;
+    Vec3 intensity;
     
     LightSourceConfig()
-    : intensity(10)
-    {}
+    : intensity(10000, 10000, 10000)
+    {
+        typeStr[0] = 'P';
+        typeStr[1] = 'O';
+        typeStr[2] = 'I';
+        typeStr[3] = 'N';
+        typeStr[4] = 'T';
+    }
 };
 
 struct SphereConfig
@@ -105,6 +114,7 @@ struct SceneImportConfig
     Vec3 translate;
     Refl_t material;
     bool faceReverse;
+    Vec3 color;
     
     SceneImportConfig()
     : scale(1, 1, 1)
@@ -229,6 +239,22 @@ private:
 };
 
 //--------------------------------------------------------------------------------
+// Rectangleセクションパーサ
+class RectangleParser : public SectionParser
+{
+public:
+    RectangleParser(const char* pName, Scene* pScene);
+    virtual ~RectangleParser();
+    
+    virtual bool OnLeave();
+    
+private:
+    Triangle triangles_[2];
+    Scene* pScene_;
+};
+
+
+//--------------------------------------------------------------------------------
 // LightSourceセクションパーサ
 class LightSourceParser : public SectionParser
 {
@@ -239,7 +265,8 @@ public:
     virtual bool OnLeave();
     
 private:
-    LightSource litSrc_;
+    LightSourceConfig conf_;
+    
     ItemDesc* pItemDesc_;
     Scene* pScene_;
 };

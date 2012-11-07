@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cstring>
 #include "BBox.h"
+#include "LightSource.h"
 
 //--------------------------------------------------------------------------------
 
@@ -346,7 +347,7 @@ bool MeshTriangle::Intersect(const Ray &r, float tmin, float tmax, HitRecord &re
     //rec.normal*=-1;
     //rec.normal = normal; // face normal
     
-    rec.color = RGB(1, 1, 1);
+    rec.color = pMesh->color_;
     rec.refl = pMesh->material_;
     return true;
 }
@@ -361,6 +362,7 @@ bool MeshTriangle::Intersect(const Ray &r, float tmin, float tmax, HitRecord &re
 //--------------------------------------------------------------------------------
 Mesh::Mesh(u32 nVertices_, u32 nFaces_)
     : material_(DIFF)
+    , color_(1, 1, 1)
 {
     pVertices = new Vertex[nVertices_];
     pFaces = new MeshTriangle[nFaces_];

@@ -4,15 +4,23 @@
 #define _Scene_H_
 
 #include "Common.h"
-#include "LightSource.h"
 #include "BBox.h"
 #include <vector>
 
 
+class Shape;
+class LightSource;
+
+// material type
+// @todo rename
 enum Refl_t
 {
-    DIFF, SPEC, REFR, PHONGMETAL
-}; // material types, used in radiance()
+    DIFF,
+    SPEC,
+    REFR,
+    PHONGMETAL,
+    LIGHT
+};
 
 struct HitRecord
 {
@@ -20,6 +28,8 @@ struct HitRecord
     Vec3 normal;
     Vec3 color;
     Refl_t refl;
+    bool hitLit;
+    const Shape* pShape;
 };
 
 class Shape
@@ -74,6 +84,7 @@ struct Vertex
 {
     Vec3 pos;
     Vec3 normal;
+    RGB color;
 };
 
 class Mesh;
@@ -120,6 +131,7 @@ public:
     u32             nFaces;
     BBox            bbox_;
     Refl_t          material_;
+    RGB             color_;
 };
 
 class Scene

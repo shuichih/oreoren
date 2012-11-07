@@ -68,7 +68,17 @@ Vec3 RayTracingRenderer::Irradiance(const Ray &r, int depth)
     // 0.5にしたらカラーが反射率になってるから暗くなるだけ。IDEALでない反射は扱えない。カラーと混ぜるとかもない。
     // Ideal DIFFUSE reflection
     if (refl == DIFF){
-        Vec3 L = (pScene_->litSrcs_.at(0)->position_ - x).normalize();
+        Vec3 litPos;
+        LightSourceType litType = pScene_->litSrcs_[0]->GetType();
+        if (litType == Lit_Point) {
+            litPos = ((PointLightSource*)pScene_->litSrcs_[0])->position_;
+        } else if (litType == Lit_Area) {
+            AreaLightSource* pLitSrc = (AreaLightSource*)pScene_->litSrcs_[0];
+            litPos = (pLitSrc->p_[0] + pLitSrc->p_[1] + pLitSrc->p_[2] + pLitSrc->p_[3]) * 0.25f;
+        } else {
+            assert(false);
+        }
+        Vec3 L = (litPos - x).normalize();
         float cosLN = L.dot(nl);
         //fprintf(stderr, "irrad %f %f %f\r", irrad[0], irrad[1], irrad[2]);
         return f * cosLN;

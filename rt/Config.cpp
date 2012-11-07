@@ -4,9 +4,12 @@
 #include <string>
 #include <cstdlib>
 #include <cerrno>
+#include <cstring>
+#include <cassert>
 #include "StringUtils.h"
 #include "MeshLoader.h"
 #include "SimpleArithmetic.h"
+#include "LightSource.h"
 
 using namespace std;
 
@@ -186,12 +189,12 @@ void SectionParser::Print()
         ItemDesc& item = pItems[j];
         string valStr;
         switch (item.type) {
-            case IVT_INT:   valStr = IntToString(item.pValAddr);   break;
-            case IVT_FLOAT: valStr = FloatToString(item.pValAddr); break;
-            case IVT_BOOL:  valStr = BoolToString(item.pValAddr); break;
-            case IVT_VEC3:  valStr = Vec3ToString(item.pValAddr);  break;
-            case IVT_STR:   valStr = *((string*)item.pValAddr);  break;
-            case IVT_MTL:   valStr = MaterialToString(item.pValAddr);  break;
+            case IVT_INT:   valStr = IntToString(item.pValAddr);      break;
+            case IVT_FLOAT: valStr = FloatToString(item.pValAddr);    break;
+            case IVT_BOOL:  valStr = BoolToString(item.pValAddr);     break;
+            case IVT_VEC3:  valStr = Vec3ToString(item.pValAddr);     break;
+            case IVT_STR:   valStr = *((string*)item.pValAddr);       break;
+            case IVT_MTL:   valStr = MaterialToString(item.pValAddr); break;
             default:
                 break;
         }
@@ -301,12 +304,59 @@ bool TriangleParser::OnLeave()
 
 //--------------------------------------------------------------------------------
 
+RectangleParser::RectangleParser(const char* pName, Scene* pScene)
+: SectionParser(pName, NULL, 0)
+{
+    ItemDesc itemDescs[] = {
+        { "p0", IVT_VEC3, &triangles_[0].p0 },
+        { "p1", IVT_VEC3, &triangles_[0].p1 },
+        { "p2", IVT_VEC3, &triangles_[0].p2 },
+        { "p3", IVT_VEC3, &triangles_[1].p2 },
+        { "emission", IVT_VEC3, &triangles_[0].color },
+        { "material", IVT_MTL, &triangles_[0].refl },
+    };
+    paryItemDesc_ = CreateItemDesc(itemDescs, ARRAY_SZ(itemDescs));
+    nItem_ = ARRAY_SZ(itemDescs);
+    
+    pScene_ = pScene;
+}
+
+RectangleParser::~RectangleParser()
+{
+}
+
+bool RectangleParser::OnLeave()
+{
+    triangles_[1].p0 = triangles_[0].p0;
+    triangles_[1].p1 = triangles_[0].p2;
+    triangles_[1].color = triangles_[0].color;
+    triangles_[1].refl = triangles_[0].refl;
+    triangles_[0].CalcNormal();
+    triangles_[1].CalcNormal();
+    pScene_->AddShape(new Triangle(triangles_[0]));
+    pScene_->AddShape(new Triangle(triangles_[1]));
+    triangles_[0] = Triangle();
+    triangles_[1] = Triangle();
+    return true;
+}
+
+
+//--------------------------------------------------------------------------------
+
 LightSourceParser::LightSourceParser(const char* pName, Scene* pScene)
 : SectionParser(pName, NULL, 0)
 {
     ItemDesc litSrcDesc[] = {
-        { "position", IVT_VEC3, &litSrc_.position_ },
-        { "intensity", IVT_VEC3, &litSrc_.intensity_ }
+        // common
+        { "type", IVT_STR, &conf_.typeStr },
+        { "intensity", IVT_VEC3, &conf_.intensity },
+        // for POINT
+        { "position", IVT_VEC3, &conf_.position },
+        // for RECT
+        { "p0", IVT_VEC3, &conf_.p[0] },
+        { "p1", IVT_VEC3, &conf_.p[1] },
+        { "p2", IVT_VEC3, &conf_.p[2] },
+        { "p3", IVT_VEC3, &conf_.p[3] },
     };
     paryItemDesc_ = CreateItemDesc(litSrcDesc, ARRAY_SZ(litSrcDesc));
     nItem_ = ARRAY_SZ(litSrcDesc);
@@ -320,8 +370,27 @@ LightSourceParser::~LightSourceParser()
 
 bool LightSourceParser::OnLeave()
 {
-    pScene_->AddLightSource(new LightSource(litSrc_));
-    litSrc_ = LightSource();
+    LightSource* pLitSrc = NULL;
+    if (StringUtils::Stricmp(conf_.typeStr, "POINT") == 0) {
+        pLitSrc = new PointLightSource(conf_.position, conf_.intensity);
+    }
+    else if (StringUtils::Stricmp(conf_.typeStr, "AREA") == 0) {
+        Vec3* p = conf_.p;
+        pLitSrc = new AreaLightSource(
+            p[0], p[1], p[2], p[3],
+            conf_.intensity);
+        
+        Vec3 p2[3] = { p[0], p[2], p[3] };
+        Shape* pLitShape0 = new AreaLightShape((AreaLightSource*)pLitSrc, p, conf_.intensity, LIGHT);
+        Shape* pLitShape1 = new AreaLightShape((AreaLightSource*)pLitSrc, p2, conf_.intensity, LIGHT);
+        pScene_->AddShape(pLitShape0);
+        pScene_->AddShape(pLitShape1);
+    } else {
+        assert(false);
+    }
+    pScene_->AddLightSource(pLitSrc);
+                                
+    conf_ = LightSourceConfig();
     return true;
 }
 
@@ -336,6 +405,7 @@ SceneImportParser::SceneImportParser(const char* pName, Scene* pScene)
         { "translate", IVT_VEC3, &conf_.translate },
         { "material", IVT_MTL, &conf_.material },
         { "faceReverse", IVT_BOOL, &conf_.faceReverse },
+        { "color", IVT_VEC3, &conf_.color },
     };
     paryItemDesc_ = CreateItemDesc(itemDesc, ARRAY_SZ(itemDesc));
     nItem_ = ARRAY_SZ(itemDesc);
@@ -365,6 +435,7 @@ bool SceneImportParser::OnLeave()
     pScene_->AddShape(pMesh);
     pMesh->CalcBoundingBox();
     pMesh->material_ = conf_.material;
+    pMesh->color_ = conf_.color;
     
     // Bounding BoxとNormal計算
     pMesh->CalcBoundingBox();
@@ -444,6 +515,7 @@ Config::Config()
     parsers_[SEC_LIGHTSOURCE] = new LightSourceParser("[LightSource]", &scene);
     parsers_[SEC_SPHERE]      = new SphereParser("[Sphere]", &scene);
     parsers_[SEC_TRIANGLE]    = new TriangleParser("[Triangle]", &scene);
+    parsers_[SEC_RECTANGLE]   = new RectangleParser("[Rectangle]", &scene);
     parsers_[SEC_SCENEIMPORT] = new SceneImportParser("[SceneImport]", &scene);
 }
 

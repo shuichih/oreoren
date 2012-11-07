@@ -21,9 +21,9 @@ distanceToProjPlane=140
 #nSubPixelSqrt = 1
 #coneFilterK = 1.1   # kに比例してWeightが軽くなる
 
-nPhotons = 100000
-nEstimatePhotons = 350
-estimateDist = 20.0
+nPhotons = 200000
+nEstimatePhotons = 500
+estimateDist = 25.0
 estimateEllipseScale = 0.2
 nSubPixelSqrt = 1
 enableConeFilter = true
@@ -39,96 +39,98 @@ nFinalGetheringRays = 64
 nMaxGlossyBounce = 1
 nGlossyRays = 256
 
-#todo 壁を板にする
-#todo 面光源にして天井に直接光当たらないように
-
 [PostEffect]
 toneMap.enabled = false
 toneMap.keyValue = 0.045
 
 [Camera]
-camera.position = 50 52 295.6
-camera.direction = 0 -0.042612 -1.0
+camera.position = 0 12 285
+camera.direction = 0 -0.04 -1.0
 camera.fovY = 0.5135
 
+#[LightSource]
+#type = POINT
+#position = 0 48 0
+#intensity = 10000 10000 10000
+
 [LightSource]
-type = POINT
-position = 50.0 80.0 71.6
+type = AREA
+p0 = -20 52  20
+p1 = -20 52 -20
+p2 =  20 52 -20
+p3 =  20 52  20
 intensity = 10000 10000 10000
 
-#[LightSource]
-#type = RECT
-#p0 = 50-10, 80, 81.6+10
-#p1 = 50-10, 80, 81.6-10
-#p2 = 50+10, 80, 81.6-10
-#p3 = 50+10, 80, 81.6+10
+# 手前がプラス
 
-[Sphere] #Left
-	radius = 1e5
-	position = 1+1e5 40.8 81.6
+[Rectangle] #Left
+    p0 = -62  53  95
+    p1 = -62 -53  95
+    p2 = -62 -53 -95
+    p3 = -62  53 -95
 	emission = .75 .25 .25
 	material = DIFF
 
-[Sphere] #Right
-	radius = 1e5
-	position = 99-1e5 40.8 81.6
+[Rectangle] #Right
+    p0 = 62  53 -95
+    p1 = 62 -53 -95
+    p2 = 62 -53  95
+    p3 = 62  53  95
 	emission = .25 .25 .75
 	material = DIFF
 
-[Sphere] #Back
-	radius = 1e5
-	position = 50 40.8 1e5
+[Rectangle] #Back
+    p0 = -62  53 -95
+    p1 = -62 -53 -95
+    p2 =  62 -53 -95
+    p3 =  62  53 -95
 	emission = .75 .75 .75
 	material = DIFF
 
-#[Sphere] #Front
-#    radius = 1e5
-#    position = 50 40.8 170-1e5
-#    emission = .75 .75 .75
+#[Rectangle] #Front
+#    p0 =  62  53  95
+#    p1 =  62 -53  95
+#    p2 = -62 -53  95
+#    p3 = -62  53  95
+#	emission = .75 .75 .75
 #	material = DIFF
+#
 
-[Sphere] #Bottom
-	radius = 1e5
-	position = 50 1e5 81.6
+[Rectangle] #Bottom
+    p0 = -62 -53 -95
+    p1 = -62 -53  95
+    p2 =  62 -53  95
+    p3 =  62 -53 -95
 	emission = .75 .75 .75
 	material = DIFF
 
-[Sphere] #Top
-	radius = 1e5
-	position = 50. 81.6-1e5 81.6
+[Rectangle] #Top
+    p0 = -62  53 -95
+    p1 = -62  53  95
+    p2 =  62  53  95
+    p3 =  62  53 -95
 	emission = .75 .75 .75
 	material = DIFF
 
-#[Sphere] #Mirror
-#	radius = 16.5
-#	position = 27 16.5 47
-#	emission = .999 .999 .999
-#	material = SPEC
-
-[Sphere] #Glass
-	radius = 16.5
-	position = 23. 16.5 78
+[Sphere] #Mirror
+	radius = 20
+	position = -25 -53+20 -20
 	emission = .999 .999 .999
 	material = SPEC
-    
-#[Sphere] #Diffuse
-#	radius = 16.5
-#	position = 50 16.5 78
-#	emission = .999 .999 .999
-#	material = DIFF
+
+#[Sphere] #Glass
+#	radius = 20
+#	position = 25 -53+20 15
+#	emission = 0 0.5 1
+#	material = REFR
 
 #[Triangle]
-#	p0 = 50 40.8+20 85
-#	p1 = 50-20 40.8-20 85
-#	p2 = 50+20 40.8-20 85
+#	p0 = 0  20 35
+#	p1 = 20 20 35
+#	p2 = 20  20 35
 #	emission = .80 .80 .20
 #	material = DIFF
-
-#[SceneImport]
-#    path = "/Users/shuichih/Dev/rt/objs/cornell_box.obj"
-#    scale = -0.10 0.10 -0.10
-#	translate = 80 10 30
-
+#
 #[SceneImport]
 #    path = "/Users/shuichih/Dev/rt/objs/venusm.obj"
 #    scale = 0.02 0.02 0.02
@@ -136,12 +138,11 @@ intensity = 10000 10000 10000
 #	translate = 85 0 95
 #    material = DIFF
 
+
 [SceneImport]
     path = "/Users/shuichih/Dev/rt/objs/slime_objs/slime_simple_uhigh_tri.obj"
-    scale = 16 16 16
-#    translate = 78 50 78 #上
-    translate = 78 20 78 #下
-#    material = PHONGMETAL
+    scale = 20 20 20
+    translate = 25 -53+20 15
     material = REFR
     faceReverse = true
-    
+    color = 0.0 0.5 1.0

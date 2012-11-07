@@ -38,7 +38,7 @@ private:
         {}
     };
     void PhotonTracing();
-    void TracePhoton(const Ray& r, float power[3], PathInfo& pathInfo);
+    void TracePhoton(const Ray& r, const Vec3& power, PathInfo& pathInfo);
     bool Intersect(const Ray& r, HitRecord& rec);
     Vec3 CosImportanceSamplingRay(const Vec3& n);
     Vec3 GlossyRay(const Vec3& w, float exponent);

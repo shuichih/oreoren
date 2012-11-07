@@ -12,6 +12,11 @@
 #include "Config.h"
 #include "Timer.h"
 
+
+// Direct
+// Coarstic  LSD+E
+// Indirect  LD(S|D)*DE
+// Shadow
 using namespace std;
 
 //----------------------------------------------------------------
@@ -68,18 +73,6 @@ bool PhotonMapRenderer::Intersect(const Ray& r, HitRecord& rec)
     return false;
 }
 
-Vec3 PhotonMapRenderer::CosImportanceSamplingRay(const Vec3& w)
-{
-    real r1 = 2.f*(real)(M_PI*erand48(xi_));
-    real r2 = (real)erand48(xi_); // => 1-cos^2θ = 1-sqrt(1-r_2)^2 = r_2
-    real r2s = sqrtf(r2);    // => sinθ = sqrt(1-cos^2θ) = sqrt(r_2)
-    Vec3 u = ((fabs(w.x) > .1f ? Vec3(0.f, 1.f, 0.f) : Vec3(1.f, 0.f, 0.f)) % w).normalize(); // binormal
-    Vec3 v = w % u; // tangent
-    
-    // ucosφsinθ + vsinφsinθ + wcosθ
-    return (u*cosf(r1)*r2s + v*sinf(r1)*r2s + w*sqrtf(1-r2)).normalize();
-}
-
 Vec3 PhotonMapRenderer::GlossyRay(const Vec3& w, float exponent)
 {
     real r1 = 2.f*(real)(M_PI*erand48(xi_));
@@ -97,7 +90,7 @@ Vec3 PhotonMapRenderer::GlossyRay(const Vec3& w, float exponent)
 }
         
 
-void PhotonMapRenderer::TracePhoton(const Ray& r, float power[3], PathInfo& pathInfo)
+void PhotonMapRenderer::TracePhoton(const Ray& r, const Vec3& power, PathInfo& pathInfo)
 {
     // max refl
     if (++pathInfo.depth > pPmConfig_->maxPhotonBounce)
@@ -106,6 +99,7 @@ void PhotonMapRenderer::TracePhoton(const Ray& r, float power[3], PathInfo& path
     }
 
     HitRecord rec;
+    rec.hitLit = false;
     if (!Intersect(r, rec))
         return;
     
@@ -116,25 +110,23 @@ void PhotonMapRenderer::TracePhoton(const Ray& r, float power[3], PathInfo& path
     Refl_t refl = rec.refl;
     
     // Ideal DIFFUSE reflection
-    if (refl == DIFF) {
+    if (refl == DIFF || refl == LIGHT) { // 光源表面はLambert面という事にしておく
         pathInfo.diffuseDepth++;
         // 直接光のフォトンはストアしない(集光模様フォトン除く)
 //        if (pathInfo.diffuseDepth > 1 || (pathInfo.specularDepth + pathInfo.glossyDepth) > 0) {
 //        if (pathInfo.diffuseDepth > 1 && (pathInfo.specularDepth + pathInfo.glossyDepth) == 0) {
-        pPhotonMap_->store(power, x.e, r.d.e);
+        pPhotonMap_->store(power.e, x.e, r.d.e);
 //        }
         
         float ave_refl = (color.x + color.y + color.z) / 3.f;
         if ((real)erand48(xi_) < ave_refl)
         {
             // 法線となす角のcosに比例する分布で反射方向を決める
-            Vec3 d = CosImportanceSamplingRay(nl);
+            Vec3 d = Ray::CosRay(nl, xi_);
             
             real ave_refl_inv = 1.0f / ave_refl;
-            power[0] *= color.x * ave_refl_inv;
-            power[1] *= color.y * ave_refl_inv;
-            power[2] *= color.z * ave_refl_inv;
-            TracePhoton(Ray(x,d), power, pathInfo);
+            Vec3 refPower = power.mult(color) * PI_INV * ave_refl_inv;
+            TracePhoton(Ray(x,d), refPower, pathInfo);
         }
         //fprintf(stderr, "p (%f %f %f) (%f %f %f) (%f %f %f)\n", power[0], power[1], power[2], pos[0], pos[1], pos[2], dir[0], dir[1], dir[2]);
         return;
@@ -184,7 +176,7 @@ void PhotonMapRenderer::TracePhoton(const Ray& r, float power[3], PathInfo& path
     if ((real)erand48(xi_) < P)
         TracePhoton(reflRay, power, pathInfo);       // 反射
     else
-        TracePhoton(Ray(x, tdir), power, pathInfo);  // 屈折
+        TracePhoton(Ray(x, tdir), power.mult(color), pathInfo);  // 屈折
 
     return;
 }
@@ -199,12 +191,13 @@ Vec3 PhotonMapRenderer::Irradiance(const Ray &r, PathInfo& pathInfo)
     }
 
     HitRecord rec;
+    rec.hitLit = true;
     if (!Intersect(r, rec)) return Vec3();
     //const Shape& obj = *g_shapes[id];       // the hit object
     Vec3 x = r.o + r.d * rec.t;
     Vec3 n = rec.normal;
     Vec3 nl = n.dot(r.d) < 0.f ? n : n * -1.f;   // 交点の法線
-    Vec3 f = rec.color;
+    Vec3 color = rec.color;
     Refl_t refl = rec.refl;
     
     // 0.5にしたらカラーが反射率になってるから暗くなるだけ。IDEALでない反射は扱えない。カラーと混ぜるとかもない。
@@ -237,8 +230,8 @@ Vec3 PhotonMapRenderer::Irradiance(const Ray &r, PathInfo& pathInfo)
             Vec3 ldir = pScene_->litSrcs_[0]->position_ - x;
             float r2 = ldir.square_length();
             ldir.normalize();
-            irrad = nl.dot(ldir) * (pScene_->litSrcs_[0]->intensity_ / (4 * PI * r2));
-                
+            irrad = nl.dot(ldir) * (pScene_->litSrcs_[0]->GetIntensity() / (4 * PI * r2));
+            
             //} else {
                 //pPhotonMap_->irradiance_estimate(irrad.e, x.e, nl, pPmConfig_->estimateDist, pPmConfig_->nEstimatePhotons);
             //}
@@ -247,7 +240,7 @@ Vec3 PhotonMapRenderer::Irradiance(const Ray &r, PathInfo& pathInfo)
 #endif
             
         }
-        return Vec3(irrad.x * f.x, irrad.y * f.y, irrad.z * f.z);
+        return Vec3(irrad.x * color.x, irrad.y * color.y, irrad.z * color.z);
     }
     else if (refl == SPEC) {
         // Ideal SPECULAR reflection
@@ -274,35 +267,41 @@ Vec3 PhotonMapRenderer::Irradiance(const Ray &r, PathInfo& pathInfo)
         }
         return irrad / nSamples;
     }
+    else if (refl == REFR) {
     
-    // Ideal dielectric REFRACTION
-    Vec3 rdir = r.d - n * 2.f * n.dot(r.d);
-    //Vec3 mx = x + rdir * EPSILON; // 自己ヒット抑止にレイ始点をちょっと進めてみる
-    Ray reflRay(x, rdir);
-    bool into = n.dot(nl) > 0.f; // Ray from outside going in?
-    real airRefrIdx = 1.f;
-    real grassRefrIdx = 1.5f;
-    real nnt = into ? airRefrIdx/grassRefrIdx : grassRefrIdx/airRefrIdx;
-    real ddn = r.d.dot(nl); // レイと法線のcos
-    real cos2t;
+        // Ideal dielectric REFRACTION
+        Vec3 rdir = r.d - n * 2.f * n.dot(r.d);
+        //Vec3 mx = x + rdir * EPSILON; // 自己ヒット抑止にレイ始点をちょっと進めてみる
+        Ray reflRay(x, rdir);
+        bool into = n.dot(nl) > 0.f; // Ray from outside going in?
+        real airRefrIdx = 1.f;
+        real grassRefrIdx = 1.5f;
+        real nnt = into ? airRefrIdx/grassRefrIdx : grassRefrIdx/airRefrIdx;
+        real ddn = r.d.dot(nl); // レイと法線のcos
+        real cos2t;
+        
+        // Total internal reflection
+        if ((cos2t = 1.f-nnt * nnt * (1.f - ddn * ddn)) < 0.f)
+            return Irradiance(reflRay, pathInfo);
+        
+        // 屈折方向
+        Vec3 tdir = (r.d * nnt - n * ((into ? 1.f : -1.f) * (ddn * nnt + sqrtf(cos2t)))).normalize();
+        //mx = x + rdir * EPSILON; // 自己ヒット抑止にレイ始点をちょっと進めてみる
+        
+        real a = grassRefrIdx - airRefrIdx;
+        real b = grassRefrIdx + airRefrIdx;
+        real R0 = a * a / (b * b); // 垂直反射率 0.25 / 2.5 = 0.1 @todo 根拠調査
+        real c = 1.f - (into ? -ddn : tdir.dot(n));
+        real fresnel = R0 + (1.f - R0)*c*c*c*c*c;
+        real Tr = 1.f - fresnel;
+        // 反射屈折両方トレース
+        PathInfo pathInfo2(pathInfo);
+        return Irradiance(reflRay, pathInfo) * fresnel
+             + Irradiance(Ray(x,tdir), pathInfo2).mult(color) * Tr;
+    }
     
-    // Total internal reflection
-    if ((cos2t = 1.f-nnt * nnt * (1.f - ddn * ddn)) < 0.f)
-        return Irradiance(reflRay, pathInfo);
-    
-    // 屈折方向
-    Vec3 tdir = (r.d * nnt - n * ((into ? 1.f : -1.f) * (ddn * nnt + sqrtf(cos2t)))).normalize();
-    //mx = x + rdir * EPSILON; // 自己ヒット抑止にレイ始点をちょっと進めてみる
-    
-    real a = grassRefrIdx - airRefrIdx;
-    real b = grassRefrIdx + airRefrIdx;
-    real R0 = a * a / (b * b); // 垂直反射率 0.25 / 2.5 = 0.1 @todo 根拠調査
-    real c = 1.f - (into ? -ddn : tdir.dot(n));
-    real fresnel = R0 + (1.f - R0)*c*c*c*c*c;
-    real Tr = 1.f - fresnel;
-    // 反射屈折両方トレース
-    PathInfo pathInfo2(pathInfo);
-    return Irradiance(reflRay, pathInfo) * fresnel + Irradiance(Ray(x,tdir), pathInfo2) * Tr;
+    // refl == LIGHT
+    return ((AreaLightShape*)rec.pShape)->SelfIrradiance();
 }
 
 void PhotonMapRenderer::PhotonTracing()
@@ -311,7 +310,7 @@ void PhotonMapRenderer::PhotonTracing()
     u32 nLit = (u32)pScene_->litSrcs_.size();
     double sumIntensity = 0;
     for (int i=0; i<nLit; i++) {
-        const Vec3& intensity = pScene_->litSrcs_[i]->intensity_;
+        const Vec3& intensity = pScene_->litSrcs_[i]->GetIntensity();
         sumIntensity += intensity.sum(); // sumでなく輝度を使った方が精度が上がる
     }
     
@@ -319,7 +318,7 @@ void PhotonMapRenderer::PhotonTracing()
     u32 iPhoton = 0;
     for (int i=0; i<nLit; i++) {
         const LightSource* pLit = pScene_->litSrcs_[i];
-        float nPhotonRatio = (float)(pLit->intensity_.sum() / sumIntensity);
+        float nPhotonRatio = (float)(pLit->GetIntensity().sum() / sumIntensity);
         u32 nPhotons = (u32)(pPmConfig_->nPhotons * nPhotonRatio);
         
         const int nPhotonsPerThread =
@@ -344,9 +343,9 @@ void PhotonMapRenderer::PhotonTracing()
                 
                 
                 Ray ray = pLit->GenerateRay();
-                Vec3 power = pLit->intensity_;
+                Vec3 power = pLit->GetIntensity();
                 PathInfo pathInfo;
-                TracePhoton(ray, power.e, pathInfo);
+                TracePhoton(ray, power, pathInfo);
             }
         }
         

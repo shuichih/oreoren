@@ -32,12 +32,14 @@ const float REAL_MAX = FLT_MAX;
 const float REAL_MIN = FLT_MIN;
 const float EPSILON = 4e-3f;
 const float PI = (float)M_PI;
+const float PI_INV = 1.0f / (float)M_PI;
 #else
 typedef double              real;
 const double REAL_MAX = DBL_MAX;
 const double REAL_MIN = DBL_MIN;
 const double EPSILON = 2e-4;
 const double PI = M_PI;
+const double PI_INV = 1.0 / M_PI;
 #endif
 
 //----------------------------------------------------------------
@@ -192,6 +194,8 @@ struct Ray
     {
         return o + t * d;
     }
+    
+    static Vec3 CosRay(const Vec3& w, unsigned short seed[3]); // generate cos distribution ray
 };
 
 
