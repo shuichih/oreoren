@@ -352,11 +352,12 @@ LightSourceParser::LightSourceParser(const char* pName, Scene* pScene)
         { "intensity", IVT_VEC3, &conf_.intensity },
         // for POINT
         { "position", IVT_VEC3, &conf_.position },
-        // for RECT
+        // for AREA
         { "p0", IVT_VEC3, &conf_.p[0] },
         { "p1", IVT_VEC3, &conf_.p[1] },
         { "p2", IVT_VEC3, &conf_.p[2] },
         { "p3", IVT_VEC3, &conf_.p[3] },
+        { "nSamples", IVT_INT, &conf_.nSamples }
     };
     paryItemDesc_ = CreateItemDesc(litSrcDesc, ARRAY_SZ(litSrcDesc));
     nItem_ = ARRAY_SZ(litSrcDesc);
@@ -378,7 +379,9 @@ bool LightSourceParser::OnLeave()
         Vec3* p = conf_.p;
         pLitSrc = new AreaLightSource(
             p[0], p[1], p[2], p[3],
-            conf_.intensity);
+            conf_.intensity,
+            conf_.nSamples
+        );
         
         Vec3 p2[3] = { p[0], p[2], p[3] };
         Shape* pLitShape0 = new AreaLightShape((AreaLightSource*)pLitSrc, p, conf_.intensity, LIGHT);
@@ -467,6 +470,7 @@ Config::Config()
     };
     ItemDesc photonMapDesc[] = {
         { "nPhotons", IVT_INT, &photonMapConf.nPhotons },
+        { "nMaxStorePhotons", IVT_INT, &photonMapConf.nMaxStorePhotons },
         { "nEstimatePhotons", IVT_INT, &photonMapConf.nEstimatePhotons },
         { "estimateDist", IVT_FLOAT, &photonMapConf.estimateDist},
         { "estimateEllipseScale", IVT_FLOAT, &photonMapConf.estimateEllipseScale },
@@ -478,11 +482,22 @@ Config::Config()
         { "useBVH", IVT_BOOL, &photonMapConf.useBVH },
         { "nTracePhotonsPerThread", IVT_INT, &photonMapConf.nTracePhotonsPerThread },
         { "useTentFilter", IVT_BOOL, &photonMapConf.useTentFilter },
-        { "distanceToProjPlane", IVT_FLOAT, &photonMapConf.distanceToProjPlane },
         { "finalGethering", IVT_BOOL, &photonMapConf.finalGethering },
         { "nFinalGetheringRays", IVT_INT, &photonMapConf.nFinalGetheringRays },
         { "nMaxGlossyBounce", IVT_INT, &photonMapConf.nMaxGlossyBounce },
         { "nGlossyRays", IVT_INT, &photonMapConf.nGlossyRays }
+    };
+    ItemDesc coarsticPmDesc[] = {
+        { "nPhotons", IVT_INT, &coarsticPmConf.nPhotons },
+        { "nMaxStorePhotons", IVT_INT, &coarsticPmConf.nMaxStorePhotons },
+        { "nEstimatePhotons", IVT_INT, &coarsticPmConf.nEstimatePhotons },
+        { "estimateDist", IVT_FLOAT, &coarsticPmConf.estimateDist},
+        { "estimateEllipseScale", IVT_FLOAT, &coarsticPmConf.estimateEllipseScale },
+        { "enableConeFilter", IVT_BOOL, &coarsticPmConf.enableConeFilter },
+        { "coneFilterK", IVT_FLOAT, &coarsticPmConf.coneFilterK },
+        { "maxPhotonBounce", IVT_INT, &coarsticPmConf.maxPhotonBounce },
+        { "useBVH", IVT_BOOL, &coarsticPmConf.useBVH },
+        { "nTracePhotonsPerThread", IVT_INT, &coarsticPmConf.nTracePhotonsPerThread },
     };
     ItemDesc rayTracingDesc[] = {
         { "nSubPixelSqrt", IVT_INT, &rayTracingConf.nSubPixelsSqrt },
@@ -503,12 +518,14 @@ Config::Config()
     
     ItemDesc* pGeneralItemDesc = CreateItemDesc(generalDesc, ARRAY_SZ(generalDesc));
     ItemDesc* pPhotonMapItemDesc = CreateItemDesc(photonMapDesc, ARRAY_SZ(photonMapDesc));
+    ItemDesc* pCoarsticPmItemDesc = CreateItemDesc(coarsticPmDesc, ARRAY_SZ(coarsticPmDesc));
     ItemDesc* pRayTracingItemDesc = CreateItemDesc(rayTracingDesc, ARRAY_SZ(rayTracingDesc));
     ItemDesc* pPostEffectItemDesc = CreateItemDesc(postEffectDesc, ARRAY_SZ(postEffectDesc));
     ItemDesc* pCameraItemDesc = CreateItemDesc(cameraDesc, ARRAY_SZ(cameraDesc));
  
     parsers_[SEC_GENERAL]     = new SectionParser("[General]",     pGeneralItemDesc, ARRAY_SZ(generalDesc));
     parsers_[SEC_PHOTONMAP]   = new SectionParser("[PhotonMap]",   pPhotonMapItemDesc, ARRAY_SZ(photonMapDesc));
+    parsers_[SEC_COARSTICPM]  = new SectionParser("[CoarsticPhotonMap]",   pCoarsticPmItemDesc, ARRAY_SZ(coarsticPmDesc));
     parsers_[SEC_RAYTRACING]  = new SectionParser("[RayTracing]",  pRayTracingItemDesc, ARRAY_SZ(rayTracingDesc));
     parsers_[SEC_POSTEFFECT]  = new SectionParser("[PostEffect]",  pPostEffectItemDesc, ARRAY_SZ(postEffectDesc));
     parsers_[SEC_CAMERA]      = new SectionParser("[Camera]",      pCameraItemDesc, ARRAY_SZ(cameraDesc));

@@ -24,19 +24,24 @@ public:
     virtual ~LightSource() {}
     
     LightSourceType GetType() const { return type_; };
-    virtual Ray GenerateRay() const = 0;
     const Vec3& GetIntensity() const { return intensity_; };
+    virtual Ray GenerateRay() const = 0;
+    virtual Vec3 DirectLight(const Vec3& pos, const Vec3& normal) const = 0;
     
     
 protected:
     LightSource()
-        : type_(Lit_Invalid), intensity_(10000, 10000, 10000) {}
+        : type_(Lit_Invalid)
+        , intensity_(10000, 10000, 10000)
+    {}
     
     LightSource(LightSourceType type, const Vec3& intensity)
-        : type_(type), intensity_(intensity) {}
+        : type_(type)
+        , intensity_(intensity)
+    {}
     
     LightSourceType type_;
-    Vec3 intensity_;
+    Vec3 intensity_; // flux
 };
 
 /**
@@ -49,6 +54,7 @@ public:
     PointLightSource(const Vec3& position, const Vec3& intensity);
     
     virtual Ray GenerateRay() const;
+    virtual Vec3 DirectLight(const Vec3& pos, const Vec3& normal) const;
     
 	Vec3 position_;
     
@@ -68,16 +74,22 @@ public:
         const Vec3& p1,
         const Vec3& p2,
         const Vec3& p3,
-        const Vec3& intensity
+        const Vec3& intensity,
+        int nSamples
     );
     
     virtual Ray GenerateRay() const;
+    virtual Vec3 DirectLight(const Vec3& pos, const Vec3& normal) const;
     
     //AreaLightShape* pShape_;
 	Vec3 p_[4];
     Vec3 normal_;
- 
+    float area_;
+    int nSamples_;
+    
 private:
+    float CalcTriangleArea(const Vec3& p0, const Vec3& p1, const Vec3& p2);
+    
 	mutable unsigned short xi_[3];
 };
 

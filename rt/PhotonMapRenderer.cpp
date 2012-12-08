@@ -112,11 +112,7 @@ void PhotonMapRenderer::TracePhoton(const Ray& r, const Vec3& power, PathInfo& p
     // Ideal DIFFUSE reflection
     if (refl == DIFF || refl == LIGHT) { // 光源表面はLambert面という事にしておく
         pathInfo.diffuseDepth++;
-        // 直接光のフォトンはストアしない(集光模様フォトン除く)
-//        if (pathInfo.diffuseDepth > 1 || (pathInfo.specularDepth + pathInfo.glossyDepth) > 0) {
-//        if (pathInfo.diffuseDepth > 1 && (pathInfo.specularDepth + pathInfo.glossyDepth) == 0) {
         pPhotonMap_->store(power.e, x.e, r.d.e);
-//        }
         
         float ave_refl = (color.x + color.y + color.z) / 3.f;
         if ((real)erand48(xi_) < ave_refl)
@@ -124,8 +120,12 @@ void PhotonMapRenderer::TracePhoton(const Ray& r, const Vec3& power, PathInfo& p
             // 法線となす角のcosに比例する分布で反射方向を決める
             Vec3 d = Ray::CosRay(nl, xi_);
             
+            // lambertのBRDFかけなくていいのか?
+            // cos分布でレイを発している(cosが掛けてある)
+            // / probability cos
+            // / lambert brdf PI
             real ave_refl_inv = 1.0f / ave_refl;
-            Vec3 refPower = power.mult(color) * PI_INV * ave_refl_inv;
+            Vec3 refPower = power.mult(color) * ave_refl_inv;
             TracePhoton(Ray(x,d), refPower, pathInfo);
         }
         //fprintf(stderr, "p (%f %f %f) (%f %f %f) (%f %f %f)\n", power[0], power[1], power[2], pos[0], pos[1], pos[2], dir[0], dir[1], dir[2]);
@@ -224,21 +224,7 @@ Vec3 PhotonMapRenderer::Irradiance(const Ray &r, PathInfo& pathInfo)
             }
             irrad /= pPmConfig_->nFinalGetheringRays;
         } else {
-#if 0
-            //if (pathInfo.diffuseDepth == 1) {
-            // @todo 複数ライト対応
-            Vec3 ldir = pScene_->litSrcs_[0]->position_ - x;
-            float r2 = ldir.square_length();
-            ldir.normalize();
-            irrad = nl.dot(ldir) * (pScene_->litSrcs_[0]->GetIntensity() / (4 * PI * r2));
-            
-            //} else {
-                //pPhotonMap_->irradiance_estimate(irrad.e, x.e, nl, pPmConfig_->estimateDist, pPmConfig_->nEstimatePhotons);
-            //}
-#else
             pPhotonMap_->irradiance_estimate(irrad.e, x.e, nl, pPmConfig_->estimateDist, pPmConfig_->nEstimatePhotons);
-#endif
-            
         }
         return Vec3(irrad.x * color.x, irrad.y * color.y, irrad.z * color.z);
     }

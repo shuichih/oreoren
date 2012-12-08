@@ -13,6 +13,7 @@
 #include "smallpt_fmt.h"
 #include "PhotonMap.h"
 #include "PhotonMapRenderer.h"
+#include "PhotonMapRenderer2.h"
 #include "PostEffect.h"
 #include "Scene.h"
 #include "BVH.h"
@@ -87,6 +88,9 @@ void App::Init(int argc, const char * argv[])
     }
     else if (config.rendererType == RTYPE_PHOTON_MAP) {
         pRenderer_ = new PhotonMapRenderer();
+    }
+    else if (config.rendererType == RTYPE_PHOTON_MAP2) {
+        pRenderer_ = new PhotonMapRenderer2();
     }
     pRenderer_->SetConfig(config);
 }

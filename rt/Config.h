@@ -14,7 +14,8 @@ using namespace std;
 enum RendererType
 {
     RTYPE_SIMPLE_RT,
-    RTYPE_PHOTON_MAP
+    RTYPE_PHOTON_MAP,
+    RTYPE_PHOTON_MAP2
 };
 
 //--------------------------------------------------------------------------------
@@ -23,6 +24,7 @@ enum Section
 {
     SEC_GENERAL,
     SEC_PHOTONMAP,
+    SEC_COARSTICPM,
     SEC_RAYTRACING,
     SEC_POSTEFFECT,
     SEC_CAMERA,
@@ -87,9 +89,11 @@ struct LightSourceConfig
     Vec3 p[4];
     Vec3 position;
     Vec3 intensity;
+    int nSamples;
     
     LightSourceConfig()
     : intensity(10000, 10000, 10000)
+    , nSamples(64)
     {
         typeStr[0] = 'P';
         typeStr[1] = 'O';
@@ -126,6 +130,7 @@ struct PhotonMapConfig
 {
     u32 nSubPixelsSqrt;
     u32 nPhotons;
+    u32 nMaxStorePhotons;
     u32 nEstimatePhotons;
     float estimateDist;
     float estimateEllipseScale;
@@ -136,7 +141,6 @@ struct PhotonMapConfig
     bool useBVH;
     u32 nTracePhotonsPerThread;
     bool useTentFilter;
-    float distanceToProjPlane;
     bool finalGethering;
     u32 nFinalGetheringRays;
     u32 nMaxGlossyBounce;
@@ -155,7 +159,6 @@ struct PhotonMapConfig
     , useBVH(true)
     , nTracePhotonsPerThread(10000)
     , useTentFilter(false)
-    , distanceToProjPlane(140)
     , finalGethering(false)
     , nFinalGetheringRays(64)
     , nMaxGlossyBounce(1)
@@ -307,6 +310,7 @@ public:
     int drawBVHDepth;
     RendererType rendererType;
     PhotonMapConfig photonMapConf;
+    PhotonMapConfig coarsticPmConf;
     RayTracingConfig rayTracingConf;
     PostEffectConfig postEffect;
     CameraConfig camera;

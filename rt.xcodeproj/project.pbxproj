@@ -29,6 +29,7 @@
 		B2C152C51483DCD800245AD6 /* GLUT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B2C152C41483DCD800245AD6 /* GLUT.framework */; };
 		B2C152C71483DF9700245AD6 /* App.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2C152C61483DF9700245AD6 /* App.cpp */; };
 		B2C152CE14851E8400245AD6 /* smallpt_fmt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2C152CD14851E8400245AD6 /* smallpt_fmt.cpp */; };
+		B2D1C01E164B30570056C5F3 /* PhotonMapRenderer2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2D1C01C164B30570056C5F3 /* PhotonMapRenderer2.cpp */; };
 		B2F4FECF15153367002EB635 /* LightSource.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2F4FECE15153367002EB635 /* LightSource.cpp */; };
 		B2F7F63A1518109900C3F71A /* PostEffect.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2F7F6381518109900C3F71A /* PostEffect.cpp */; };
 /* End PBXBuildFile section */
@@ -91,6 +92,8 @@
 		B2C152C61483DF9700245AD6 /* App.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = App.cpp; sourceTree = "<group>"; };
 		B2C152C81483E23100245AD6 /* App.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = App.h; sourceTree = "<group>"; };
 		B2C152CD14851E8400245AD6 /* smallpt_fmt.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = smallpt_fmt.cpp; sourceTree = "<group>"; };
+		B2D1C01C164B30570056C5F3 /* PhotonMapRenderer2.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PhotonMapRenderer2.cpp; sourceTree = "<group>"; };
+		B2D1C01D164B30570056C5F3 /* PhotonMapRenderer2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PhotonMapRenderer2.h; sourceTree = "<group>"; };
 		B2F4FECC15153359002EB635 /* LightSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LightSource.h; sourceTree = "<group>"; };
 		B2F4FECE15153367002EB635 /* LightSource.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LightSource.cpp; sourceTree = "<group>"; };
 		B2F74FD214F8BB42007135DE /* Scene.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Scene.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
@@ -132,6 +135,8 @@
 		B209617B1483117300863694 /* rt */ = {
 			isa = PBXGroup;
 			children = (
+				B2D1C01C164B30570056C5F3 /* PhotonMapRenderer2.cpp */,
+				B2D1C01D164B30570056C5F3 /* PhotonMapRenderer2.h */,
 				B2013FDE16181376008BF6F7 /* Timer.cpp */,
 				B2013FDF16181376008BF6F7 /* Timer.h */,
 				B26B252A1616DCC700560892 /* IRenderer.h */,
@@ -271,6 +276,7 @@
 				B2A36AC515FB5C5C00262567 /* Common.cpp in Sources */,
 				B26B25281616D72E00560892 /* RayTracingRenderer.cpp in Sources */,
 				B2013FE016181376008BF6F7 /* Timer.cpp in Sources */,
+				B2D1C01E164B30570056C5F3 /* PhotonMapRenderer2.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

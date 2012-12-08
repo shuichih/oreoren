@@ -15,13 +15,8 @@ useTentFilter = false
 distanceToProjPlane=140
 
 [PhotonMap]
-#nPhotons = 500000
-#nEstimatePhotons = 500
-#estimateDist = 20.0
-#nSubPixelSqrt = 1
-#coneFilterK = 1.1   # kに比例してWeightが軽くなる
-
 nPhotons = 200000
+nMaxStorePhotons = 400000
 nEstimatePhotons = 500
 estimateDist = 25.0
 estimateEllipseScale = 0.2
@@ -29,15 +24,26 @@ nSubPixelSqrt = 1
 enableConeFilter = true
 coneFilterK = 1.1   # kに比例してWeightが軽くなる
 nTracePhotonsPerThread = 10000
-
 maxPhotonBounce = 6
 maxRayBounce = 6
 useBVH = true
 #finalGethering = true
 nFinalGetheringRays = 64
-
 nMaxGlossyBounce = 1
 nGlossyRays = 256
+
+[CoarsticPhotonMap]
+nPhotons = 800000
+nMaxStorePhotons = 800000
+nEstimatePhotons = 100
+estimateDist = 10
+estimateEllipseScale = 0.2
+enableConeFilter = true
+coneFilterK = 1.1   # kに比例してWeightが軽くなる
+nTracePhotonsPerThread = 10000
+maxPhotonBounce = 6
+maxRayBounce = 6
+useBVH = true
 
 [PostEffect]
 toneMap.enabled = false
@@ -50,7 +56,7 @@ camera.fovY = 0.5135
 
 #[LightSource]
 #type = POINT
-#position = 0 48 0
+#position = 0 52 0
 #intensity = 10000 10000 10000
 
 [LightSource]
@@ -60,6 +66,7 @@ p1 = -20 52 -20
 p2 =  20 52 -20
 p3 =  20 52  20
 intensity = 10000 10000 10000
+nSamples = 64
 
 # 手前がプラス
 

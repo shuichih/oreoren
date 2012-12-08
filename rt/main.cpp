@@ -2,14 +2,12 @@
 //  main.cpp
 //  rt
 //
-//  Created by 秀一 林 on 11/28/11.
-//  Copyright 2011 __MyCompanyName__. All rights reserved.
+//  Copyright 2012 Suichi Hayashi. All rights reserved.
 //
 #include <iostream>
 #include "App.h"
 
 #include <GLUT/glut.h>
-
 
 void drawScene();
 
@@ -25,4 +23,5 @@ int main(int argc, const char * argv[])
     
 	return 0;
 }
+
 

@@ -156,8 +156,7 @@ void Photon_map::irradiance_estimate(
         }
     }
 
-    // BRDFの1/π掛けてないけど、それはきっとこの関数の呼び出し元で
-    // 任意のBRDFを掛けるから
+    // BRDFの1/π掛けてないけど、それであってるっぽい
     float tmp = 1.0f / (float)(M_PI * np.dist2[0]);  // estimate of density
     if (pFilter_)
         tmp *= pFilter_->Normalizer();

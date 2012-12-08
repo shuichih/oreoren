@@ -36,27 +36,27 @@ Ray PointLightSource::GenerateRay() const
 	return Ray(position_, dir);
 }
 
+Vec3 PointLightSource::DirectLight(const Vec3& pos, const Vec3& normal) const
+{
+    Vec3 ldir = position_ - pos;
+    float r2 = ldir.square_length();
+    ldir.normalize();
+    return normal.dot(ldir) * intensity_ / (4 * PI * r2);
+}
+
 
 //--------------------------------------------------------------------------------
-
-/*
-AreaLightSource::AreaLightSource()
-: LightSource(Lit_Area, Vec3(10000, 10000, 10000))
-{
-	xi_[0] = 0;
-	xi_[1] = 0;
-	xi_[2] = (unsigned short)(intensity_.x + intensity_.y + intensity_.z);
-}
-*/
 
 AreaLightSource::AreaLightSource(
     const Vec3& p0,
     const Vec3& p1,
     const Vec3& p2,
     const Vec3& p3,
-    const Vec3& intensity
+    const Vec3& intensity,
+    int nSamples
 )
 : LightSource(Lit_Area, intensity)
+, nSamples_(nSamples)
 {
     p_[0] = p0;
     p_[1] = p1;
@@ -72,26 +72,68 @@ AreaLightSource::AreaLightSource(
     }
     normal_.normalize();
     
+    // Heron's formula
+    float s0 = CalcTriangleArea(p0, p1, p2);
+    float s1 = CalcTriangleArea(p0, p2, p3);
+    area_ = s0 + s1;
+    
 	xi_[0] = 0;
 	xi_[1] = 0;
 	xi_[2] = (unsigned short)(intensity.x + intensity.y + intensity.z);
 }
 
+float AreaLightSource::CalcTriangleArea(const Vec3& p0, const Vec3& p1, const Vec3& p2)
+{
+    // Heron's formula
+    float e0 = (p1 - p0).length();
+    float e1 = (p2 - p1).length();
+    float e2 = (p0 - p2).length();
+    float s = 0.5f * (e0 + e1 + e2);
+    return sqrtf(s * (s-e0) * (s-e1) * (s-e2));
+}
+
 Ray AreaLightSource::GenerateRay() const
 {
-    real beta = (real)erand48(xi_);
-    real gamma = 1.0f - beta;
-//    Vec3 pos = ((real)erand48(xi_) < 0.5f) ?
-//        (p_[0] + p_[1] * beta + p_[2] * gamma) * 0.5f :
-//        (p_[0] + p_[2] * beta + p_[3] * gamma) * 0.5f;
-    //Vec3 pos = (p_[0] + p_[1] * beta + p_[2] * gamma) * 0.5f;
-    Vec3 pos = (p_[0] + p_[2] * beta + p_[3] * gamma) * 0.5f;
+    real b0 = (real)erand48(xi_);
+    real b1 = (1.0f - b0) * (real)erand48(xi_);
+    real b2 = 1.0f - b0 - b1;
+    Vec3 pos = ((real)erand48(xi_) < 0.5f) ?
+        (p_[0] * b0 + p_[1] * b1 + p_[2] * b2):
+        (p_[0] * b0 + p_[2] * b1 + p_[3] * b2);
     
 	Vec3 dir = Ray::CosRay(normal_, xi_);
     
-    // @todo ライトのポリゴン化、レイトレしてライトポリゴンに当たったら明るさは直接計算して返す。
-    
 	return Ray(pos, dir);
+}
+
+Vec3 AreaLightSource::DirectLight(const Vec3& pos, const Vec3& normal) const
+{
+    // 遮蔽なし
+
+    if (normal.dot(this->normal_) > 0.0f) {
+        return Vec3();
+    }
+
+    Vec3 irrad;
+    const float nSampleInv = 1.0f / nSamples_;
+    for (int i=0; i<nSamples_; i++) {
+        real b0 = (real)erand48(xi_);
+        real b1 = (1.0f - b0) * (real)erand48(xi_);
+        real b2 = 1.0f - b0 - b1;
+        Vec3 lpos = ((real)erand48(xi_) < 0.5f) ?
+            (p_[0] * b0 + p_[1] * b1 + p_[2] * b2):
+            (p_[0] * b0 + p_[2] * b1 + p_[3] * b2);
+        
+        Vec3 ldir = lpos - pos;
+        float r2 = ldir.square_length();
+        ldir.normalize();
+        float cosX = this->normal_.dot(-1 * ldir);
+        //if (cosX < 0.0f) continue;
+        float cosY = normal.dot(ldir);
+        //if (cosY < 0.0f) continue;
+        irrad += (intensity_ * nSampleInv) * cosX * cosY / r2;
+    }
+    return irrad;
 }
 
 //--------------------------------------------------------------------------------

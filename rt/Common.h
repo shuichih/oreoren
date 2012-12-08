@@ -150,7 +150,7 @@ struct Vec3 {
         return sqrtf(x * x + y * y + z * z);
     }
     
-    inline Vec3& normalize() // @todo change normalizeThis(DXUTとかに合わせる)
+    inline Vec3& normalize()
     {
         return *this = *this / length();
     }
