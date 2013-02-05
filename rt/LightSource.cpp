@@ -36,12 +36,30 @@ Ray PointLightSource::GenerateRay() const
 	return Ray(position_, dir);
 }
 
-Vec3 PointLightSource::DirectLight(const Vec3& pos, const Vec3& normal) const
+Vec3 PointLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra) const
 {
+    // penumbra
+    // == 1.0, 完全に光が当たっている領域: サンプリング、シャドウレイなし
+    // == 0.0, penumbra完全に影の領域　: 黒
+    // else  , 半影領域              : サンプリング、シャドウレイあり
+   
+#if 0
+    if (penumbra == 0.f) {
+        return Vec3();
+    }
+#endif
+    
+    HitRecord rec;
     Vec3 ldir = position_ - pos;
     float r2 = ldir.square_length();
+    float r = sqrtf(ldir.square_length());
     ldir.normalize();
-    return normal.dot(ldir) * intensity_ / (4 * PI * r2);
+    Ray ray(pos, ldir);
+    if (/*!penumbra == 1.f || */!scene.Intersect(ray, EPSILON, r, rec)) {
+        return normal.dot(ldir) * intensity_ / (4 * PI * r2);
+    } else {
+        return Vec3();
+    }
 }
 
 
@@ -106,16 +124,25 @@ Ray AreaLightSource::GenerateRay() const
 	return Ray(pos, dir);
 }
 
-Vec3 AreaLightSource::DirectLight(const Vec3& pos, const Vec3& normal) const
+Vec3 AreaLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra) const
 {
-    // 遮蔽なし
-
+    // penumbra
+    // == 1.0, 完全に光が当たっている領域: サンプリング、シャドウレイなし
+    // == 0.0, penumbra完全に影の領域　: 黒
+    // else  , 半影領域              : サンプリング、シャドウレイあり
+    
+    if (penumbra == 0.f) {
+        return Vec3();
+    }
+    
     if (normal.dot(this->normal_) > 0.0f) {
         return Vec3();
     }
 
     Vec3 irrad;
     const float nSampleInv = 1.0f / nSamples_;
+    HitRecord rec;
+    
     for (int i=0; i<nSamples_; i++) {
         real b0 = (real)erand48(xi_);
         real b1 = (1.0f - b0) * (real)erand48(xi_);
@@ -126,12 +153,15 @@ Vec3 AreaLightSource::DirectLight(const Vec3& pos, const Vec3& normal) const
         
         Vec3 ldir = lpos - pos;
         float r2 = ldir.square_length();
+        float r = sqrtf(r2);
         ldir.normalize();
-        float cosX = this->normal_.dot(-1 * ldir);
-        //if (cosX < 0.0f) continue;
-        float cosY = normal.dot(ldir);
-        //if (cosY < 0.0f) continue;
-        irrad += (intensity_ * nSampleInv) * cosX * cosY / r2;
+        
+        Ray ray(pos, ldir);
+        if (penumbra == 1.f || !scene.Intersect(ray, EPSILON, r, rec)) {
+            float cosX = this->normal_.dot(-1 * ldir);
+            float cosY = normal.dot(ldir);
+            irrad += (intensity_ * nSampleInv) * cosX * cosY / r2;
+        }
     }
     return irrad;
 }

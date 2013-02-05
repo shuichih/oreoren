@@ -1,3 +1,5 @@
+//siren
+
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -6,7 +8,7 @@
 #include "Scene.h"
 #include "PhotonMap.h"
 #include "LightSource.h"
-#include "PhotonMapRenderer.h"
+#include "PhotonMapRenderer2.h"
 #include "PhotonFilter.h"
 #include "Config.h"
 #include "Timer.h"
@@ -19,40 +21,55 @@
 using namespace std;
 
 //----------------------------------------------------------------
-PhotonMapRenderer::PhotonMapRenderer()
-: pPhotonMap_(NULL)
+PhotonMapRenderer2::PhotonMapRenderer2()
+: pCurrPm_(NULL)
+, pPhotonMap_(NULL)
+, pCoarsticPhotonMap_(NULL)
+, pShadowPhotonMap_(NULL)
 , pFilter_(NULL)
+, pCoarsticFilter_(NULL)
 {
 }
 
-PhotonMapRenderer::~PhotonMapRenderer()
+PhotonMapRenderer2::~PhotonMapRenderer2()
 {
     delete pPhotonMap_;
     delete pFilter_;
 }
 
-void PhotonMapRenderer::SetConfig(const Config& config)
+void PhotonMapRenderer2::SetConfig(const Config& config)
 {
     pConfig_ = &config;
     pPmConfig_ = &pConfig_->photonMapConf;
+    pCoarsticPmConfig_ = &pConfig_->coarsticPmConf;
+    pShadowPmConfig_ = &pConfig_->shadowPmConf;
     
-    if (pPhotonMap_ != NULL) delete pPhotonMap_;
-    pPhotonMap_ = new Photon_map(pPmConfig_->nPhotons * pPmConfig_->maxPhotonBounce); // ちと多め
-    
-    if (pFilter_ != NULL) delete pFilter_;
-    if (pPmConfig_->enableConeFilter) {
-        pFilter_ = new ConeFilter(pPmConfig_->coneFilterK);
-        ((ConeFilter*)pFilter_)->SetK(pPmConfig_->coneFilterK);
-        pPhotonMap_->SetFilter(pFilter_);
-    }
-    else {
-        pPhotonMap_->SetFilter(NULL);
-    }
-    
-    pPhotonMap_->SetEstimateEllipseScale(pPmConfig_->estimateEllipseScale);
+    InitializePhotonMap(&pPhotonMap_, *pPmConfig_, &pFilter_);
+    InitializePhotonMap(&pCoarsticPhotonMap_, *pCoarsticPmConfig_, &pCoarsticFilter_);
+    InitializePhotonMap(&pShadowPhotonMap_, *pShadowPmConfig_, NULL);
 }
 
-Vec3 PhotonMapRenderer::GlossyRay(const Vec3& w, float exponent)
+void PhotonMapRenderer2::InitializePhotonMap(Photon_map** ppPm, const PhotonMapConfig& pmConf, PhotonFilter** ppFilter)
+{
+    if (*ppPm != NULL) delete *ppPm;
+    *ppPm = new Photon_map(pmConf.nMaxStorePhotons);
+    
+    if (ppFilter) {
+        if (*ppFilter) delete *ppFilter;
+        
+        if (pmConf.enableConeFilter) {
+            *ppFilter = new ConeFilter(pmConf.coneFilterK);
+            ((ConeFilter*)(*ppFilter))->SetK(pmConf.coneFilterK);
+            (*ppPm)->SetFilter(*ppFilter);
+        }
+    }
+    else {
+        (*ppPm)->SetFilter(NULL);
+    }
+    (*ppPm)->SetEstimateEllipseScale(pmConf.estimateEllipseScale);
+}
+    
+Vec3 PhotonMapRenderer2::GlossyRay(const Vec3& w, float exponent)
 {
     real r1 = 2.f*(real)(M_PI*erand48(xi_));
     real r2 = (real)erand48(xi_);
@@ -67,11 +84,9 @@ Vec3 PhotonMapRenderer::GlossyRay(const Vec3& w, float exponent)
     // ucosφsinθ + vsinφsinθ + wcosθ
     return (u*rx + v*ry + w*rz).normalize();
 }
-        
 
-void PhotonMapRenderer::TracePhoton(const Ray& r, const Vec3& power, PathInfo& pathInfo)
+void PhotonMapRenderer2::TracePhoton(const Ray& r, const Vec3& power, PathInfo& pathInfo)
 {
-    // max refl
     if (++pathInfo.depth > pPmConfig_->maxPhotonBounce)
     {
         return;
@@ -88,27 +103,63 @@ void PhotonMapRenderer::TracePhoton(const Ray& r, const Vec3& power, PathInfo& p
     Vec3 color = rec.color;
     Refl_t refl = rec.refl;
     
+    // 影フォトン
+    if (traceFlag_ == Trace_Shadow) {
+        
+        // ここを通るのは必ず直接光
+        assert(pathInfo.diffuseDepth == 0);
+        
+        // 直接光をストア
+        pCurrPm_->store(power.e, x.e, r.d.e, true, lightNo_);
+        
+        // 影フォトンをストア
+        int nHits = pScene_->RayCast(shadyHits_, 0, r, rec.t+EPSILON, REAL_MAX);
+        //printf("%d\n", nHits);
+        for (int i=0; i<nHits; i++) {
+            HitRecord& sh_rec = shadyHits_.at(i);
+            if (sh_rec.refl == DIFF && sh_rec.normal.dot(r.d) < 0) {
+                //printf("hit\n");
+                Vec3 sh_x = r.o + r.d * sh_rec.t;
+                pCurrPm_->store((-1*power).e, sh_x.e, r.d.e, false, lightNo_);
+            }
+        }
+        
+        // 再帰せずここで終了
+        return;
+    }
+    
     // Ideal DIFFUSE reflection
     if (refl == DIFF || refl == LIGHT) { // 光源表面はLambert面という事にしておく
         pathInfo.diffuseDepth++;
-        bool direct = pathInfo.diffuseDepth == 1;
-        pPhotonMap_->store(power.e, x.e, r.d.e, direct, pathInfo.lightNo);
+        bool direct = (pathInfo.diffuseDepth == 1);
         
-        float ave_refl = (color.x + color.y + color.z) / 3.f;
-        if ((real)erand48(xi_) < ave_refl)
-        {
-            // 法線となす角のcosに比例する分布で反射方向を決める
-            Vec3 d = Ray::CosRay(nl, xi_);
+        if (traceFlag_ == Trace_Coarstic) {
             
-            // lambertのBRDFかけなくていいのか?
-            // cos分布でレイを発している(cosが掛けてある)
-            // / probability cos
-            // / lambert brdf PI
-            real ave_refl_inv = 1.0f / ave_refl;
-            Vec3 refPower = power.mult(color) * ave_refl_inv;
-            TracePhoton(Ray(x,d), refPower, pathInfo);
+            // 屈折を経たPhotonのみをストア
+            if (pathInfo.refractionDepth > 1)
+            {
+                pCurrPm_->store(power.e, x.e, r.d.e, true, lightNo_);
+            }
+            
+            // 間接光の集光模様は影響が低そうなのでストアしない
+            
+        } else {
+            if (!direct) {
+                // 間接光のフォトンをストア
+                pCurrPm_->store(power.e, x.e, r.d.e, false, lightNo_);
+            }
+
+            // 拡散反射
+            float ave_refl = (color.x + color.y + color.z) / 3.f;
+            if ((real)erand48(xi_) < ave_refl)
+            {
+                Vec3 d = Ray::CosRay(nl, xi_);
+                real ave_refl_inv = 1.0f / ave_refl;
+                Vec3 refPower = power.mult(color) * ave_refl_inv;
+                TracePhoton(Ray(x,d), refPower, pathInfo);
+            }
         }
-        //fprintf(stderr, "p (%f %f %f) (%f %f %f) (%f %f %f)\n", power[0], power[1], power[2], pos[0], pos[1], pos[2], dir[0], dir[1], dir[2]);
+        
         return;
     }
     // Ideal SPECULAR reflection
@@ -128,7 +179,7 @@ void PhotonMapRenderer::TracePhoton(const Ray& r, const Vec3& power, PathInfo& p
         return;
     }
     
-    pathInfo.specularDepth++;
+    pathInfo.refractionDepth++;
     
     // Ideal dielectric REFRACTION
     Ray reflRay(x, r.d - n * 2.f * n.dot(r.d));
@@ -161,8 +212,7 @@ void PhotonMapRenderer::TracePhoton(const Ray& r, const Vec3& power, PathInfo& p
     return;
 }
 
-
-Vec3 PhotonMapRenderer::Irradiance(const Ray &r, PathInfo& pathInfo)
+Vec3 PhotonMapRenderer2::Irradiance(const Ray &r, PathInfo& pathInfo)
 {
     // max refl
     if (++pathInfo.depth > pPmConfig_->maxRayBounce)
@@ -173,39 +223,53 @@ Vec3 PhotonMapRenderer::Irradiance(const Ray &r, PathInfo& pathInfo)
     HitRecord rec;
     rec.hitLit = true;
     if (!pScene_->Intersect(r, EPSILON, REAL_MAX, rec)) return Vec3();
-    //const Shape& obj = *g_shapes[id];       // the hit object
     Vec3 x = r.o + r.d * rec.t;
     Vec3 n = rec.normal;
     Vec3 nl = n.dot(r.d) < 0.f ? n : n * -1.f;   // 交点の法線
     Vec3 color = rec.color;
     Refl_t refl = rec.refl;
     
-    // 0.5にしたらカラーが反射率になってるから暗くなるだけ。IDEALでない反射は扱えない。カラーと混ぜるとかもない。
     // Ideal DIFFUSE reflection
     if (refl == DIFF) {
         pathInfo.diffuseDepth++;
         Vec3 irrad;
-        //fprintf(stderr, "irrad %f %f %f\r", irrad[0], irrad[1], irrad[2]);
-        if (pPmConfig_->finalGethering && pathInfo.diffuseDepth <= 1) {
-            for (int i=0; i<pPmConfig_->nFinalGetheringRays; i++) {
-                real r1 = 2.f*(real)(M_PI*erand48(xi_));
-                real r2 = (real)erand48(xi_); // => 1-cos^2θ = 1-sqrt(1-r_2)^2 = r_2
-                real r2s = sqrtf(r2);    // => sinθ = sqrt(1-cos^2θ) = sqrt(r_2)
-                Vec3 w = nl; // normal
-                Vec3 u = ((fabs(w.x) > .1f ? Vec3(0.f, 1.f, 0.f) : Vec3(1.f, 0.f, 0.f)) % w).normalize(); // binormal
-                Vec3 v = w % u; // tangent
-                
-                // ucosφsinθ + vsinφsinθ + wcosθ
-                Vec3 d = (u*cosf(r1)*r2s + v*sinf(r1)*r2s + w*sqrtf(1-r2)).normalize();
-                PathInfo pathInfo2(pathInfo);
-                irrad += Irradiance(Ray(x, d), pathInfo2);// * nl.dot(d) / nl.dot(d);
-                // 入射方向と法線のcosθ掛けるのとimportance samplingしたので確率密度関数cosθで割るのとで
-                // 相殺するような。
-            }
-            irrad /= pPmConfig_->nFinalGetheringRays;
-        } else {
-            pPhotonMap_->irradiance_estimate(irrad.e, x.e, nl, pPmConfig_->estimateDist, pPmConfig_->nEstimatePhotons);
+        const float BRDF = PI_INV;
+        
+        const float peDist = pShadowPmConfig_->estimateDist;
+        const int peNum = pShadowPmConfig_->nEstimatePhotons;
+        float peRatio = pShadowPhotonMap_->penumbra_estimate(lightNo_, x.e, nl, peDist, peNum);
+        
+        //printf("pe=%f\n", peRatio);
+#if 0
+        // 影度合い別に可視化
+        if (peRatio == 1.f) {
+            // direct
+            return Vec3(0, .2f, .5f);
         }
+        else if (peRatio == 0) {
+            // umbra
+            return Vec3(0, 0, 0);
+        }
+        else {
+            // penumbra
+            return Vec3(.5f, .5f, .5f);
+        }
+#endif
+        
+        // Direct Light
+        for (int i=0; i<pScene_->litSrcs_.size(); i++) {
+            irrad += BRDF * pScene_->litSrcs_[i]->DirectLight(x, nl, *pScene_, peRatio);
+        }
+        
+        // Indirect Light
+        Vec3 tmpIrrad;
+        pPhotonMap_->irradiance_estimate(tmpIrrad.e, x.e, nl, pPmConfig_->estimateDist, pPmConfig_->nEstimatePhotons);
+        irrad += tmpIrrad;
+        
+        // Coarstics
+        pCoarsticPhotonMap_->irradiance_estimate(tmpIrrad.e, x.e, nl, pCoarsticPmConfig_->estimateDist, pCoarsticPmConfig_->nEstimatePhotons);
+        irrad += tmpIrrad;
+        
         return Vec3(irrad.x * color.x, irrad.y * color.y, irrad.z * color.z);
     }
     else if (refl == SPEC) {
@@ -270,7 +334,7 @@ Vec3 PhotonMapRenderer::Irradiance(const Ray &r, PathInfo& pathInfo)
     return ((AreaLightShape*)rec.pShape)->SelfIrradiance();
 }
 
-void PhotonMapRenderer::PhotonTracing()
+void PhotonMapRenderer2::PhotonTracing()
 {
     // すべてのライトの合計の明るさを求める
     u32 nLit = (u32)pScene_->litSrcs_.size();
@@ -281,14 +345,42 @@ void PhotonMapRenderer::PhotonTracing()
     }
     
     // 各ライトからライトの明るさに応じてフォトンをばらまく
+    if (pPmConfig_->enable) {
+        printf("<Indirect Photon Map>\n");
+        PhotonTracing_(*pPhotonMap_, *pPmConfig_, nLit, sumIntensity, Trace_Indirect);
+    }
+    if (pCoarsticPmConfig_->enable) {
+        printf("<Coarstic Photon Map>\n");
+        PhotonTracing_(*pCoarsticPhotonMap_, *pCoarsticPmConfig_, nLit, sumIntensity, Trace_Coarstic);
+    }
+    if (pShadowPmConfig_->enable) {
+        printf("<Shadow Photon Map>\n");
+        PhotonTracing_(*pShadowPhotonMap_, *pShadowPmConfig_, nLit, sumIntensity, Trace_Shadow);
+    }
+}
+
+// 各ライトからライトの明るさに応じてフォトンをばらまく
+void PhotonMapRenderer2::PhotonTracing_(
+    Photon_map& photonMap,
+    const PhotonMapConfig& pmConfig,
+    int nLit,
+    double sumIntensity,
+    PhotonMapRenderer2::TraceFlag traceFlag)
+{
+    const int c_nPhotonsPerThread = pmConfig.nTracePhotonsPerThread;
+    const int c_nPhotons = pmConfig.nPhotons;
+    
+    pCurrPm_ = &photonMap;
+    traceFlag_ = traceFlag;
+    
+    // 各ライトからライトの明るさに応じてフォトンをばらまく
     u32 iPhoton = 0;
     for (int i=0; i<nLit; i++) {
         const LightSource* pLit = pScene_->litSrcs_[i];
         float nPhotonRatio = (float)(pLit->GetIntensity().sum() / sumIntensity);
-        u32 nPhotons = (u32)(pPmConfig_->nPhotons * nPhotonRatio);
+        u32 nPhotons = (u32)(c_nPhotons * nPhotonRatio);
         
-        const int nPhotonsPerThread =
-            pPmConfig_->nTracePhotonsPerThread > 0 ? pPmConfig_->nTracePhotonsPerThread : nPhotons;
+        int nPhotonsPerThread = c_nPhotonsPerThread > 0 ? c_nPhotonsPerThread : nPhotons;
         int nThread = ceilf(nPhotons / (float)nPhotonsPerThread);
         
         #pragma omp parallel for num_threads(4) schedule(dynamic, 1)
@@ -300,31 +392,31 @@ void PhotonMapRenderer::PhotonTracing()
                 #pragma omp atomic
                 iPhoton++;
                 
-                if (iPhoton % (pPmConfig_->nPhotons / 100) == 0) {
+                if (iPhoton % (c_nPhotons / 100) == 0) {
                     #pragma omp critical
                     {
-                        fprintf(stderr, "PhotonTracing %5.2f%%\n", 100. * iPhoton / pPmConfig_->nPhotons);
+                        fprintf(stderr, "PhotonTracing %5.2f%%\n", 100. * iPhoton / c_nPhotons);
                     }
                 }
-                
                 
                 Ray ray = pLit->GenerateRay();
                 Vec3 power = pLit->GetIntensity();
                 PathInfo pathInfo;
-                pathInfo.lightNo = i;
+                lightNo_ = i;
                 TracePhoton(ray, power, pathInfo);
             }
         }
         
         printf("%d photons traced.\n", iPhoton);
         
-        pPhotonMap_->scale_photon_power(1.0f / nPhotons); // 前回スケールした範囲は除外される
+        photonMap.scale_photon_power(1.0f / nPhotons); // 前回スケールした範囲は除外される
     }
-    pPhotonMap_->balance();
-    
+    photonMap.balance();
 }
 
-void PhotonMapRenderer::RayTracing(Vec3* pColorBuf)
+
+
+void PhotonMapRenderer2::RayTracing(Vec3* pColorBuf)
 {
     const u32 w = pConfig_->windowWidth;
     const u32 h = pConfig_->windowHeight;
@@ -411,7 +503,7 @@ void PhotonMapRenderer::RayTracing(Vec3* pColorBuf)
     
 }
 
-void PhotonMapRenderer::Run(Vec3* pColorBuf, const Scene& scene)
+void PhotonMapRenderer2::Run(Vec3* pColorBuf, const Scene& scene)
 {
     xi_[0] = 0;
 	xi_[1] = 0;

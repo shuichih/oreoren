@@ -49,6 +49,7 @@ Photon_map::Photon_map(const int max_phot)
 : pFilter_(NULL)
 {
 	stored_photons = 0;
+	half_stored_photons = 0;
 	prev_scale = 1;
 	max_photons = max_phot;
 
@@ -57,6 +58,7 @@ Photon_map::Photon_map(const int max_phot)
 		fprintf(stderr, "Out of memory initializing photon map¥n");
 		exit(-1);
 	}
+    memset(photons, 0, sizeof(Photon) * (max_photons+1));
 
 	bbox_min[0] = bbox_min[1] = bbox_min[2] = 1e8f;
 	bbox_max[0] = bbox_max[1] = bbox_max[2] = -1e8f;
@@ -165,6 +167,66 @@ void Photon_map::irradiance_estimate(
     irrad[2] *= tmp;
 }
 
+/**
+ * penumbra_estimate computes a ratio of direct light
+ * at a given surface position
+ */
+float Photon_map::penumbra_estimate(
+    int lightNo,
+	const float pos[3],    		// surface position
+	const Vec3& normal,   		// surface normal at pos
+	const float max_dist,   	// max distance to look for photons
+	const int nphotons) const 	// number of photons to use
+{
+	// allocaはスタックに確保するので遅くはない。
+	NearestPhotons np;
+	np.dist2 = (float*)alloca(sizeof(float) * (nphotons+1));
+	np.index = (const Photon**)alloca(sizeof(Photon*) * (nphotons+1));
+	
+	np.pos[0] = pos[0]; np.pos[1] = pos[1]; np.pos[2] = pos[2];
+    np.normal = normal;
+	np.max = nphotons;
+	np.found = 0;
+	np.got_heap = 0;
+	np.dist2[0] = max_dist * max_dist;
+
+    // locate the nearest photons
+    locate_photons(&np, 1);
+
+    // if less than 8 photons return
+//    if (np.found < 8)
+//    {
+//        return 0.5f;
+//    }
+
+    float pdir[3];
+    
+    // 直接光フォトン数と影フォトン数から直接光が当たっている割合を求める
+    int nDirect = 0;
+    int nShadow = 0;
+    for (int i=1; i<=np.found; i++) {
+        const Photon* p = np.index[i];
+        short photonLightNo = p->flag >> 3;
+        if (photonLightNo == lightNo)
+        {
+            photon_dir(pdir, p);
+            if ((pdir[0]*normal.e[0] + pdir[1]*normal.e[1] + pdir[2]*normal.e[2]) < 0.0f) {
+                if ((p->flag & Photon::FLAG_DIRECT) != 0) {
+                    nDirect++;
+                }
+                else if (p->power[0] < 0 || p->power[1] < 0 || p->power[2] < 0) {
+                    nShadow++;
+                }
+            }
+        }
+    }
+
+    if (nDirect+nShadow == 0)
+        return 1.0f;
+
+    return (nDirect) / (float)(nDirect+nShadow);
+}
+
 
 /**
  * locate_photons finds the nearest photons in the
@@ -180,7 +242,8 @@ void Photon_map::locate_photons(
 	// この条件を満たさない場合はもう子がないということ。バランス2分木なのでそうなる
     if (index < half_stored_photons) {
 		// フォトンからKD木分割面までの距離
-        dist1 = np->pos[p->plane] - p->pos[p->plane];
+        short plane = (p->flag & 0x0003);
+        dist1 = np->pos[plane] - p->pos[plane];
 
 		if (dist1 > 0.0f) { // if dist1 is positive search right plane
 			locate_photons(np, 2*index+1);		// ヒープ(整列2分木)に合わせたindex計算
@@ -277,7 +340,9 @@ void Photon_map::locate_photons(
 void Photon_map::store(
 	const float power[3],
 	const float pos[3],
-	const float dir[3])
+	const float dir[3],
+    bool directLight,
+    int lightNo)
 {
 	if (stored_photons >= max_photons) {
         printf("[WARNING] over max_photons\n");
@@ -313,6 +378,13 @@ void Photon_map::store(
 		node->phi = (unsigned char)(phi + 256);
 	else
 		node->phi = (unsigned char)phi;
+    
+    if (directLight)
+        node->flag |= Photon::FLAG_DIRECT;
+    else
+        node->flag &= ~Photon::FLAG_DIRECT;
+    
+    node->flag |= (lightNo << 3);
 }
 
 /**
@@ -454,7 +526,7 @@ void Photon_map::balance_segment(
 
 	median_split(porg, start, end, median, axis);
 	pbal[index] = porg[median]; // medianのphotonでindex位置を更新
-	pbal[index]->plane = axis;
+	pbal[index]->flag |= axis;
 
 	//------------------------------------------------
 	// recursively balance the left and right block

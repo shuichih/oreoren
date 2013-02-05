@@ -221,14 +221,13 @@ void RayTracingRenderer::RayTracing(Vec3* pColorBuf)
     
 }
 
-void RayTracingRenderer::Run(Vec3* pColorBuf, const Scene& scene, BVH* pBVH)
+void RayTracingRenderer::Run(Vec3* pColorBuf, const Scene& scene)
 {
     xi_[0] = 0;
 	xi_[1] = 0;
 	xi_[2] = pConfig_->windowWidth * pConfig_->windowHeight; // テキトウ
     
     pScene_ = &scene;
-    pBVH_ = pBVH;
     
     RayTracing(pColorBuf);
 }

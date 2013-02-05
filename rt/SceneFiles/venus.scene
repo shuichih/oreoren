@@ -1,11 +1,11 @@
 [General]
-windowWidth=256
-windowHeight=256
+windowWidth=512
+windowHeight=512
 buildBVH=true
 drawBVH=false
 drawBBox=false
 drawBVHDepth=7
-rendererType=1
+rendererType=2
 
 [RayTracing]
 useBVH = true
@@ -14,10 +14,11 @@ nSubPixelSqrt = 1
 useTentFilter = false
 distanceToProjPlane=140
 
-[PhotonMap]
-nPhotons = 200000
-nMaxStorePhotons = 400000
-nEstimatePhotons = 500
+[PhotonMap] # for Indirect Light
+enable = true
+nPhotons = 100000
+nMaxStorePhotons = 200000
+nEstimatePhotons = 1000
 estimateDist = 25.0
 estimateEllipseScale = 0.2
 nSubPixelSqrt = 1
@@ -33,10 +34,11 @@ nMaxGlossyBounce = 1
 nGlossyRays = 256
 
 [CoarsticPhotonMap]
+enable = true
 nPhotons = 800000
 nMaxStorePhotons = 800000
 nEstimatePhotons = 100
-estimateDist = 10
+estimateDist = 5
 estimateEllipseScale = 0.2
 enableConeFilter = true
 coneFilterK = 1.1   # kに比例してWeightが軽くなる
@@ -44,6 +46,17 @@ nTracePhotonsPerThread = 10000
 maxPhotonBounce = 6
 maxRayBounce = 6
 useBVH = true
+
+[ShadowPhotonMap]
+enable = true
+nPhotons = 40000
+nMaxStorePhotons = 80000
+nEstimatePhotons = 100
+estimateDist = 7.0
+estimateEllipseScale = 0.2
+
+# @todo RendererのConfigとPhotonMapデータ構造自体のコンフィグを分ける
+# 2つ以上のLightでpenumbra_estimate test
 
 [PostEffect]
 toneMap.enabled = false
@@ -61,12 +74,12 @@ camera.fovY = 0.5135
 
 [LightSource]
 type = AREA
-p0 = -20 52  20
-p1 = -20 52 -20
-p2 =  20 52 -20
-p3 =  20 52  20
+p0 = -15 52  15
+p1 = -15 52 -15
+p2 =  15 52 -15
+p3 =  15 52  15
 intensity = 10000 10000 10000
-nSamples = 64
+nSamples = 256
 
 # 手前がプラス
 

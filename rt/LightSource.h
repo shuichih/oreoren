@@ -26,7 +26,7 @@ public:
     LightSourceType GetType() const { return type_; };
     const Vec3& GetIntensity() const { return intensity_; };
     virtual Ray GenerateRay() const = 0;
-    virtual Vec3 DirectLight(const Vec3& pos, const Vec3& normal) const = 0;
+    virtual Vec3 DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra) const = 0;
     
     
 protected:
@@ -54,7 +54,7 @@ public:
     PointLightSource(const Vec3& position, const Vec3& intensity);
     
     virtual Ray GenerateRay() const;
-    virtual Vec3 DirectLight(const Vec3& pos, const Vec3& normal) const;
+    virtual Vec3 DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penshadowRayumbra) const;
     
 	Vec3 position_;
     
@@ -79,7 +79,7 @@ public:
     );
     
     virtual Ray GenerateRay() const;
-    virtual Vec3 DirectLight(const Vec3& pos, const Vec3& normal) const;
+    virtual Vec3 DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra) const;
     
     //AreaLightShape* pShape_;
 	Vec3 p_[4];

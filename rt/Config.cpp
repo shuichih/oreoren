@@ -469,6 +469,7 @@ Config::Config()
         { "rendererType", IVT_INT, &rendererType }
     };
     ItemDesc photonMapDesc[] = {
+        { "enable", IVT_BOOL, &photonMapConf.enable },
         { "nPhotons", IVT_INT, &photonMapConf.nPhotons },
         { "nMaxStorePhotons", IVT_INT, &photonMapConf.nMaxStorePhotons },
         { "nEstimatePhotons", IVT_INT, &photonMapConf.nEstimatePhotons },
@@ -488,6 +489,7 @@ Config::Config()
         { "nGlossyRays", IVT_INT, &photonMapConf.nGlossyRays }
     };
     ItemDesc coarsticPmDesc[] = {
+        { "enable", IVT_BOOL, &coarsticPmConf.enable },
         { "nPhotons", IVT_INT, &coarsticPmConf.nPhotons },
         { "nMaxStorePhotons", IVT_INT, &coarsticPmConf.nMaxStorePhotons },
         { "nEstimatePhotons", IVT_INT, &coarsticPmConf.nEstimatePhotons },
@@ -497,7 +499,15 @@ Config::Config()
         { "coneFilterK", IVT_FLOAT, &coarsticPmConf.coneFilterK },
         { "maxPhotonBounce", IVT_INT, &coarsticPmConf.maxPhotonBounce },
         { "useBVH", IVT_BOOL, &coarsticPmConf.useBVH },
-        { "nTracePhotonsPerThread", IVT_INT, &coarsticPmConf.nTracePhotonsPerThread },
+        { "nTracePhotonsPerThread", IVT_INT, &coarsticPmConf.nTracePhotonsPerThread }
+    };
+    ItemDesc shadowPmDesc[] = {
+        { "enable", IVT_BOOL, &shadowPmConf.enable },
+        { "nPhotons", IVT_INT, &shadowPmConf.nPhotons },
+        { "nMaxStorePhotons", IVT_INT, &shadowPmConf.nMaxStorePhotons },
+        { "nEstimatePhotons", IVT_INT, &shadowPmConf.nEstimatePhotons },
+        { "estimateDist", IVT_FLOAT, &shadowPmConf.estimateDist},
+        { "estimateEllipseScale", IVT_FLOAT, &shadowPmConf.estimateEllipseScale }
     };
     ItemDesc rayTracingDesc[] = {
         { "nSubPixelSqrt", IVT_INT, &rayTracingConf.nSubPixelsSqrt },
@@ -519,6 +529,7 @@ Config::Config()
     ItemDesc* pGeneralItemDesc = CreateItemDesc(generalDesc, ARRAY_SZ(generalDesc));
     ItemDesc* pPhotonMapItemDesc = CreateItemDesc(photonMapDesc, ARRAY_SZ(photonMapDesc));
     ItemDesc* pCoarsticPmItemDesc = CreateItemDesc(coarsticPmDesc, ARRAY_SZ(coarsticPmDesc));
+    ItemDesc* pShadowPmItemDesc = CreateItemDesc(shadowPmDesc, ARRAY_SZ(shadowPmDesc));
     ItemDesc* pRayTracingItemDesc = CreateItemDesc(rayTracingDesc, ARRAY_SZ(rayTracingDesc));
     ItemDesc* pPostEffectItemDesc = CreateItemDesc(postEffectDesc, ARRAY_SZ(postEffectDesc));
     ItemDesc* pCameraItemDesc = CreateItemDesc(cameraDesc, ARRAY_SZ(cameraDesc));
@@ -526,6 +537,7 @@ Config::Config()
     parsers_[SEC_GENERAL]     = new SectionParser("[General]",     pGeneralItemDesc, ARRAY_SZ(generalDesc));
     parsers_[SEC_PHOTONMAP]   = new SectionParser("[PhotonMap]",   pPhotonMapItemDesc, ARRAY_SZ(photonMapDesc));
     parsers_[SEC_COARSTICPM]  = new SectionParser("[CoarsticPhotonMap]",   pCoarsticPmItemDesc, ARRAY_SZ(coarsticPmDesc));
+    parsers_[SEC_SHADOWPM]      = new SectionParser("[ShadowPhotonMap]",   pShadowPmItemDesc, ARRAY_SZ(shadowPmDesc));
     parsers_[SEC_RAYTRACING]  = new SectionParser("[RayTracing]",  pRayTracingItemDesc, ARRAY_SZ(rayTracingDesc));
     parsers_[SEC_POSTEFFECT]  = new SectionParser("[PostEffect]",  pPostEffectItemDesc, ARRAY_SZ(postEffectDesc));
     parsers_[SEC_CAMERA]      = new SectionParser("[Camera]",      pCameraItemDesc, ARRAY_SZ(cameraDesc));

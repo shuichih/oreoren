@@ -25,6 +25,7 @@ enum Section
     SEC_GENERAL,
     SEC_PHOTONMAP,
     SEC_COARSTICPM,
+    SEC_SHADOWPM,
     SEC_RAYTRACING,
     SEC_POSTEFFECT,
     SEC_CAMERA,
@@ -128,6 +129,7 @@ struct SceneImportConfig
 
 struct PhotonMapConfig
 {
+    bool enable;
     u32 nSubPixelsSqrt;
     u32 nPhotons;
     u32 nMaxStorePhotons;
@@ -147,7 +149,8 @@ struct PhotonMapConfig
     u32 nGlossyRays;
     
     PhotonMapConfig()
-    : nSubPixelsSqrt(1)
+    : enable(true)
+    , nSubPixelsSqrt(1)
     , nPhotons(100000)
     , nEstimatePhotons(200)
     , estimateDist(15.f)
@@ -311,6 +314,7 @@ public:
     RendererType rendererType;
     PhotonMapConfig photonMapConf;
     PhotonMapConfig coarsticPmConf;
+    PhotonMapConfig shadowPmConf;
     RayTracingConfig rayTracingConf;
     PostEffectConfig postEffect;
     CameraConfig camera;

@@ -16,7 +16,7 @@ public:
     RayTracingRenderer();
     ~RayTracingRenderer();
     virtual void SetConfig(const Config& config);
-    virtual void Run(Vec3* pColorBuf, const Scene& scene, BVH* pBVH);
+    virtual void Run(Vec3* pColorBuf, const Scene& scene);
     
 private:
     

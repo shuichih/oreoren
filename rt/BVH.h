@@ -22,6 +22,7 @@ public:
     
     virtual BBox BoundingBox() const;
     virtual bool Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) const;
+    virtual int RayCast(std::vector<HitRecord>& hits, int nHits, const Ray &r, float tmin, float tmax) const;
     virtual bool IsBVH() const { return true; };
     void LimitMinScale(float minScale);
     // virtual bool ShadowHit(const Ray& r, float tmin, float tmax) const;

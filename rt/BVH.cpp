@@ -2,6 +2,8 @@
 #include "BVH.h"
 #include <cassert>
 
+using namespace std;
+
 BVH::BVH()
 : pLeft_(NULL)
 , pRight_(NULL)
@@ -93,7 +95,7 @@ const Shape* BVH::BuildBranch(const Shape** pShapes, int nShapes, int axis)
     
     return new BVH(pLeft, pRight, bbox);
 }
-                    
+
 BBox BVH::BoundingBox() const
 {
     return bbox_;
@@ -110,6 +112,17 @@ bool BVH::Intersect(const Ray &r, float tmin, float tmax, HitRecord& rec) const
     
     return (isahit1 || isahit2);
 }
+
+int BVH::RayCast(vector<HitRecord>& hits, int nHits, const Ray &r, float tmin, float tmax) const
+{
+    if (!bbox_.RayIntersect(r, tmin, tmax)) return nHits;
+    
+    nHits = pLeft_->RayCast(hits, nHits, r, tmin, tmax);
+    nHits = pRight_->RayCast(hits, nHits, r, tmin, tmax);
+    
+    return nHits;
+}
+
 
 // 直接照明実装するとき使用?
 //bool BVH::ShadowHit(const Ray &r, float tmin, float tmax)

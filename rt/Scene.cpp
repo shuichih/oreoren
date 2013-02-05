@@ -4,12 +4,30 @@
 #include "BBox.h"
 #include "LightSource.h"
 
+using namespace std;
+
 //--------------------------------------------------------------------------------
 
 Shape::~Shape()
 {
 }
 
+int Shape::RayCast(vector<HitRecord>& hits, int nHits, const Ray& r, float tmin, float tmax) const
+{
+    if (hits.size() == nHits)
+    {
+        hits.resize((nHits+1) * 2);
+    }
+    
+    HitRecord& rec = hits.at(nHits);
+    if (Intersect(r, tmin, tmax, rec))
+    {
+        return nHits + 1;
+    }
+    
+    return nHits;
+}
+    
 //--------------------------------------------------------------------------------
 
 Sphere::Sphere()
@@ -475,6 +493,7 @@ void Mesh::translate(real x, real y, real z)
 
 //--------------------------------------------------------------------------------
 Scene::Scene()
+    : pBVH_(NULL)
 {
 }
 
@@ -497,3 +516,44 @@ void Scene::AddShape(const Shape* pShape)
 {
     shapes_.push_back(pShape);
 }
+
+void Scene::BuildBVH()
+{
+    delete pBVH_;
+    pBVH_ = new BVH(&shapes_[0], (int)shapes_.size());
+    //pBVH_->LimitMinScale(0.01f);
+}
+
+bool Scene::Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) const
+{
+    if (pBVH_) {
+        return pBVH_->Intersect(r, tmin, tmax, rec);
+    }
+    else {
+        rec.t = tmax;
+        size_t nShapes = shapes_.size();
+        const std::vector<const Shape*>& shapes = shapes_;
+        for (size_t i=nShapes; i--;) {
+            shapes[i]->Intersect(r, tmin, rec.t, rec);
+        }
+        
+        return rec.t < tmax;
+    }
+    
+    return false;
+}
+
+int Scene::RayCast(vector<HitRecord>& hits, int nHits, const Ray& r, float tmin, float tmax) const
+{
+    if (pBVH_) {
+        return pBVH_->RayCast(hits, nHits, r, tmin, tmax);
+    }
+    
+    size_t nShapes = shapes_.size();
+    for (size_t i=nShapes; i--;) {
+        nHits += shapes_[i]->RayCast(hits, nHits, r, tmin, tmax);
+    }
+    
+    return nHits;
+}
+

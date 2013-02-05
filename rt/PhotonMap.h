@@ -14,8 +14,16 @@ class PhotonFilter;
  * size is 28bytes
  */
 typedef struct Photon {
+    enum
+    {
+        FLAG_DIRECT = (1 << 2)
+    };
+    
 	float pos[3];					// photon position
-	short plane;					// splitting plane for kd-tree
+    
+    // 2bit:splitting plane for kd-tree, 1bit:direct light, other: light number
+	short flag;
+    
 	unsigned char theta, phi;   	// incoming direction
 	float power[3];					// photon power (uncompressed)
 } Photon;
@@ -49,7 +57,10 @@ public:
 	void store(
 		const float power[3],		// photon power
 		const float pos[3],  		// photon position
-		const float dir[3]);		// photon direction
+		const float dir[3],
+        bool directLight,           // photon direction
+        int lightNo                 // light no (use 13bit, limit is 8192)
+    );
 
 	void scale_photon_power(
 		const float scale);			// 1/(number of emitted photons)
@@ -62,6 +73,13 @@ public:
 		const Vec3& normal,		    // surface normal at pos
 		const float max_dist,		// max distance to look for photons
 		const int nphotons) const;	// number of photon to use
+    
+    float penumbra_estimate(
+        int lightNo,
+        const float pos[3],    		// surface position
+        const Vec3& normal,   		// surface normal at pos
+        const float max_dist,   	// max distance to look for photons
+        const int nphotons) const; 	// number of photons to use
 	
 	void locate_photons(
 		NearestPhotons* const np,	// np is used to locate the photons

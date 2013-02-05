@@ -9,7 +9,6 @@ class Photon_map;
 class PhotonFilter;
 struct HitRecord;
 class Scene;
-class BVH;
 
 class PhotonMapRenderer : public IRenderer
 {
@@ -20,7 +19,7 @@ public:
     PhotonMapRenderer();
     ~PhotonMapRenderer();
     virtual void SetConfig(const Config& config);
-    virtual void Run(Vec3* pColorBuf, const Scene& scene, BVH* pBVH);
+    virtual void Run(Vec3* pColorBuf, const Scene& scene);
 
 private:
     
@@ -30,11 +29,13 @@ private:
         int diffuseDepth;
         int glossyDepth;
         int specularDepth;
+        int lightNo;
         PathInfo()
         : depth(0)
         , diffuseDepth(0)
         , glossyDepth(0)
         , specularDepth(0)
+        , lightNo(0)
         {}
     };
     void PhotonTracing();
@@ -51,7 +52,6 @@ private:
     unsigned short xi_[3];
     PhotonFilter* pFilter_;
     const Scene* pScene_;
-    BVH* pBVH_;
 };
 
 #endif

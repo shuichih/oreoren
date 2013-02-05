@@ -98,12 +98,10 @@ void App::Init(int argc, const char * argv[])
 void App::BuildBVH()
 {
     if (config.buildBVH) {
+        
         Timer timer;
         printf("Building BVH...\n");
-        std::vector<const Shape*>& shapes = config.scene.shapes_;
-        delete pBVH_;
-        pBVH_ = new BVH(&shapes[0], (int)shapes.size());
-        //pBVH_->LimitMinScale(0.01f);
+        config.scene.BuildBVH();
         printf("BVH Build Time: %ld ms\n", timer.Elapsed());
     }
 }
@@ -160,7 +158,7 @@ void App::Render()
 void App::RenderScene(Vec3* pRealColorBuf)
 {
     // Render using photonmap
-    pRenderer_->Run(pRealColorBuf, config.scene, pBVH_);
+    pRenderer_->Run(pRealColorBuf, config.scene);
     
     // Tone Mapping
     if (config.postEffect.toneMapEnabled) {

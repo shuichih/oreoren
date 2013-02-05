@@ -1,5 +1,3 @@
-
-
 #ifndef _Scene_H_
 #define _Scene_H_
 
@@ -10,6 +8,7 @@
 
 class Shape;
 class LightSource;
+class BVH;
 
 // material type
 // @todo rename
@@ -30,6 +29,9 @@ struct HitRecord
     Refl_t refl;
     bool hitLit;
     const Shape* pShape;
+    HitRecord()
+    : hitLit(false)
+    {}
 };
 
 class Shape
@@ -38,6 +40,7 @@ public:
     virtual ~Shape();
     
     virtual BBox BoundingBox() const = 0;
+    virtual int RayCast(std::vector<HitRecord>& shapes, int nHits, const Ray& r, float tmin, float tmax) const;
     virtual bool Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) const = 0;
     virtual bool IsBVH() const { return false; };
     virtual int GetChildNum() const { return 0; }
@@ -142,9 +145,13 @@ public:
     
     void AddLightSource(const LightSource* pLitSrc);
     void AddShape(const Shape* pShape);
+    bool Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) const;
+    int RayCast(std::vector<HitRecord>& shapes, int nHits, const Ray& r, float tmin, float tmax) const;
+    void BuildBVH();
     
     std::vector<const LightSource*> litSrcs_;
     std::vector<const Shape*> shapes_;
+    BVH* pBVH_;
 };
 
 #endif
