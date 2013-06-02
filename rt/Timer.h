@@ -2,6 +2,7 @@
 #define Timer_h
 
 #include <ctime>
+#include <string>
 
 //#define TIMER_USE_CLOCK
 
@@ -12,6 +13,8 @@ class Timer
 {
 public:
     Timer();
+    Timer(const char* pMsg);
+    ~Timer();
     
     void Restart();
     long Elapsed();
@@ -19,6 +22,7 @@ public:
     void PrintElapsed(const char* str=NULL);
     
 private:
+    std::string msg_;
     bool ticking_;
 #ifdef TIMER_USE_CLOCK
     clock_t start_;

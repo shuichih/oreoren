@@ -5,13 +5,16 @@
 #include "Scene.h"
 #include "BVH.h"
 
+//--------------------------------------------------------------------------------
 enum LightSourceType
 {
     Lit_Invalid = -1,
     Lit_Point = 0,
-    Lit_Area
+    Lit_Area = 1,
+    Lit_Sphere = 2
 };
 
+//--------------------------------------------------------------------------------
 /**
  * Light Source Interface.
  */
@@ -24,7 +27,7 @@ public:
     virtual ~LightSource() {}
     
     LightSourceType GetType() const { return type_; };
-    const Vec3& GetIntensity() const { return intensity_; };
+    const Vec3& GetFlux() const { return flux_; };
     virtual Ray GenerateRay() const = 0;
     virtual Vec3 DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra) const = 0;
     
@@ -32,16 +35,16 @@ public:
 protected:
     LightSource()
         : type_(Lit_Invalid)
-        , intensity_(10000, 10000, 10000)
+        , flux_(10000, 10000, 10000)
     {}
     
-    LightSource(LightSourceType type, const Vec3& intensity)
+    LightSource(LightSourceType type, const Vec3& flux)
         : type_(type)
-        , intensity_(intensity)
+        , flux_(flux)
     {}
     
     LightSourceType type_;
-    Vec3 intensity_; // flux
+    Vec3 flux_; // flux
 };
 
 /**
@@ -54,7 +57,7 @@ public:
     PointLightSource(const Vec3& position, const Vec3& intensity);
     
     virtual Ray GenerateRay() const;
-    virtual Vec3 DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penshadowRayumbra) const;
+    virtual Vec3 DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra) const;
     
 	Vec3 position_;
     
@@ -62,6 +65,7 @@ private:
 	mutable unsigned short xi_[3];
 };
 
+//--------------------------------------------------------------------------------
 /**
  * Area Light Source.
  */
@@ -80,11 +84,13 @@ public:
     
     virtual Ray GenerateRay() const;
     virtual Vec3 DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra) const;
+    const Vec3& GetIrradiance() const { return irradiance_; };
     
-    //AreaLightShape* pShape_;
 	Vec3 p_[4];
     Vec3 normal_;
     float area_;
+    float pdf_;
+    Vec3 irradiance_;
     int nSamples_;
     
 private:
@@ -100,15 +106,51 @@ public:
     AreaLightShape(AreaLightSource* pLitSrc, const Vec3 points[3], const RGB& color, Refl_t refl);
     virtual ~AreaLightShape() {};
     
+    virtual Vec3 SelfIrradiance() const;
+    virtual bool Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) const;
+    
+private:
+    AreaLightSource* pLightSource_;
+};
+
+//--------------------------------------------------------------------------------
+class SphereLightShape;
+
+/**
+ * Sphere Light Source.
+ */
+class SphereLightSource : public LightSource
+{
+public:
+    //SphereLightSource();
+    SphereLightSource(const Vec3& position, float radius, const Vec3& intensity, int nSamples);
+    
+    void SetShape(SphereLightShape* pShape) { pShape_ = pShape; }
+    virtual Ray GenerateRay() const;
+    virtual Vec3 DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra) const;
+    const Vec3& GetIrradiance() const { return irradiance_; };
+    
+	Vec3 position_;
+    float radius_;
+    Vec3 irradiance_;
+    SphereLightShape* pShape_;
+    int nSamples_;
+    
+private:
+	mutable unsigned short xi_[3];
+};
+
+// SphereLightShape
+class SphereLightShape : public Sphere
+{
+public:
+    SphereLightShape(SphereLightSource* pLitSrc, float radius, const Vec3& pos, const RGB& color, Refl_t refl);
+    virtual ~SphereLightShape() {};
+    
     virtual Vec3 SelfIrradiance();
     virtual bool Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) const;
     
-    //float DirectIrradiance(const Vec3& normal);
-
-private:
-    Vec3 irradiance_;
-    float invArea_;
+    SphereLightSource* pLightSource_;
 };
-
 
 #endif

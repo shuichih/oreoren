@@ -23,6 +23,7 @@ enum RendererType
 enum Section
 {
     SEC_GENERAL,
+    SEC_BVH,
     SEC_PHOTONMAP,
     SEC_COARSTICPM,
     SEC_SHADOWPM,
@@ -33,6 +34,7 @@ enum Section
     SEC_SPHERE,
     SEC_TRIANGLE,
     SEC_RECTANGLE,
+    SEC_CUBOID,
     SEC_SCENEIMPORT,
     SEC_NUM,
 };
@@ -72,7 +74,7 @@ struct CameraConfig
     , fovY(cosf(60))
     {}
 };
-    
+
 struct PostEffectConfig
 {
     bool toneMapEnabled;
@@ -89,12 +91,14 @@ struct LightSourceConfig
     string typeStr;
     Vec3 p[4];
     Vec3 position;
-    Vec3 intensity;
+    Vec3 flux;
+    float radius;
     int nSamples;
     
     LightSourceConfig()
-    : intensity(10000, 10000, 10000)
+    : flux(10000, 10000, 10000)
     , nSamples(64)
+    , radius(1)
     {
         typeStr[0] = 'P';
         typeStr[1] = 'O';
@@ -117,6 +121,7 @@ struct SceneImportConfig
     string path;
     Vec3 scale;
     Vec3 translate;
+    Vec3 rotate;
     Refl_t material;
     bool faceReverse;
     Vec3 color;
@@ -124,6 +129,7 @@ struct SceneImportConfig
     SceneImportConfig()
     : scale(1, 1, 1)
     , faceReverse(false)
+    , color(1, 1, 1)
     {}
 };
 
@@ -166,8 +172,7 @@ struct PhotonMapConfig
     , nFinalGetheringRays(64)
     , nMaxGlossyBounce(1)
     , nGlossyRays(64)
-    {
-    }
+    {}
 };
 
 struct RayTracingConfig
@@ -179,6 +184,22 @@ struct RayTracingConfig
     float distanceToProjPlane;
 };
 
+struct BVHConfig
+{
+    bool build;
+    BVHType type;
+    bool useSIMD;
+    bool draw;
+    int drawDepth;
+    
+    BVHConfig()
+    : build(true)
+    , type(BVH_BINARY)
+    , useSIMD(true)
+    , draw(false)
+    , drawDepth(7)
+    {}
+};
 
 //--------------------------------------------------------------------------------
 // セクションパーサ
@@ -221,9 +242,7 @@ class SphereParser : public SectionParser
 public:
     SphereParser(const char* pName, Scene* pScene);
     virtual ~SphereParser();
-    
     virtual bool OnLeave();
-    
 private:
     Sphere sphere_;
     Scene* pScene_;
@@ -236,9 +255,7 @@ class TriangleParser : public SectionParser
 public:
     TriangleParser(const char* pName, Scene* pScene);
     virtual ~TriangleParser();
-    
     virtual bool OnLeave();
-    
 private:
     Triangle triangle_;
     Scene* pScene_;
@@ -251,14 +268,32 @@ class RectangleParser : public SectionParser
 public:
     RectangleParser(const char* pName, Scene* pScene);
     virtual ~RectangleParser();
-    
     virtual bool OnLeave();
-    
 private:
     Triangle triangles_[2];
     Scene* pScene_;
 };
 
+//--------------------------------------------------------------------------------
+// Cuboidセクションパーサ
+class CuboidParser : public SectionParser
+{
+public:
+    CuboidParser(const char* pName, Scene* pScene);
+    virtual ~CuboidParser();
+    virtual bool OnLeave();
+private:
+    Vec3 scale_;
+    Vec3 rotate_;
+    Vec3 position_;
+    Vec3 emission_;
+    Vec3 repeat_;
+    int interval_;
+    Vec3 margin_;
+    bool randColor_;
+    Refl_t material_;
+    Scene* pScene_;
+};
 
 //--------------------------------------------------------------------------------
 // LightSourceセクションパーサ
@@ -307,11 +342,9 @@ public:
 public:
     int windowWidth;
     int windowHeight;
-    bool buildBVH;
-    bool drawBVH;
     bool drawBBox;
-    int drawBVHDepth;
     RendererType rendererType;
+    BVHConfig bvhConf;
     PhotonMapConfig photonMapConf;
     PhotonMapConfig coarsticPmConf;
     PhotonMapConfig shadowPmConf;
@@ -343,6 +376,7 @@ private:
     //Section currSection;
     SectionParser* parsers_[SEC_NUM];
     SectionParser* pCurrParser_;
+    bool bComment_;
     
 };
 

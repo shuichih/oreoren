@@ -9,6 +9,7 @@
 #include <OpenGL/OpenGL.h>
 #include <GLUT/glut.h>
 #include <algorithm>
+#include <cassert>
 #include "App.h"
 #include "smallpt_fmt.h"
 #include "PhotonMap.h"
@@ -17,6 +18,7 @@
 #include "PostEffect.h"
 #include "Scene.h"
 #include "BVH.h"
+#include "QBVH.h"
 #include "RayTracingRenderer.h"
 
 
@@ -47,6 +49,7 @@ inline int toInt(real x)
 
 App::App()
 : pBVH_(NULL)
+, pQBVH_(NULL)
 {
 
 }
@@ -54,6 +57,7 @@ App::App()
 App::~App()
 {
     delete pBVH_;
+    delete pQBVH_;
 }
 
 
@@ -70,7 +74,8 @@ void App::Init(int argc, const char * argv[])
 {
     // Configロード
     //const char* path = (argc >= 2) ? argv[1] : "~/Dev/rt/rt/SceneFiles/cornell_box.scene";
-    const char* path = (argc >= 2) ? argv[1] : "~/Dev/rt/rt/SceneFiles/venus.scene";
+    //const char* path = (argc >= 2) ? argv[1] : "~/Dev/rt/rt/SceneFiles/venus.scene";
+    const char* path = (argc >= 2) ? argv[1] : "~/Dev/rt/rt/SceneFiles/simple.scene";
     config.Load(path);
     printf("--------------------------------\n\n");
     
@@ -97,12 +102,9 @@ void App::Init(int argc, const char * argv[])
 
 void App::BuildBVH()
 {
-    if (config.buildBVH) {
-        
-        Timer timer;
-        printf("Building BVH...\n");
-        config.scene.BuildBVH();
-        printf("BVH Build Time: %ld ms\n", timer.Elapsed());
+    if (config.bvhConf.build) {
+        Timer timer("Building BVH");
+        config.scene.BuildBVH(config.bvhConf.type);
     }
 }
 
@@ -233,7 +235,7 @@ void App::DrawDebugStuff()
 
     glDisable(GL_LIGHTING);
     
-    if (config.drawBVH) {
+    if (config.bvhConf.draw) {
         DrawBVH(pBVH_, 0);
     }
     if (config.drawBBox) {
@@ -244,9 +246,9 @@ void App::DrawDebugStuff()
     
 }
 
-void App::DrawBVH(const Shape* pShape, int depth)
+void App::DrawBVH(const IShape* pShape, int depth)
 {
-    if (pShape == NULL || depth >= config.drawBVHDepth) {
+    if (pShape == NULL || depth >= config.bvhConf.drawDepth) {
         return;
     }
     
@@ -277,7 +279,7 @@ void App::DrawBVH(const Shape* pShape, int depth)
 
 void App::DrawBBox()
 {
-    std::vector<const Shape*>& shapes = config.scene.shapes_;
+    std::vector<const IShape*>& shapes = config.scene.shapes_;
     for (int i=0; i<shapes.size(); i++) {
         if (!shapes[i]->IsBVH()) {
             const BBox& bbox = shapes[i]->BoundingBox();

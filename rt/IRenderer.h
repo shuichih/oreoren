@@ -1,10 +1,11 @@
 #ifndef IRenderer_h
 #define IRenderer_h
 
+#include "Common.h"
+
 class Config;
 class BVH;
 class Scene;
-class Vec3;
 
 /**
  * Renderer Interface

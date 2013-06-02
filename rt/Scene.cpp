@@ -3,16 +3,21 @@
 #include <cstring>
 #include "BBox.h"
 #include "LightSource.h"
+#include "vecmath/matrix4.h"
+#include "simd.h"
+#include "Ray.h"
+#include "QBVH.h"
 
 using namespace std;
 
+
 //--------------------------------------------------------------------------------
 
-Shape::~Shape()
+IShape::~IShape()
 {
 }
 
-int Shape::RayCast(vector<HitRecord>& hits, int nHits, const Ray& r, float tmin, float tmax) const
+int IShape::RayCast(vector<HitRecord>& hits, int nHits, const Ray& r, float tmin, float tmax) const
 {
     if (hits.size() == nHits)
     {
@@ -27,7 +32,7 @@ int Shape::RayCast(vector<HitRecord>& hits, int nHits, const Ray& r, float tmin,
     
     return nHits;
 }
-    
+
 //--------------------------------------------------------------------------------
 
 Sphere::Sphere()
@@ -49,9 +54,15 @@ Sphere::~Sphere()
 {
 }
 
+ShapeType Sphere::GetType() const
+{
+    return ST_SPHERE;
+}
+
 BBox Sphere::BoundingBox() const
 {
-    return BBox(p - rad, p + rad);
+    Vec3 radv(rad, rad, rad);
+    return BBox(p - radv, p + radv);
 }
 
 // returns distance, 0 if nohit
@@ -97,6 +108,11 @@ Triangle::Triangle()
 
 Triangle::~Triangle()
 {
+}
+
+ShapeType Triangle::GetType() const
+{
+    return ST_TRIANGLE;
 }
 
 BBox Triangle::BoundingBox() const
@@ -309,6 +325,11 @@ void MeshTriangle::CalcFaceNormal()
     normal = ((p1 - p0) % (p2 - p0)).normalize();
 }
 
+ShapeType MeshTriangle::GetType() const
+{
+    return ST_MESH_TRIANGLE;
+}
+
 BBox MeshTriangle::BoundingBox() const
 {
     Vec3 p0 = pMesh->pVertices[indices[0]].pos;
@@ -326,6 +347,70 @@ BBox MeshTriangle::BoundingBox() const
 
 bool MeshTriangle::Intersect(const Ray &r, float tmin, float tmax, HitRecord &rec) const
 {
+#ifdef MESHTRIANGLE_USE_SIMD
+    __m128 p0 = pMesh->pVertices[indices[0]].pos.m;
+    __m128 p1 = pMesh->pVertices[indices[1]].pos.m;
+    __m128 p2 = pMesh->pVertices[indices[2]].pos.m;
+
+    __m128 e2 = _mm_sub_ps(p2, p0);
+
+    // cross product
+    // Vec3 s1 = r.d % e2;
+    __m128 s1   = _mm_shuffle_ps(r.d.m, r.d.m, _MM_SHUFFLE(3, 0, 2, 1));
+    __m128 tmp0 = _mm_shuffle_ps(e2,    e2,    _MM_SHUFFLE(3, 1, 0, 2));
+           s1   = _mm_mul_ps(tmp0, s1);
+
+           tmp0 = _mm_shuffle_ps(r.d.m, r.d.m, _MM_SHUFFLE(3, 1, 0, 2));
+    __m128 tmp1 = _mm_shuffle_ps(e2,    e2,    _MM_SHUFFLE(3, 0, 2, 1));
+           tmp0 = _mm_mul_ps(tmp0, tmp1);
+
+           s1   = _mm_sub_ps(s1, tmp0); // result of r.d % e2
+    //
+
+    __m128 e1   = _mm_sub_ps(p1, p0);
+
+    __m128 idiv = _mm_dp_ps(s1, e1, 0x71);  // divisor
+    float div   = _mm_cvtss_f32(idiv);
+    if (div == 0.0f)
+        return false;
+
+           tmp0 = _mm_set_ss(1.f);
+           idiv = _mm_div_ps(tmp0, idiv);         // invDivisor
+
+    // 重心座標を算出して範囲内にあるかチェック
+    __m128 d    = _mm_sub_ps(r.o.m, p0);
+    __m128 xmb1 = _mm_dp_ps(d, s1, 0x71);
+           xmb1 = _mm_mul_ss(xmb1, idiv);
+
+    float b1    = _mm_cvtss_f32(xmb1);
+    if (b1 < 0.0f || b1 > 1.0f)
+        return false;
+
+    // cross product
+    // Vec3 s2 = d % e1;
+    __m128 s2   = _mm_shuffle_ps(d,  d,  _MM_SHUFFLE(3, 0, 2, 1));
+           tmp0 = _mm_shuffle_ps(e1, e1, _MM_SHUFFLE(3, 1, 0, 2));
+           s2   = _mm_mul_ps(tmp0, s2);
+
+           tmp0 = _mm_shuffle_ps(d,  d,  _MM_SHUFFLE(3, 1, 0, 2));
+           tmp1 = _mm_shuffle_ps(e1, e1, _MM_SHUFFLE(3, 0, 2, 1));
+           tmp0 = _mm_mul_ps(tmp0, tmp1);
+
+           s2   = _mm_sub_ps(s2, tmp0); // result of d % e1;
+    //
+
+    __m128 xmb2 = _mm_dp_ps(r.d.m, s2, 0x71);
+           xmb2 = _mm_mul_ss(xmb2, idiv);
+    float b2    = _mm_cvtss_f32(xmb2);
+    if (b2 < 0.0f || b1 + b2 > 1.0f)
+        return false;
+
+    // t算出
+    __m128 xmt  = _mm_dp_ps(e2, s2, 0x71);
+           xmt  = _mm_mul_ss(xmt, idiv);
+    float t     = _mm_cvtss_f32(xmt);
+
+#else
     Vec3 p0 = pMesh->pVertices[indices[0]].pos;
     Vec3 p1 = pMesh->pVertices[indices[1]].pos;
     Vec3 p2 = pMesh->pVertices[indices[2]].pos;
@@ -352,20 +437,31 @@ bool MeshTriangle::Intersect(const Ray &r, float tmin, float tmax, HitRecord &re
     
     // t算出
     real t = e2.dot(s2) * invDivisor;
+#endif
     
     // 光線始点より後ろならヒットしない、EPSILONは自己ヒット抑止のため
     if (t < tmin || t > tmax)
         return false;
-    
+
     rec.t = t;
     real b0 = 1.f - b1 - b2;
-    rec.normal = ((pMesh->pVertices[indices[0]].normal * b0)
-               +  (pMesh->pVertices[indices[1]].normal * b1)
-               +  (pMesh->pVertices[indices[2]].normal * b2)).normalize();
-    //rec.normal*=-1;
-    //rec.normal = normal; // face normal
+    if (pMesh->GetUseFaceNormal()) {
+        rec.normal = normal; // face normal
+    } else {
+        rec.normal = ((pMesh->pVertices[indices[0]].normal * b0)
+                   +  (pMesh->pVertices[indices[1]].normal * b1)
+                   +  (pMesh->pVertices[indices[2]].normal * b2)).normalize();
+    }
     
-    rec.color = pMesh->color_;
+    if (pMesh->colorUnit_ == CU_Mesh) {
+        rec.color = pMesh->color_;
+    } else if (pMesh->colorUnit_ == CU_Face) {
+        rec.color = this->color_;
+    } else {
+        rec.color = ((pMesh->pVertices[indices[0]].color * b0)
+                  +  (pMesh->pVertices[indices[1]].color * b1)
+                  +  (pMesh->pVertices[indices[2]].color * b2)) / 3;
+    }
     rec.refl = pMesh->material_;
     return true;
 }
@@ -381,10 +477,12 @@ bool MeshTriangle::Intersect(const Ray &r, float tmin, float tmax, HitRecord &re
 Mesh::Mesh(u32 nVertices_, u32 nFaces_)
     : material_(DIFF)
     , color_(1, 1, 1)
+    , useFaceNormal_(false)
+    , colorUnit_(CU_Mesh)
 {
     pVertices = new Vertex[nVertices_];
     pFaces = new MeshTriangle[nFaces_];
-    ppFaces = new const Shape*[nFaces_];
+    ppFaces = new const IShape*[nFaces_];
     nVertices = nVertices_;
     nFaces = nFaces_;
     
@@ -400,10 +498,41 @@ Mesh::~Mesh()
     delete [] pFaces;
 }
 
+void Mesh::SetUseFaceNormal(bool useFaceNormal)
+{
+    useFaceNormal_ = useFaceNormal;
+}
+
+bool Mesh::GetUseFaceNormal()
+{
+    return useFaceNormal_;
+}
+
 void Mesh::CalcFaceNormals()
 {
     for (int i=0; i<nFaces; i++) {
         pFaces[i].CalcFaceNormal();
+    }
+}
+
+void Mesh::CalcVertexNormals()
+{
+    for (int i=0; i<nVertices; i++) {
+        pVertices[i].normal = Vec3();
+    }
+    for (int i=0; i<nFaces; i++) {
+        Vec3& fn = pFaces[i].normal;
+        for (int j=0; j<3; j++) {
+            Vertex& v = pVertices[pFaces[i].indices[j]];
+            v.normal += fn;
+        }
+    }
+    for (int i=0; i<nVertices; i++) {
+        if (pVertices[i].normal.lengthSquared() == 0) {
+            pVertices[i].normal = Vec3(0, 0, 1);
+        } else {
+            pVertices[i].normal.normalize();
+        }
     }
 }
 
@@ -425,6 +554,11 @@ void Mesh::CalcBoundingBox()
     }
     
     bbox_ = BBox(minV, maxV);
+}
+
+ShapeType Mesh::GetType() const
+{
+    return ST_MESH;
 }
 
 BBox Mesh::BoundingBox() const
@@ -451,12 +585,12 @@ int Mesh::GetChildNum() const
     //return 0;
 }
 
-const Shape** Mesh::GetChildren() const
+const IShape** Mesh::GetChildren() const
 {
     return ppFaces;
 }
 
-void Mesh::scale(Vec3 scl)
+void Mesh::scale(Vec3& scl)
 {
     scale(scl.x, scl.y, scl.z);
 }
@@ -470,9 +604,28 @@ void Mesh::scale(real x, real y, real z)
     }
 }
 
-void Mesh::translate(Vec3 transl)
+void Mesh::translate(Vec3& transl)
 {
     translate(transl.x, transl.y, transl.z);
+}
+
+void Mesh::rotateXYZ(Vec3& rot)
+{
+    Matrix4f mtxRot;
+    Matrix4f mtxTmp;
+    mtxRot.rotX(Deg2Rad(rot.x));
+    mtxTmp.rotY(Deg2Rad(rot.y));
+    mtxRot.mul(mtxTmp);
+    mtxTmp.rotZ(Deg2Rad(rot.z));
+    mtxRot.mul(mtxTmp);
+    
+    for (u32 i=0; i<nVertices; i++) {
+        Vec3 pos = pVertices[i].pos;
+        Vec3 nml = pVertices[i].normal;
+        mtxRot.transform(pos, &pVertices[i].pos);
+        mtxRot.transform(nml, &pVertices[i].normal);
+    }
+    
 }
 
 void Mesh::translate(real x, real y, real z)
@@ -512,15 +665,21 @@ void Scene::AddLightSource(const LightSource* pLitSrc)
     litSrcs_.push_back(pLitSrc);
 }
 
-void Scene::AddShape(const Shape* pShape)
+void Scene::AddShape(const IShape* pShape)
 {
     shapes_.push_back(pShape);
 }
 
-void Scene::BuildBVH()
+void Scene::BuildBVH(BVHType bvhType)
 {
     delete pBVH_;
-    pBVH_ = new BVH(&shapes_[0], (int)shapes_.size());
+    if (bvhType == BVH_BINARY) {
+        pBVH_ = new BVH(&shapes_[0], (int)shapes_.size());
+    } else if (bvhType == BVH_QUAD_SISD) {
+        QBVH* pQBVH = new QBVH();
+        pQBVH->Build(&shapes_[0], (int)shapes_.size());
+        pBVH_ = pQBVH;
+    }
     //pBVH_->LimitMinScale(0.01f);
 }
 
@@ -532,7 +691,7 @@ bool Scene::Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) cons
     else {
         rec.t = tmax;
         size_t nShapes = shapes_.size();
-        const std::vector<const Shape*>& shapes = shapes_;
+        const std::vector<const IShape*>& shapes = shapes_;
         for (size_t i=nShapes; i--;) {
             shapes[i]->Intersect(r, tmin, rec.t, rec);
         }

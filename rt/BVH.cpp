@@ -16,14 +16,14 @@ BVH::~BVH()
     if (pRight_->IsBVH()) delete pRight_;
 }
 
-inline BVH::BVH(const Shape* pLeft, const Shape* pRight, const BBox& bbox)
+inline BVH::BVH(const IShape* pLeft, const IShape* pRight, const BBox& bbox)
 : bbox_(bbox)
 , pLeft_(pLeft)
 , pRight_(pRight)
 {
 }
 
-inline BVH::BVH(const Shape* pLeft, const Shape* pRight)
+inline BVH::BVH(const IShape* pLeft, const IShape* pRight)
 {
     pLeft_ = pLeft;
     pRight_ = pRight;
@@ -31,7 +31,7 @@ inline BVH::BVH(const Shape* pLeft, const Shape* pRight)
     bbox_ = BBox::Surround(pLeft->BoundingBox(), pRight->BoundingBox());
 }
 
-BVH::BVH(const Shape** pShapes, int nShapes)
+BVH::BVH(const IShape** pShapes, int nShapes)
 {
     if (nShapes == 0) {
         pLeft_ = NULL;
@@ -63,7 +63,7 @@ BVH::BVH(const Shape** pShapes, int nShapes)
     pRight_ = BuildBranch(&pShapes[mid_point], nShapes - mid_point, 1); // Y方向で
 }
 
-const Shape* BVH::BuildBranch(const Shape** pShapes, int nShapes, int axis)
+const IShape* BVH::BuildBranch(const IShape** pShapes, int nShapes, int axis)
 {
     if (nShapes == 1) {
         int nChild = pShapes[0]->GetChildNum();
@@ -71,9 +71,9 @@ const Shape* BVH::BuildBranch(const Shape** pShapes, int nShapes, int axis)
     }
     if (nShapes == 2) {
         int nChild = pShapes[0]->GetChildNum();
-        const Shape* pLeft = (nChild) ? BuildBranch(pShapes[0]->GetChildren(), nChild) : pShapes[0];
+        const IShape* pLeft = (nChild) ? BuildBranch(pShapes[0]->GetChildren(), nChild) : pShapes[0];
         nChild = pShapes[1]->GetChildNum();
-        const Shape* pRight = (nChild) ? BuildBranch(pShapes[1]->GetChildren(), nChild) : pShapes[1];
+        const IShape* pRight = (nChild) ? BuildBranch(pShapes[1]->GetChildren(), nChild) : pShapes[1];
         
         return new BVH(pLeft, pRight);
     }
@@ -90,10 +90,15 @@ const Shape* BVH::BuildBranch(const Shape** pShapes, int nShapes, int axis)
     int mid_point = QSplit(pShapes, nShapes, pivot.x, 0); // まずX方向で
     
     // 子ノードをビルド
-    const Shape* pLeft = BuildBranch(pShapes, mid_point, (axis+1)%3);
-    const Shape* pRight = BuildBranch(&pShapes[mid_point], nShapes - mid_point, (axis+1)%3);
+    const IShape* pLeft = BuildBranch(pShapes, mid_point, (axis+1)%3);
+    const IShape* pRight = BuildBranch(&pShapes[mid_point], nShapes - mid_point, (axis+1)%3);
     
     return new BVH(pLeft, pRight, bbox);
+}
+
+ShapeType BVH::GetType() const
+{
+    return ST_BBVH;
 }
 
 BBox BVH::BoundingBox() const
@@ -153,7 +158,7 @@ void BVH::LimitMinScale(float minScale)
     if (pRight_->IsBVH()) ((BVH*)pRight_)->LimitMinScale(minScale);
 }
 
-int BVH::QSplit(const Shape** pShapes, int nShapes, float pivot, int axis)
+int BVH::QSplit(const IShape** pShapes, int nShapes, float pivot, int axis)
 {
     BBox bbox;
     double centroid;
@@ -164,7 +169,7 @@ int BVH::QSplit(const Shape** pShapes, int nShapes, float pivot, int axis)
         if (centroid < pivot)
         {
             // pivotを基準にmid_idxの左右に集める
-            const Shape* pTemp = pShapes[i];
+            const IShape* pTemp = pShapes[i];
             pShapes[i] = pShapes[mid_idx];
             pShapes[mid_idx] = pTemp;
             mid_idx++;

@@ -259,14 +259,14 @@ void Photon_map::locate_photons(
 	// compute squared distance between current photon and np->pos
 	// 推定する点からフォトンへの2乗距離を計算
     Vec3 d(p->pos[0] - np->pos[0], p->pos[1] - np->pos[1], p->pos[2] - np->pos[2]);
-    float dist2 = d.square_length();
+    float dist2 = d.lengthSquared();
     
     // 楕円の範囲内のフォトンを集める
     Vec3 nd = np->normal * d.dot(np->normal); // 法線に平行な成分
     Vec3 pn = nd - d; // 法線に垂直な成分
     nd *= estimateEllipseScaleInv_; // 垂直方向にだけスケール
     d = nd + pn;
-	float dist2_ellipse = d.square_length();
+	float dist2_ellipse = d.lengthSquared();
 
 	//if (dist2_ellipse < np->dist2[0]) {
 	if (dist2_ellipse < np->dist2[0]) {

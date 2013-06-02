@@ -20,7 +20,6 @@ public:
     
 private:
     
-    bool Intersect(const Ray& r, HitRecord& rec);
     void RayTracing(Vec3* pColorBuf);
     Vec3 Irradiance(const Ray &r, int depth);
     

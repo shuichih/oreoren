@@ -10,6 +10,7 @@
 #include "PhotonFilter.h"
 #include "Config.h"
 #include "Timer.h"
+#include "Ray.h"
 
 
 // Direct
@@ -274,17 +275,17 @@ void PhotonMapRenderer::PhotonTracing()
 {
     // すべてのライトの合計の明るさを求める
     u32 nLit = (u32)pScene_->litSrcs_.size();
-    double sumIntensity = 0;
+    double sumFlux = 0;
     for (int i=0; i<nLit; i++) {
-        const Vec3& intensity = pScene_->litSrcs_[i]->GetIntensity();
-        sumIntensity += intensity.sum(); // sumでなく輝度を使った方が精度が上がる
+        const Vec3& flux = pScene_->litSrcs_[i]->GetFlux();
+        sumFlux += flux.sum(); // sumでなく輝度を使った方が精度が上がる
     }
     
     // 各ライトからライトの明るさに応じてフォトンをばらまく
     u32 iPhoton = 0;
     for (int i=0; i<nLit; i++) {
         const LightSource* pLit = pScene_->litSrcs_[i];
-        float nPhotonRatio = (float)(pLit->GetIntensity().sum() / sumIntensity);
+        float nPhotonRatio = (float)(pLit->GetFlux().sum() / sumFlux);
         u32 nPhotons = (u32)(pPmConfig_->nPhotons * nPhotonRatio);
         
         const int nPhotonsPerThread =
@@ -309,7 +310,7 @@ void PhotonMapRenderer::PhotonTracing()
                 
                 
                 Ray ray = pLit->GenerateRay();
-                Vec3 power = pLit->GetIntensity();
+                Vec3 power = pLit->GetFlux();
                 PathInfo pathInfo;
                 pathInfo.lightNo = i;
                 TracePhoton(ray, power, pathInfo);

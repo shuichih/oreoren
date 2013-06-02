@@ -12,6 +12,7 @@
 #include "PhotonFilter.h"
 #include "Config.h"
 #include "Timer.h"
+#include "Ray.h"
 
 
 // Direct
@@ -120,7 +121,7 @@ void PhotonMapRenderer2::TracePhoton(const Ray& r, const Vec3& power, PathInfo& 
             if (sh_rec.refl == DIFF && sh_rec.normal.dot(r.d) < 0) {
                 //printf("hit\n");
                 Vec3 sh_x = r.o + r.d * sh_rec.t;
-                pCurrPm_->store((-1*power).e, sh_x.e, r.d.e, false, lightNo_);
+                pCurrPm_->store((-1.f*power).e, sh_x.e, r.d.e, false, lightNo_);
             }
         }
         
@@ -338,24 +339,24 @@ void PhotonMapRenderer2::PhotonTracing()
 {
     // すべてのライトの合計の明るさを求める
     u32 nLit = (u32)pScene_->litSrcs_.size();
-    double sumIntensity = 0;
+    double sumFlux = 0;
     for (int i=0; i<nLit; i++) {
-        const Vec3& intensity = pScene_->litSrcs_[i]->GetIntensity();
-        sumIntensity += intensity.sum(); // sumでなく輝度を使った方が精度が上がる
+        const Vec3& flux = pScene_->litSrcs_[i]->GetFlux();
+        sumFlux += flux.sum(); // sumでなく輝度を使った方が精度が上がる
     }
     
     // 各ライトからライトの明るさに応じてフォトンをばらまく
     if (pPmConfig_->enable) {
         printf("<Indirect Photon Map>\n");
-        PhotonTracing_(*pPhotonMap_, *pPmConfig_, nLit, sumIntensity, Trace_Indirect);
+        PhotonTracing_(*pPhotonMap_, *pPmConfig_, nLit, sumFlux, Trace_Indirect);
     }
     if (pCoarsticPmConfig_->enable) {
         printf("<Coarstic Photon Map>\n");
-        PhotonTracing_(*pCoarsticPhotonMap_, *pCoarsticPmConfig_, nLit, sumIntensity, Trace_Coarstic);
+        PhotonTracing_(*pCoarsticPhotonMap_, *pCoarsticPmConfig_, nLit, sumFlux, Trace_Coarstic);
     }
     if (pShadowPmConfig_->enable) {
         printf("<Shadow Photon Map>\n");
-        PhotonTracing_(*pShadowPhotonMap_, *pShadowPmConfig_, nLit, sumIntensity, Trace_Shadow);
+        PhotonTracing_(*pShadowPhotonMap_, *pShadowPmConfig_, nLit, sumFlux, Trace_Shadow);
     }
 }
 
@@ -364,7 +365,7 @@ void PhotonMapRenderer2::PhotonTracing_(
     Photon_map& photonMap,
     const PhotonMapConfig& pmConfig,
     int nLit,
-    double sumIntensity,
+    double sumFlux,
     PhotonMapRenderer2::TraceFlag traceFlag)
 {
     const int c_nPhotonsPerThread = pmConfig.nTracePhotonsPerThread;
@@ -377,7 +378,7 @@ void PhotonMapRenderer2::PhotonTracing_(
     u32 iPhoton = 0;
     for (int i=0; i<nLit; i++) {
         const LightSource* pLit = pScene_->litSrcs_[i];
-        float nPhotonRatio = (float)(pLit->GetIntensity().sum() / sumIntensity);
+        float nPhotonRatio = (float)(pLit->GetFlux().sum() / sumFlux);
         u32 nPhotons = (u32)(c_nPhotons * nPhotonRatio);
         
         int nPhotonsPerThread = c_nPhotonsPerThread > 0 ? c_nPhotonsPerThread : nPhotons;
@@ -400,7 +401,7 @@ void PhotonMapRenderer2::PhotonTracing_(
                 }
                 
                 Ray ray = pLit->GenerateRay();
-                Vec3 power = pLit->GetIntensity();
+                Vec3 power = pLit->GetFlux();
                 PathInfo pathInfo;
                 lightNo_ = i;
                 TracePhoton(ray, power, pathInfo);

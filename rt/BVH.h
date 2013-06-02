@@ -8,18 +8,19 @@
 /**
  * Bounding Volume Hierarchy
  */
-class BVH : public Shape
+class BVH : public IShape
 {
 public:
-    static int QSplit(const Shape** pShapes, int nShapes, float pivot, int axis);
+    static int QSplit(const IShape** pShapes, int nShapes, float pivot, int axis);
     
 public:
     BVH();
-    BVH(const Shape** pShapes, int nShapes);
-    BVH(const Shape* s1, const Shape* s2);
-    BVH(const Shape* s1, const Shape* s2, const BBox& bbox);
+    BVH(const IShape** pShapes, int nShapes);
+    BVH(const IShape* s1, const IShape* s2);
+    BVH(const IShape* s1, const IShape* s2, const BBox& bbox);
     virtual ~BVH();
     
+    virtual ShapeType GetType() const;
     virtual BBox BoundingBox() const;
     virtual bool Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) const;
     virtual int RayCast(std::vector<HitRecord>& hits, int nHits, const Ray &r, float tmin, float tmax) const;
@@ -28,11 +29,11 @@ public:
     // virtual bool ShadowHit(const Ray& r, float tmin, float tmax) const;
     
 private:
-    const Shape* BuildBranch(const Shape** pShapes, int nShapes, int axis = 0);
+    const IShape* BuildBranch(const IShape** pShapes, int nShapes, int axis = 0);
 
 public:
-    const Shape* pLeft_;
-    const Shape* pRight_;
+    const IShape* pLeft_;
+    const IShape* pRight_;
     BBox bbox_;
 };
 

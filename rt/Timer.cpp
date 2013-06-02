@@ -8,6 +8,20 @@ Timer::Timer()
     Restart();
 }
 
+Timer::Timer(const char* pMsg)
+{
+    Restart();
+    msg_ = pMsg;
+    printf("[START] %s\n", msg_.c_str());
+}
+
+Timer::~Timer()
+{
+    if (!msg_.empty()) {
+        printf("[ END ] %s: %ld ms\n", msg_.c_str(), Elapsed());
+    }
+}
+
 void Timer::Restart()
 {
 #ifdef TIMER_USE_CLOCK

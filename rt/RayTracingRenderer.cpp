@@ -8,6 +8,7 @@
 #include "RayTracingRenderer.h"
 #include "BVH.h"
 #include "Config.h"
+#include "Ray.h"
 
 using namespace std;
 
@@ -27,26 +28,6 @@ void RayTracingRenderer::SetConfig(const Config& config)
     pRtConfig_ = &config.rayTracingConf;
 }
 
-bool RayTracingRenderer::Intersect(const Ray& r, HitRecord& rec)
-{
-    if (pRtConfig_->useBVH && pBVH_) {
-        return pBVH_->Intersect(r, EPSILON, REAL_MAX, rec);
-    }
-    else {
-        rec.t = REAL_MAX;
-        size_t nShapes = pScene_->shapes_.size();
-        const vector<const Shape*>& shapes = pScene_->shapes_;
-        for (size_t i=nShapes; i--;) {
-            shapes[i]->Intersect(r, EPSILON, rec.t, rec);
-        }
-        
-        return rec.t < REAL_MAX;
-    }
-    
-    assert(true);
-    return false;
-}
-
 Vec3 RayTracingRenderer::Irradiance(const Ray &r, int depth)
 {
     // max refl
@@ -56,8 +37,8 @@ Vec3 RayTracingRenderer::Irradiance(const Ray &r, int depth)
     }
     
     HitRecord rec;
-    if (!Intersect(r, rec)) return Vec3();
-    //const Shape& obj = *g_shapes[id];       // the hit object
+    if (!pScene_->Intersect(r, EPSILON, REAL_MAX, rec)) return Vec3(0, 0, 1);
+    //const IShape& obj = *g_shapes[id];       // the hit object
     Vec3 x = r.o + r.d * rec.t;
     Vec3 n = rec.normal;
     Vec3 nl = n.dot(r.d) < 0.f ? n : n * -1.f;   // 交点の法線
@@ -75,7 +56,10 @@ Vec3 RayTracingRenderer::Irradiance(const Ray &r, int depth)
         } else if (litType == Lit_Area) {
             AreaLightSource* pLitSrc = (AreaLightSource*)pScene_->litSrcs_[0];
             litPos = (pLitSrc->p_[0] + pLitSrc->p_[1] + pLitSrc->p_[2] + pLitSrc->p_[3]) * 0.25f;
+        } else if (litType == Lit_Sphere) {
+            litPos = ((SphereLightSource*)pScene_->litSrcs_[0])->position_;
         } else {
+            litPos = ((SphereLightSource*)pScene_->litSrcs_[0])->position_;
             assert(false);
         }
         Vec3 L = (litPos - x).normalize();
@@ -134,7 +118,7 @@ Vec3 RayTracingRenderer::Irradiance(const Ray &r, int depth)
     real fresnel = R0 + (1.f - R0)*c*c*c*c*c;
     real Tr = 1.f - fresnel;
     // 反射屈折両方トレース
-    return Irradiance(reflRay, depth) * fresnel + Irradiance(Ray(x,tdir), depth) * Tr;
+    return Irradiance(reflRay, depth) * fresnel + Irradiance(Ray(x,tdir), depth).mult(f) * Tr;
 }
 
 void RayTracingRenderer::RayTracing(Vec3* pColorBuf)
@@ -162,6 +146,7 @@ void RayTracingRenderer::RayTracing(Vec3* pColorBuf)
     // 355, 225, 187, 167
     #pragma omp parallel for num_threads(4) schedule(dynamic, 1)   // OpenMP
     for (int y=0; y<h; y++) {
+    //int y = h / 2;
         fprintf(stderr, "RayTracing (%d spp) %5.2f%%\n", nSub*nSub, 100.f * y / (h-1));
         
         xi_[0] = 0;
@@ -170,7 +155,8 @@ void RayTracingRenderer::RayTracing(Vec3* pColorBuf)
         
         // Loop cols
         for (unsigned short x=0; x<w; x++) {
-            
+        //unsigned short x = w / 2;
+    
             int i = (h-y-1) * w + x; // カラーバッファのインデックス
             for (int sy=0; sy<nSub; sy++) {         // subpixel rows
                 for (int sx=0; sx<nSub; sx++) {     // subpixel cols
@@ -216,7 +202,7 @@ void RayTracingRenderer::RayTracing(Vec3* pColorBuf)
                 }
             }
             //fprintf(stderr, "\r%f %f %f", c[i].x, c[i].y, c[i].z);
-        }
+         }
     }
     
 }

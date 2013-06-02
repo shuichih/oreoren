@@ -2,6 +2,9 @@
 #define BBox_h
 
 #include "Common.h"
+#include "simd.h"
+
+class Ray;
 
 /**
  * Axis-aligned bounding box.
@@ -25,6 +28,10 @@ public:
     virtual bool RayIntersect(const Ray &r, float tmin, float tmax) const;
     
     Vec3 pp[2]; // [0]:min [1]:max
+#ifdef BBOX_USE_SIMD
+    __m128 xmpp0;
+    __m128 xmpp1;
+#endif
 };
 
 #endif

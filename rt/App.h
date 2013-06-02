@@ -14,6 +14,7 @@
 
 class Photon_map;
 class BVH;
+class QBVH;
 class IRenderer;
 
 class App
@@ -33,7 +34,7 @@ private:
     void ConvertToUint(u8* pColorBuf, Vec3* pRealColorBuf);
     void DrawDebugStuff();
     void DrawBBox();
-    void DrawBVH(const Shape* pShape, int level);
+    void DrawBVH(const IShape* pShape, int level);
     
 private:
     
@@ -41,6 +42,7 @@ private:
     Photon_map* pPhotonMap_;
     IRenderer* pRenderer_;
     BVH* pBVH_;
+    QBVH* pQBVH_;
     Timer timer_;
 };
 

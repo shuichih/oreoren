@@ -1,9 +1,10 @@
 #ifndef MeshLoader_h
 #define MeshLoader_h
 
+#include "Common.h"
+
 class Mesh;
 class objLoader;
-class Vec3;
 struct obj_face;
 
 class ObjLoader
