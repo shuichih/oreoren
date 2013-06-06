@@ -390,6 +390,7 @@ void PhotonMapRenderer2::PhotonTracing_(
                 (nPhotons-((nThread-1)*nPhotonsPerThread)) : nPhotonsPerThread;
                  
             for (int j=0; j<nPhotonThisThread; j++) {
+                
                 #pragma omp atomic
                 iPhoton++;
                 

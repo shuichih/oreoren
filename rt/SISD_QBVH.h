@@ -92,6 +92,8 @@ private:
     void BuildBranch(SISD_QBVH_NODE& rNode, const IShape** pShapes, int nShapes);
     int BuildLeaf(u8& nMeshTris, u8& nOtherPrims, const IShape** ppShapes, int nShapes);
     int BuildOtherPrimitive(const IShape** pShapes, int nShapes);
+    SISD_QBVH_NODE& GetNewNode();
+    Leaf& GetNewLeaf();
     bool IntersectBranch(SISD_QBVH_NODE& rNode, const Ray &r, float tmin, HitRecord& rec) const;
     bool IntersectLeaf(Leaf& leaf, const Ray& r, float tmin, HitRecord& rec) const;
     bool IntersectTriangle(SISD_TRIANGLE& tri, const Ray& r, float tmin, float tmax, HitRecord& rec) const;
@@ -105,8 +107,8 @@ private:
     SISD_TRIANGLE* pTriangles_;
     const IShape** ppOtherPrims_;
     Leaf* pLeaves_;
-    int nNodes_;
-    int nLeaves_;
+    int nNodeCapacity_;
+    int nLeafCapacity_;
     int nTriangles_;
     int nOtherPrims_;
     int iNodes_;
