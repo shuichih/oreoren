@@ -6,7 +6,7 @@ rendererType=2
 
 [BVH]
 build = true
-type = 0  # 0:BBVH 1:QBVH_SIMD
+type = 1 # 0:BBVH 1:QBVH_SISD
 useSIMD = true
 draw = false
 drawDepth = 7

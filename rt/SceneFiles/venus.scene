@@ -1,6 +1,6 @@
 [General]
-#windowWidth=700
-#windowHeight=600
+#windowWidth=1366
+#windowHeight=768
 windowWidth=128
 windowHeight=128
 drawBBox=false
@@ -8,7 +8,7 @@ rendererType=2
 
 [BVH]
 build = true
-type = 0  # 0:BBVH 1:QBVH_SIMD
+type = 1  # 0:BBVH 1:QBVH_SIMD
 useSIMD = true
 draw = false
 drawDepth = 7
@@ -28,8 +28,8 @@ distanceToProjPlane=140
 
 [PhotonMap] # for Indirect Light
 enable = true
-nPhotons = 10000
-#nPhotons = 100000
+#nPhotons = 10000
+nPhotons = 100000
 nMaxStorePhotons = 200000
 nEstimatePhotons = 1000
 estimateDist = 25.0
@@ -48,8 +48,8 @@ nGlossyRays = 256
 
 [CoarsticPhotonMap]
 enable = true
-nPhotons = 40000
-#nPhotons = 400000
+#nPhotons = 40000
+nPhotons = 400000
 nMaxStorePhotons = 400000
 nEstimatePhotons = 200
 estimateDist = 5
@@ -103,11 +103,11 @@ nSamples = 8
 
 [LightSource]
 type = SPHERE
-position = 0 50 0
+position = 0 50 65
 radius = 5
-flux = 50000 50000 50000
+flux = 35000 35000 35000
 #nSamples = 128
-nSamples = 32
+nSamples = 64
 
 # 手前がプラス
 # @todo emission -> color

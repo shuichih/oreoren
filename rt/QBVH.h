@@ -35,15 +35,10 @@ private:
         //float bboxes_[2][3][4]; // min-max xyz 4 children
         BBox bboxes[4]; // 24*4=96 bytes
         int children[4]; // 16bytes
-        int axes; // pPrimsSISDを含めて128bytesに収めるためにまとめた
-        int reserved0;
-
-        // 末端ノードを作成するときに、SIMD処理できないMeshTriangle以外の
-        // プリミティブがあれば、それらを格納する配列を作成する。
-        int nOtherPrims;
-        int iOtherPrims;
-        //const IShape* pOtherPrims; // 8bytes(x64)
-        int reserved1;
+        int axis0; // 4bytes
+        int axis1; // 4bytes
+        int axis2; // 4bytes
+        int reserved;
         
         SISD_QBVH_NODE()
         {
@@ -55,9 +50,10 @@ private:
             for (int i=0; i<4; i++) {
                 children[i] = INT_MIN;
             }
-            axes = 0;
-            nOtherPrims = 0;
-            iOtherPrims = 0;
+            axis0 = 0;
+            axis1 = 0;
+            axis2 = 0;
+            reserved = 0;
         }
     };
     
@@ -67,15 +63,13 @@ private:
         const MeshTriangle *pMeshTriangle;
     };
     
-    /*
     struct Leaf
     {
         SISD_TRIANGLE* pTriangles;
-        IShape* pOtherPrims;
-        int nTriangles;
-        int nOtherPrims;
+        const IShape** ppOtherPrims;
+        u8 nTriangles;
+        u8 nOtherPrims;
     };
-    */
     
 #if 0
     // SIMD version. total size == 128bytes
@@ -97,22 +91,27 @@ private:
     const IShape** FlattenLeafShapes(const IShape** ppFlatten, const IShape** ppShapes, int nShapes);
     BBox SurroundBBox(const IShape** pShapes, int nShapes);
     void BuildBranch(SISD_QBVH_NODE& rNode, const IShape** pShapes, int nShapes);
-    void BuildLeaf(int& nMeshTri, int& nOtherPrims, const IShape** pShapes, int nShapes);
+    int BuildLeaf(u8& nMeshTris, u8& nOtherPrims, const IShape** ppShapes, int nShapes);
+    int BuildOtherPrimitive(const IShape** pShapes, int nShapes);
     bool IntersectBranch(SISD_QBVH_NODE& rNode, const Ray &r, float tmin, HitRecord& rec) const;
-    bool IntersectLeaf(SISD_TRIANGLE* pTri, int nTri, const Ray& r, float tmin, HitRecord& rec) const;
+    bool IntersectLeaf(Leaf& leaf, const Ray& r, float tmin, HitRecord& rec) const;
     bool IntersectTriangle(SISD_TRIANGLE& tri, const Ray& r, float tmin, float tmax, HitRecord& rec) const;
     int RayCastBranch(std::vector<HitRecord>& hits, int nHits, SISD_QBVH_NODE& rNode, const Ray &r, float tmin, float tmax) const;
-    int RayCastLeaf(std::vector<HitRecord>& hits, int nHits, SISD_TRIANGLE* pTri, int nTri, const Ray &r, float tmin, float tmax) const;
+    int RayCastLeaf(std::vector<HitRecord>& hits, int nHits, Leaf& leaf, const Ray &r, float tmin, float tmax) const;
+    int LargestAxis(const BBox& bbox);
     
     //
 
     SISD_QBVH_NODE* pNodes_;
     SISD_TRIANGLE* pTriangles_;
     const IShape** ppOtherPrims_;
+    Leaf* pLeaves_;
     int nNodes_;
+    int nLeaves_;
     int nTriangles_;
     int nOtherPrims_;
     int iNodes_;
+    int iLeaves_;
     int iTriangles_;
     int iOtherPrims_;
     BBox bbox_;
