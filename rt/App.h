@@ -14,7 +14,6 @@
 
 class Photon_map;
 class BVH;
-class QBVH;
 class IRenderer;
 
 class App
@@ -42,7 +41,6 @@ private:
     Photon_map* pPhotonMap_;
     IRenderer* pRenderer_;
     BVH* pBVH_;
-    QBVH* pQBVH_;
     Timer timer_;
 };
 

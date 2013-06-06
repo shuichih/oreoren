@@ -6,7 +6,7 @@
 #include "vecmath/matrix4.h"
 #include "simd.h"
 #include "Ray.h"
-#include "QBVH.h"
+#include "SISD_QBVH.h"
 
 using namespace std;
 
@@ -676,7 +676,7 @@ void Scene::BuildBVH(BVHType bvhType)
     if (bvhType == BVH_BINARY) {
         pBVH_ = new BVH(&shapes_[0], (int)shapes_.size());
     } else if (bvhType == BVH_QUAD_SISD) {
-        QBVH* pQBVH = new QBVH();
+        SISD_QBVH* pQBVH = new SISD_QBVH();
         pQBVH->Build(&shapes_[0], (int)shapes_.size());
         pBVH_ = pQBVH;
     }

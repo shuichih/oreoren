@@ -1,5 +1,5 @@
-#ifndef QBVH_h
-#define QBVH_h
+#ifndef SISD_QBVH_h
+#define SISD_QBVH_h
 
 #include "Common.h"
 #include "Scene.h"
@@ -8,23 +8,22 @@
 /**
  * Bounding Volume Hierarchy
  */
-class QBVH : public IShape
+class SISD_QBVH : public IShape
 {
 public:
     static int QSplit(const IShape** pShapes, int nShapes, float pivot, int axis);
     
 public:
-    QBVH();
-    QBVH(const IShape* s1, const IShape* s2);
-    QBVH(const IShape* s1, const IShape* s2, const BBox& bbox);
-    virtual ~QBVH();
+    SISD_QBVH();
+    SISD_QBVH(const IShape* s1, const IShape* s2);
+    SISD_QBVH(const IShape* s1, const IShape* s2, const BBox& bbox);
+    virtual ~SISD_QBVH();
     
     void Build(const IShape** pShapes, int nShapes);
     virtual ShapeType GetType() const;
     virtual BBox BoundingBox() const;
     virtual bool Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) const;
     virtual int RayCast(std::vector<HitRecord>& hits, int nHits, const Ray &r, float tmin, float tmax) const;
-    virtual bool IsQBVH() const { return true; };
     //void LimitMinScale(float minScale);
     
 private:

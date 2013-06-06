@@ -18,7 +18,7 @@
 #include "PostEffect.h"
 #include "Scene.h"
 #include "BVH.h"
-#include "QBVH.h"
+#include "SISD_QBVH.h"
 #include "RayTracingRenderer.h"
 
 
@@ -49,7 +49,6 @@ inline int toInt(real x)
 
 App::App()
 : pBVH_(NULL)
-, pQBVH_(NULL)
 {
 
 }
@@ -57,7 +56,6 @@ App::App()
 App::~App()
 {
     delete pBVH_;
-    delete pQBVH_;
 }
 
 
