@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VariablesViewState
+   version = "1.0">
+   <ContextStates>
+      <ContextState
+         contextName = "PhotonMapRenderer::PhotonTracing(Ray const&amp;, float*, int):PhotonMapRenderer.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "r.o">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "Photon_map::locate_photons(NearestPhotons*, int) const:PhotonMap.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "BVH::QSplit(Shape const**, int, float, int):BVH.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "Vec3::operator+(Vec3 const&amp;) const:Common.h">
+      </ContextState>
+      <ContextState
+         contextName = "Photon_map::irradiance_estimate(float*, float const*, float const*, float, int) const:PhotonMap.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "BVH::Intersect(Ray const&amp;, float, float, HitRecord&amp;) const:BVH.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "BVH::BVH(Shape const**, int):BVH.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "*pShapes[0]">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+   </ContextStates>
+</VariablesViewState>
