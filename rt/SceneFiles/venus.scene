@@ -1,14 +1,14 @@
 [General]
 #windowWidth=1366
 #windowHeight=768
-windowWidth=128
-windowHeight=128
+windowWidth=512
+windowHeight=512
 drawBBox=false
 rendererType=2
 
 [BVH]
 build = true
-type = 1  # 0:BBVH 1:QBVH_SIMD
+type = 1  # 0:BBVH 1:QBVH_SISD 2:QBVH_SIMD
 useSIMD = true
 draw = false
 drawDepth = 7
@@ -206,6 +206,21 @@ nSamples = 64
 	translate = 0 -52 30
     material = REFR
     color = 0.9 0.9 0.9
+
+[SceneImport]
+    path = "/Users/shuichih/Dev/rt/objs/venusm.obj"
+    scale = 0.025 0.025 0.025
+	translate = 40 -52 30
+    material = REFR
+    color = 0.9 0.9 0.9
+
+[SceneImport]
+    path = "/Users/shuichih/Dev/rt/objs/venusm.obj"
+    scale = 0.025 0.025 0.025
+	translate = -40 -52 30
+    material = REFR
+    color = 0.9 0.9 0.9
+
 
 /#
 [SceneImport]

@@ -2,11 +2,11 @@
 windowWidth=128
 windowHeight=128
 drawBBox=false
-rendererType=2
+rendererType=0
 
 [BVH]
 build = true
-type = 1 # 0:BBVH 1:QBVH_SISD
+type = 2 # 0:BBVH 1:QBVH_SISD 2:QBVH_SIMD
 useSIMD = true
 draw = false
 drawDepth = 7
