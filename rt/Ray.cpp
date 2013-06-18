@@ -12,34 +12,34 @@ Ray::Ray(Vec3 o_, Vec3 d_) : o(o_), d(d_)
 void Ray::SetDirection(const Vec3& dir)
 {
     d = dir;
-    invDir = Vec3(1.0f / dir.x, 1.0f / dir.y, 1.0f / dir.z);
+    idir = Vec3(1.0f / dir.x, 1.0f / dir.y, 1.0f / dir.z);
 #ifdef RAY_USE_SIMD
-    xmInvDir = _mm_set_ps(invDir.x, invDir.y, invDir.z, 0);
+    xmInvDir = _mm_set_ps(idir.x, idir.y, idir.z, 0);
 #endif
     
 #ifdef BBOX_USE_SIMD
     xmDirSignMask = _mm_setzero_ps();
 #endif
     if (dir.x > 0) {
-        dirSign[0] = 0;
+        sign[0] = 0;
     } else {
-        dirSign[0] = 1;
+        sign[0] = 1;
 #ifdef BBOX_USE_SIMD
         xmDirSignMask_i = _mm_add_epi32(xmDirSignMask_i, _mm_set_epi32(0xffffffff, 0, 0, 0));
 #endif
     }
     if (dir.y > 0) {
-        dirSign[1] = 0;
+        sign[1] = 0;
     } else {
-        dirSign[1] = 1;
+        sign[1] = 1;
 #ifdef BBOX_USE_SIMD
         xmDirSignMask_i = _mm_add_epi32(xmDirSignMask_i, _mm_set_epi32(0, 0xffffffff, 0, 0));
 #endif
     }
     if (dir.z > 0) {
-        dirSign[2] = 0;
+        sign[2] = 0;
     } else {
-        dirSign[2] = 1;
+        sign[2] = 1;
 #ifdef BBOX_USE_SIMD
         xmDirSignMask_i = _mm_add_epi32(xmDirSignMask_i, _mm_set_epi32(0, 0, 0xffffffff, 0));
 #endif

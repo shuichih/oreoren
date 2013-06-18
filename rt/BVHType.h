@@ -7,6 +7,7 @@ enum BVHType
 {
     BVH_BINARY,
     BVH_QUAD_SISD,
+    BVH_QUAD_SIMD,
 };
 
 #endif

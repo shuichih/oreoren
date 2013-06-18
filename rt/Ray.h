@@ -9,8 +9,8 @@ class Ray
 public:
     Vec3 o;
     Vec3 d;
-    Vec3 invDir;
-    i32 dirSign[3]; // dirの符号 0:positive 1:negative
+    Vec3 idir;
+    i32 sign[3]; // sign of the direction, 0:positive 1:negative
 #ifdef RAY_USE_SIMD
     __m128 xmo;
     __m128 xmInvDir;
@@ -18,7 +18,7 @@ public:
     
 #ifdef BBOX_USE_SIMD
     union {
-        __m128 xmDirSignMask; // dirの符号 0:positive FF:negative
+        __m128 xmDirSignMask; // sign of the direction 0:positive FF:negative
         __m128i xmDirSignMask_i;
     };
 #endif

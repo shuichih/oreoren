@@ -37,6 +37,7 @@ enum ShapeType
     ST_MESH,
     ST_BBVH,
     ST_QBVH_SISD,
+    ST_QBVH_SIMD,
 };
 
 struct HitRecord

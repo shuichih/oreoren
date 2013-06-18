@@ -146,7 +146,7 @@ void RayTracingRenderer::RayTracing(Vec3* pColorBuf)
     // 355, 225, 187, 167
     #pragma omp parallel for num_threads(4) schedule(dynamic, 1)   // OpenMP
     for (int y=0; y<h; y++) {
-    //int y = h / 2;
+    //int y = h / 2; {
         fprintf(stderr, "RayTracing (%d spp) %5.2f%%\n", nSub*nSub, 100.f * y / (h-1));
         
         xi_[0] = 0;
@@ -155,7 +155,7 @@ void RayTracingRenderer::RayTracing(Vec3* pColorBuf)
         
         // Loop cols
         for (unsigned short x=0; x<w; x++) {
-        //unsigned short x = w / 2;
+        //unsigned short x = w / 2; {
     
             int i = (h-y-1) * w + x; // カラーバッファのインデックス
             for (int sy=0; sy<nSub; sy++) {         // subpixel rows

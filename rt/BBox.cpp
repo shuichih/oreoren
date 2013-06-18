@@ -73,9 +73,9 @@ bool BBox::RayIntersect(const Ray &r, float tmin, float tmax) const
     float interval_max = tmax;
     
     // X軸方向のBB内区間をRayのパラメータ空間(Ray方向のt)で計算
-    int dirSign = r.dirSign[0];
-    float t0 = (pp[dirSign].x - r.o.x) * r.invDir.x;
-    float t1 = (pp[1-dirSign].x - r.o.x) * r.invDir.x;
+    int sign = r.sign[0];
+    float t0 = (pp[sign].x - r.o.x) * r.idir.x;
+    float t1 = (pp[1-sign].x - r.o.x) * r.idir.x;
     // BB内に入っている区間にtの範囲を限定していく
     if (t0 > interval_min) interval_min = t0;
     if (t1 < interval_max) interval_max = t1;
@@ -83,16 +83,16 @@ bool BBox::RayIntersect(const Ray &r, float tmin, float tmax) const
     if (interval_min > interval_max) return false;
     
     // Y軸、Z軸についても同様に処理
-    dirSign = r.dirSign[1];
-    t0 = (pp[dirSign].y - r.o.y) * r.invDir.y;
-    t1 = (pp[1-dirSign].y - r.o.y) * r.invDir.y;
+    sign = r.sign[1];
+    t0 = (pp[sign].y - r.o.y) * r.idir.y;
+    t1 = (pp[1-sign].y - r.o.y) * r.idir.y;
     if (t0 > interval_min) interval_min = t0;
     if (t1 < interval_max) interval_max = t1;
     if (interval_min > interval_max) return false;
     
-    dirSign = r.dirSign[2];
-    t0 = (pp[dirSign].z - r.o.z) * r.invDir.z;
-    t1 = (pp[1-dirSign].z - r.o.z) * r.invDir.z;
+    sign = r.sign[2];
+    t0 = (pp[sign].z - r.o.z) * r.idir.z;
+    t1 = (pp[1-sign].z - r.o.z) * r.idir.z;
     if (t0 > interval_min) interval_min = t0;
     if (t1 < interval_max) interval_max = t1;
     if (interval_min > interval_max) return false;

@@ -18,7 +18,6 @@
 #include "PostEffect.h"
 #include "Scene.h"
 #include "BVH.h"
-#include "SISD_QBVH.h"
 #include "RayTracingRenderer.h"
 
 

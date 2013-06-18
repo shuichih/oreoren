@@ -1,15 +1,17 @@
 #include "Scene.h"
-#include "SISD_QBVH.h"
+#include "SIMD_QBVH.h"
 #include <cassert>
 #include "simd.h"
 #include "Ray.h"
+
+// @todo Branch -> Node に rename?
 
 using namespace std;
 
 #define INITIAL_NODE_NUM 10000 // about 1.2MB
 #define INITIAL_LEAF_NUM 30000 // about 0.72MB
 
-SISD_QBVH::SISD_QBVH()
+SIMD_QBVH::SIMD_QBVH()
 : pTriangles_(NULL)
 , ppOtherPrims_(NULL)
 , nNodeCapacity_(0)
@@ -22,23 +24,23 @@ SISD_QBVH::SISD_QBVH()
 , depth_(0)
 {
     nNodeCapacity_ = INITIAL_NODE_NUM;
-    pNodes_ = new SISD_QBVH_NODE[nNodeCapacity_];
+    pNodes_ = new SIMD_QBVH_NODE[nNodeCapacity_];
     nLeafCapacity_ = INITIAL_LEAF_NUM;
     pLeaves_ = new Leaf[nLeafCapacity_];
 }
 
-SISD_QBVH::~SISD_QBVH()
+SIMD_QBVH::~SIMD_QBVH()
 {
     delete pNodes_;
 }
 
-ShapeType SISD_QBVH::GetType() const
+ShapeType SIMD_QBVH::GetType() const
 {
-    return ST_QBVH_SISD;
+    return ST_QBVH_SIMD;
 }
 
 // Build時に使うバッファを初期化
-void SISD_QBVH::Reset()
+void SIMD_QBVH::Reset()
 {
     for (int i=0; i<nNodeCapacity_; i++) {
         pNodes_[i].Reset();
@@ -50,7 +52,7 @@ void SISD_QBVH::Reset()
 }
 
 // シェイプが葉になるタイプならtrueを返す
-bool SISD_QBVH::IsLeafType(ShapeType shapeType)
+bool SIMD_QBVH::IsLeafType(ShapeType shapeType)
 {
     return (shapeType == ST_MESH_TRIANGLE
          || shapeType == ST_SPHERE
@@ -58,7 +60,7 @@ bool SISD_QBVH::IsLeafType(ShapeType shapeType)
 }
 
 // シェイプがMeshTriangle以外の葉になるタイプならtrueを返す
-bool SISD_QBVH::IsOtherPrimType(ShapeType shapeType)
+bool SIMD_QBVH::IsOtherPrimType(ShapeType shapeType)
 {
     return (shapeType == ST_SPHERE
          || shapeType == ST_TRIANGLE);
@@ -66,7 +68,7 @@ bool SISD_QBVH::IsOtherPrimType(ShapeType shapeType)
 
 // 葉ノード総数をカウント
 // MESH, QBVHは葉にならない
-int SISD_QBVH::CountLeafShapes(const IShape** pShapes, int nShapes)
+int SIMD_QBVH::CountLeafShapes(const IShape** pShapes, int nShapes)
 {
     int ret = 0;
     for (int i=0; i<nShapes; i++) {
@@ -83,7 +85,7 @@ int SISD_QBVH::CountLeafShapes(const IShape** pShapes, int nShapes)
 }
 
 // 葉のシェイプだけをフラットな配列にする
-const IShape** SISD_QBVH::FlattenLeafShapes(const IShape** ppFlatten, const IShape** ppShapes, int nShapes)
+const IShape** SIMD_QBVH::FlattenLeafShapes(const IShape** ppFlatten, const IShape** ppShapes, int nShapes)
 {
     for (int i=0; i<nShapes; i++) {
         int nChildren = ppShapes[i]->GetChildNum();
@@ -98,7 +100,7 @@ const IShape** SISD_QBVH::FlattenLeafShapes(const IShape** ppFlatten, const ISha
 }
 
 // 構築
-void SISD_QBVH::Build(const IShape** pShapes, int nShapes)
+void SIMD_QBVH::Build(const IShape** pShapes, int nShapes)
 {
     Reset();
     
@@ -124,23 +126,21 @@ void SISD_QBVH::Build(const IShape** pShapes, int nShapes)
     }
     
     // MeshTriangleとその他のシェイプの領域を確保
-    pTriangles_ = new SISD_TRIANGLE[nTriangles_];
+    pTriangles_ = new SIMD_TRIANGLE[nTriangles_];
     ppOtherPrims_ = new const IShape*[nOtherPrims_];
     printf("LeafShape=%d MeshTriangle=%d OtherPrim=%d\n", nLeafShapes, nTriangles_, nOtherPrims_);
     
     // 構築
-    SISD_QBVH_NODE& rNode = pNodes_[0];
+    SIMD_QBVH_NODE& rNode = pNodes_[0];
     iNodes_++;
     BuildBranch(rNode, ppLeafShapes, nLeafShapes);
     
     // 全体のBBoxを作成
-    BBox bbox0 = BBox::Surround(rNode.bboxes[0], rNode.bboxes[1]);
-    BBox bbox1 = BBox::Surround(rNode.bboxes[2], rNode.bboxes[3]);
-    bbox_ = BBox::Surround(bbox0, bbox1);
+    bbox_ = SurroundBBox(rNode.bboxes);
     
     // realloc
     printf("Node=%d Leaf=%d\n", iNodes_, iLeaves_ );
-    SISD_QBVH_NODE* pNewNodes = new SISD_QBVH_NODE[iNodes_];
+    SIMD_QBVH_NODE* pNewNodes = new SIMD_QBVH_NODE[iNodes_];
     for (int i=0; i<iNodes_; i++) {
         pNewNodes[i] = pNodes_[i];
     }
@@ -155,12 +155,12 @@ void SISD_QBVH::Build(const IShape** pShapes, int nShapes)
 }
 
 // 枝ノード構築
-void SISD_QBVH::BuildBranch(SISD_QBVH_NODE& rNode, const IShape** pShapes, int nShapes)
+void SIMD_QBVH::BuildBranch(SIMD_QBVH_NODE& rNode, const IShape** pShapes, int nShapes)
 {
     depth_++;
     
     // qsplitのピボットとして使用するためにBBoxの中間点を求める
-    BBox bbox = SurroundBBox(pShapes, nShapes);
+    BBox bbox = SurroundBBox(pShapes, nShapes); // @todo 上から渡した方がいい
     
     // BBoxの一番大きい軸
     int axis = LargestAxis(bbox);
@@ -208,10 +208,11 @@ void SISD_QBVH::BuildBranch(SISD_QBVH_NODE& rNode, const IShape** pShapes, int n
         nShapes-(mid_point+mid_point_r)
     };
     
+    BBox childBBoxes[4];
     for (int i=0; i<4; i++) {
         
         // bbox求める
-        rNode.bboxes[i] = SurroundBBox(ppChildShapes[i], nChildren[i]);
+        childBBoxes[i] = SurroundBBox(ppChildShapes[i], nChildren[i]);
         
         // 子が空なら特別なindexをセット
         if (nChildren[i] == 0) {
@@ -221,8 +222,9 @@ void SISD_QBVH::BuildBranch(SISD_QBVH_NODE& rNode, const IShape** pShapes, int n
         // 子が4より多ければさらに枝に分割
         else if (nChildren[i] > 4) {
             //printf("=\n");
+            //assert(iNodes_ < nNodeCapacity_);
             rNode.children[i] = iNodes_;
-            SISD_QBVH_NODE& rChildNode = GetNewNode();
+            SIMD_QBVH_NODE& rChildNode = GetNewNode();
             BuildBranch(rChildNode, ppChildShapes[i], nChildren[i]);
         }
         // 子が4以下だったら葉を作る
@@ -238,13 +240,23 @@ void SISD_QBVH::BuildBranch(SISD_QBVH_NODE& rNode, const IShape** pShapes, int n
             BuildLeaf(rLeaf.nTriangles, rLeaf.nOtherPrims, ppChildShapes[i], nChildren[i]);
         }
     }
+    for (int i=0; i<2; i++) {
+        for (int j=0; j<3; j++) {
+            rNode.bboxes[i][j] = _mm_set_ps(
+                childBBoxes[3].pp[i].e[j],
+                childBBoxes[2].pp[i].e[j],
+                childBBoxes[1].pp[i].e[j],
+                childBBoxes[0].pp[i].e[j]
+                                            );
+        }
+    }
     
     depth_--;
     //printf("rNode=%p iTri=%d iOP=%d\n", &rNode, iTriangles_, iOtherPrims_);
 }
 
 // 葉ノード構築
-int SISD_QBVH::BuildLeaf(u8& nMeshTris, u8& nOtherPrims, const IShape** ppShapes, int nShapes)
+int SIMD_QBVH::BuildLeaf(u8& nMeshTris, u8& nOtherPrims, const IShape** ppShapes, int nShapes)
 {
     nMeshTris = 0;
     nOtherPrims = 0;
@@ -252,7 +264,7 @@ int SISD_QBVH::BuildLeaf(u8& nMeshTris, u8& nOtherPrims, const IShape** ppShapes
         if (ppShapes[i]->GetType() == ST_MESH_TRIANGLE) {
             const MeshTriangle* pMeshTri = reinterpret_cast<const MeshTriangle*>(ppShapes[i]);
             assert(iTriangles_ < nTriangles_);
-            SISD_TRIANGLE& rTri = pTriangles_[iTriangles_];
+            SIMD_TRIANGLE& rTri = pTriangles_[iTriangles_];
             rTri.pMeshTriangle = pMeshTri;
             for (int j=0; j<3; j++) {
                 Vertex& v = pMeshTri->pMesh->pVertices[pMeshTri->indices[j]];
@@ -273,8 +285,8 @@ int SISD_QBVH::BuildLeaf(u8& nMeshTris, u8& nOtherPrims, const IShape** ppShapes
     return nMeshTris;
 }
 
-// 全Shapeを含むBBoxを返す
-BBox SISD_QBVH::SurroundBBox(const IShape** ppShapes, int nShapes)
+// 全Shapeを内包するBBoxを返す
+BBox SIMD_QBVH::SurroundBBox(const IShape** ppShapes, int nShapes)
 {
     if (nShapes == 0) {
         return BBox();
@@ -287,26 +299,51 @@ BBox SISD_QBVH::SurroundBBox(const IShape** ppShapes, int nShapes)
     return bbox;
 }
 
+// 4つのBBoxを内包するBBoxを返す
+BBox SIMD_QBVH::SurroundBBox(__m128 bboxes[2][3])
+{
+    //Um128 bbox_min = bboxes[0][0];
+    //Um128 bbox_max = bboxes[1][0];
+    Vec3 minv;
+    Vec3 maxv;
+    for (int xyz=0; xyz<3; xyz++) {
+        Um128 bbox_min = bboxes[0][xyz];
+        Um128 bbox_max = bboxes[1][xyz];
+        minv.e[xyz] = bbox_min.e[0]; // 0:最初のBox
+        maxv.e[xyz] = bbox_max.e[0];
+        // 残り3つのBoxをループ
+        for (int box=1; box<4; box++) {
+            if (bbox_min.e[box] < minv.e[xyz]) {
+                minv.e[xyz] = bbox_min.e[box];
+            }
+            if (bbox_max.e[box] > maxv.e[xyz]) {
+                maxv.e[xyz] = bbox_max.e[box];
+            }
+        }
+    }
+    return BBox(minv, maxv);
+}
+
 // 新しい枝を取得
-SISD_QBVH::SISD_QBVH_NODE& SISD_QBVH::GetNewNode()
+SIMD_QBVH::SIMD_QBVH_NODE& SIMD_QBVH::GetNewNode()
 {
     // ensure capacity
     if (iNodes_ >= nNodeCapacity_) {
         nNodeCapacity_ *= 2;
-        SISD_QBVH_NODE* pNewNodes = new SISD_QBVH_NODE[nNodeCapacity_];
+        SIMD_QBVH_NODE* pNewNodes = new SIMD_QBVH_NODE[nNodeCapacity_];
         for (int i=0; i<iNodes_; i++) {
             pNewNodes[i] = pNodes_[i];
         }
         delete pNodes_;
         pNodes_ = pNewNodes;
     }
-    SISD_QBVH_NODE& rNode = pNodes_[iNodes_];
+    SIMD_QBVH_NODE& rNode = pNodes_[iNodes_];
     iNodes_++;
     return rNode;
 }
 
 // 新しい葉を取得
-SISD_QBVH::Leaf& SISD_QBVH::GetNewLeaf()
+SIMD_QBVH::Leaf& SIMD_QBVH::GetNewLeaf()
 {
     // ensure capacity
     if (iLeaves_ >= nLeafCapacity_) {
@@ -324,30 +361,87 @@ SISD_QBVH::Leaf& SISD_QBVH::GetNewLeaf()
 }
 
 // ツリー全体のBBを返す
-BBox SISD_QBVH::BoundingBox() const
+BBox SIMD_QBVH::BoundingBox() const
 {
     return bbox_;
 }
 
+// SIMD命令を使って4つのBBoxを一度に交差判定
+// reference:
+//   - Kaze Renderer (@TODO URL here)
+//   - Shirley, Realistic Ray Tracing
+//   - Implemented sisd version in BBox::RayIntersect()
+inline int SIMD_QBVH::IntersectSIMD(
+    const __m128 bboxes[2][3],  // min-max[2] of xyz[3] of boxes[4]
+    const __m128 orig[3],       // ray origin, xyz[3]
+    const __m128 idir[3],       // ray inverse direction, xyz[3]
+    const int sign[3],          // ray xyz direction -> +:0,-:1
+    __m128 tmin, __m128 tmax    // ray range tmin-tmax
+) const
+{
+    // x coordinate
+    tmin = _mm_max_ps(
+        tmin,
+        _mm_mul_ps(_mm_sub_ps(bboxes[sign[0]][0], orig[0]), idir[0])
+    );
+    tmax = _mm_min_ps(
+        tmax,
+        _mm_mul_ps(_mm_sub_ps(bboxes[1 - sign[0]][0], orig[0]), idir[0])
+    );
+
+    // y coordinate
+    tmin = _mm_max_ps(
+        tmin,
+        _mm_mul_ps(_mm_sub_ps(bboxes[sign[1]][1], orig[1]), idir[1])
+    );
+    tmax = _mm_min_ps(
+        tmax,
+        _mm_mul_ps(_mm_sub_ps(bboxes[1 - sign[1]][1], orig[1]), idir[1])
+    );
+
+    // z coordinate
+    tmin = _mm_max_ps(
+        tmin,
+        _mm_mul_ps(_mm_sub_ps(bboxes[sign[2]][2], orig[2]), idir[2])
+    );
+    tmax = _mm_min_ps(
+        tmax,
+        _mm_mul_ps(_mm_sub_ps(bboxes[1 - sign[2]][2], orig[2]), idir[2])
+    );
+
+    return _mm_movemask_ps(_mm_cmpge_ps(tmax, tmin));//tmin<tmaxとなれば交差
+}
+
+
 // 枝との交差判定
-bool SISD_QBVH::IntersectBranch(SISD_QBVH_NODE& rNode, const Ray &r, float tmin, HitRecord& rec) const
+bool SIMD_QBVH::IntersectBranch(SIMD_QBVH_NODE& rNode, const Ray &r, float tmin, HitRecord& rec) const
 {
     depth_++;
     
     bool ret = false;
+    __m128 xmtmin = _mm_set1_ps(tmin);
+    __m128 xmtmax = _mm_set1_ps(rec.t);
+    __m128 orig[3] = { _mm_set1_ps(r.o.x), _mm_set1_ps(r.o.y), _mm_set1_ps(r.o.z) };
+    __m128 idir[3] = { _mm_set1_ps(r.idir.x), _mm_set1_ps(r.idir.y), _mm_set1_ps(r.idir.z) };
+    
+    int hit = IntersectSIMD(rNode.bboxes, orig, idir, r.sign, xmtmin, xmtmax);
+    
+    /*
+    Um128 dbg_minx = rNode.bboxes[0][0];
+    Um128 dbg_miny = rNode.bboxes[0][1];
+    Um128 dbg_minz = rNode.bboxes[0][2];
+    Um128 dbg_maxx = rNode.bboxes[1][0];
+    Um128 dbg_maxy = rNode.bboxes[1][1];
+    Um128 dbg_maxz = rNode.bboxes[1][2];
+    */
     for (int i=0; i<4; i++) {
-        if (rNode.children[i] == INT_MIN) {
-            // 空ノード
-            continue;
-        }
-        
         /*
         printf("%d  %f %f %f  %f %f %f\n", depth_,
-            rNode.bboxes[i].pp[0].e[0], rNode.bboxes[i].pp[0].e[1], rNode.bboxes[i].pp[0].e[2],
-            rNode.bboxes[i].pp[1].e[0], rNode.bboxes[i].pp[1].e[1], rNode.bboxes[i].pp[1].e[2]
-        );
+            dbg_minx.e[i], dbg_miny.e[i], dbg_minz.e[i],
+            dbg_maxx.e[i], dbg_maxy.e[i], dbg_maxz.e[i]);
         */
-        if (rNode.bboxes[i].RayIntersect(r, tmin, rec.t)) {
+        
+        if (((1 << i) & hit) && (rNode.children[i] != INT_MIN)) {
             //printf("hit!\n");
             // 枝
             if ((rNode.children[i] & (0x01 << 31)) == 0) {
@@ -371,10 +465,10 @@ bool SISD_QBVH::IntersectBranch(SISD_QBVH_NODE& rNode, const Ray &r, float tmin,
 }
 
 //　葉の交差判定
-bool SISD_QBVH::IntersectLeaf(Leaf& leaf, const Ray& r, float tmin, HitRecord& rec) const
+bool SIMD_QBVH::IntersectLeaf(Leaf& leaf, const Ray& r, float tmin, HitRecord& rec) const
 {
     bool ret = false;
-    SISD_TRIANGLE* pTri = &pTriangles_[leaf.iTriangles];
+    SIMD_TRIANGLE* pTri = &pTriangles_[leaf.iTriangles];
     int nTri = leaf.nTriangles;
     for (int i=0; i<nTri; i++) {
         bool hit = IntersectTriangle(pTri[i], r, tmin, rec.t, rec);
@@ -392,7 +486,7 @@ bool SISD_QBVH::IntersectLeaf(Leaf& leaf, const Ray& r, float tmin, HitRecord& r
 }
 
 // 三角形交差判定
-bool SISD_QBVH::IntersectTriangle(SISD_TRIANGLE& tri, const Ray& r, float tmin, float tmax, HitRecord& rec) const
+bool SIMD_QBVH::IntersectTriangle(SIMD_TRIANGLE& tri, const Ray& r, float tmin, float tmax, HitRecord& rec) const
 {
     // based PHISICALLY BASED RENDERING 2ND EDITION, 3.6.2
     Vec3 e1 = tri.p[1] - tri.p[0];
@@ -449,7 +543,7 @@ bool SISD_QBVH::IntersectTriangle(SISD_TRIANGLE& tri, const Ray& r, float tmin, 
 }
 
 // 交差判定
-bool SISD_QBVH::Intersect(const Ray &r, float tmin, float tmax, HitRecord& rec) const
+bool SIMD_QBVH::Intersect(const Ray &r, float tmin, float tmax, HitRecord& rec) const
 {
     if (!bbox_.RayIntersect(r, tmin, tmax)) return false;
     
@@ -459,15 +553,17 @@ bool SISD_QBVH::Intersect(const Ray &r, float tmin, float tmax, HitRecord& rec) 
 }
 
 // 枝とのレイキャスト
-int SISD_QBVH::RayCastBranch(vector<HitRecord>& hits, int nHits, SISD_QBVH_NODE& rNode, const Ray &r, float tmin, float tmax) const
+int SIMD_QBVH::RayCastBranch(vector<HitRecord>& hits, int nHits, SIMD_QBVH_NODE& rNode, const Ray &r, float tmin, float tmax) const
 {
+    __m128 xmtmin = _mm_set1_ps(tmin);
+    __m128 xmtmax = _mm_set1_ps(tmax);
+    __m128 orig[3] = { _mm_set1_ps(r.o.x), _mm_set1_ps(r.o.y), _mm_set1_ps(r.o.z) };
+    __m128 idir[3] = { _mm_set1_ps(r.idir.x), _mm_set1_ps(r.idir.y), _mm_set1_ps(r.idir.z) };
+    
+    int hit = IntersectSIMD(rNode.bboxes, orig, idir, r.sign, xmtmin, xmtmax);
+    
     for (int i=0; i<4; i++) {
-        if (rNode.children[i] == INT_MIN) {
-            // 空ノード
-            continue;
-        }
-        
-        if (rNode.bboxes[i].RayIntersect(r, tmin, tmax)) {
+        if ((1 << i) & hit) {
             // 枝
             if ((rNode.children[i] & (0x01 << 31)) == 0) {
                 nHits = RayCastBranch(hits, nHits, pNodes_[rNode.children[i]], r, tmin, tmax);
@@ -486,9 +582,9 @@ int SISD_QBVH::RayCastBranch(vector<HitRecord>& hits, int nHits, SISD_QBVH_NODE&
 }
 
 // 葉に対するレイキャスト
-int SISD_QBVH::RayCastLeaf(vector<HitRecord>& hits, int nHits, Leaf& leaf, const Ray &r, float tmin, float tmax) const
+int SIMD_QBVH::RayCastLeaf(vector<HitRecord>& hits, int nHits, Leaf& leaf, const Ray &r, float tmin, float tmax) const
 {
-    SISD_TRIANGLE* pTri = &pTriangles_[leaf.iTriangles];
+    SIMD_TRIANGLE* pTri = &pTriangles_[leaf.iTriangles];
     int nTri = leaf.nTriangles;
     for (int i=0; i<nTri; i++) {
         if (hits.size() == nHits)
@@ -511,7 +607,7 @@ int SISD_QBVH::RayCastLeaf(vector<HitRecord>& hits, int nHits, Leaf& leaf, const
 }
 
 // レイキャスト
-int SISD_QBVH::RayCast(vector<HitRecord>& hits, int nHits, const Ray &r, float tmin, float tmax) const
+int SIMD_QBVH::RayCast(vector<HitRecord>& hits, int nHits, const Ray &r, float tmin, float tmax) const
 {
     if (!bbox_.RayIntersect(r, tmin, tmax)) return nHits;
     
@@ -519,7 +615,7 @@ int SISD_QBVH::RayCast(vector<HitRecord>& hits, int nHits, const Ray &r, float t
 }
 
 // シェイプをpivotの左右に分ける
-int SISD_QBVH::QSplit(const IShape** pShapes, int nShapes, float pivot, int axis)
+int SIMD_QBVH::QSplit(const IShape** pShapes, int nShapes, float pivot, int axis)
 {
     BBox bbox;
     double centroid;
@@ -546,7 +642,7 @@ int SISD_QBVH::QSplit(const IShape** pShapes, int nShapes, float pivot, int axis
 }
 
 // BBoxの一番大きい軸
-int SISD_QBVH::LargestAxis(const BBox& bbox)
+int SIMD_QBVH::LargestAxis(const BBox& bbox)
 {
     Vec3 bboxSize = bbox.pp[1] - bbox.pp[0];
     int axis;

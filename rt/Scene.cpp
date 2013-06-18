@@ -1,12 +1,14 @@
 #include "Scene.h"
 #include <cmath>
 #include <cstring>
+#include <cassert>
 #include "BBox.h"
 #include "LightSource.h"
 #include "vecmath/matrix4.h"
 #include "simd.h"
 #include "Ray.h"
 #include "SISD_QBVH.h"
+#include "SIMD_QBVH.h"
 
 using namespace std;
 
@@ -679,8 +681,14 @@ void Scene::BuildBVH(BVHType bvhType)
         SISD_QBVH* pQBVH = new SISD_QBVH();
         pQBVH->Build(&shapes_[0], (int)shapes_.size());
         pBVH_ = pQBVH;
+    } else if (bvhType == BVH_QUAD_SIMD) {
+        SIMD_QBVH* pQBVH = new SIMD_QBVH();
+        pQBVH->Build(&shapes_[0], (int)shapes_.size());
+        pBVH_ = pQBVH;
+    } else {
+        assert(false);
     }
-    //pBVH_->LimitMinScale(0.01f);
+//pBVH_->LimitMinScale(0.01f);
 }
 
 bool Scene::Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) const
