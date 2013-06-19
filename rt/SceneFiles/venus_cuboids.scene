@@ -1,0 +1,235 @@
+[General]
+windowWidth=700
+windowHeight=600
+#windowWidth=256
+#windowHeight=256
+buildBVH=true
+drawBVH=false
+drawBBox=false
+drawBVHDepth=7
+rendererType=2
+
+[RayTracing]
+useBVH = true
+maxRayBounce = 6
+nSubPixelSqrt = 1
+useTentFilter = false
+distanceToProjPlane=140
+
+# @todo [PhotonMapRenderer]
+# @todo direct=true
+# @todo indirect=true
+# @todo coarstic=true
+# @todo shadowEstimate=true
+
+[PhotonMap] # for Indirect Light
+enable = true
+nPhotons = 100000
+nMaxStorePhotons = 200000
+nEstimatePhotons = 1000
+estimateDist = 25.0
+estimateEllipseScale = 0.2
+nSubPixelSqrt = 2
+enableConeFilter = true
+coneFilterK = 1.1   # kに比例してWeightが軽くなる
+nTracePhotonsPerThread = 10000
+maxPhotonBounce = 20
+maxRayBounce = 10
+useBVH = true
+#finalGethering = true
+nFinalGetheringRays = 64
+nMaxGlossyBounce = 1
+nGlossyRays = 256
+
+[CoarsticPhotonMap]
+enable = true
+nPhotons = 400000
+nMaxStorePhotons = 400000
+nEstimatePhotons = 200
+estimateDist = 5
+estimateEllipseScale = 0.2
+enableConeFilter = true
+coneFilterK = 1.1   # kに比例してWeightが軽くなる
+nTracePhotonsPerThread = 10000
+maxPhotonBounce = 40
+#maxRayBounce = 20
+useBVH = true
+
+[ShadowPhotonMap]
+enable = true
+nPhotons = 30000
+nMaxStorePhotons = 60000
+nEstimatePhotons = 300
+estimateDist = 9.0
+estimateEllipseScale = 1.0
+
+# @todo RendererのConfigとPhotonMapデータ構造自体のコンフィグを分ける
+# 2つ以上のLightでpenumbra_estimate test
+
+[PostEffect]
+toneMap.enabled = false
+toneMap.keyValue = 0.045
+
+[Camera]
+camera.position = 0 12 285
+camera.direction = 0 -0.04 -1.0
+camera.fovY = 0.5135
+
+/#
+[LightSource]
+type = POINT
+position = 0 50 70
+#position = 0 0 0
+flux = 25000 25000 25000
+#/
+
+# 直接光、間接光など要素ごとに比べる
+
+/#
+[LightSource]
+type = AREA
+p0 = -5 52  5
+p1 = -5 52 -5
+p2 =  5 52 -5
+p3 =  5 52  5
+flux = 10000 10000 10000
+nSamples = 8
+#/
+
+[LightSource]
+type = SPHERE
+position = 0 50 70
+#position = 0 0 0
+radius = 4
+flux = 50000 50000 50000
+#nSamples = 128
+nSamples = 32
+
+# 手前がプラス
+# @todo emission -> color
+
+[Rectangle] #Left
+    p0 = -62  53  95
+    p1 = -62 -53  95
+    p2 = -62 -53 -95
+    p3 = -62  53 -95
+	emission = .75 .25 .25
+	material = DIFF
+
+[Rectangle] #Right
+    p0 = 62  53 -95
+    p1 = 62 -53 -95
+    p2 = 62 -53  95
+    p3 = 62  53  95
+	emission = .25 .25 .75
+	material = DIFF
+
+/#
+[Rectangle] #Back
+    p0 = -62  53 -95
+    p1 = -62 -53 -95
+    p2 =  62 -53 -95
+    p3 =  62  53 -95
+	emission = .75 .75 .75
+	material = DIFF
+#/
+
+/#
+[Rectangle] #Front
+    p0 =  62  53  95
+    p1 =  62 -53  95
+    p2 = -62 -53  95
+    p3 = -62  53  95
+	emission = .75 .75 .75
+	material = DIFF
+#/
+
+[Rectangle] #Bottom
+    p0 = -62 -53 -95
+    p1 = -62 -53  95
+    p2 =  62 -53  95
+    p3 =  62 -53 -95
+	emission = .75 .75 .75
+	material = DIFF
+
+[Rectangle] #Top
+    p0 = -62  53 -95
+    p1 = -62  53  95
+    p2 =  62  53  95
+    p3 =  62  53 -95
+	emission = .75 .75 .75
+	material = DIFF
+
+/#
+[Sphere] #Mirror
+	radius = 20
+	position = +10 -53+20 -25
+	emission = .999 .999 .999
+	material = SPEC
+#/
+
+[Cuboid]
+    scale = 12 12 12
+    rotate = 30 30 0
+    position = 0 0 -100
+    emission = 0.1 0.1 0.1
+    material = DIFF
+    repeat = 7 7 7
+    interval = 1
+    margin = 0 0 0
+    randColor = true
+
+/#
+[Sphere] #Glass
+	radius = 20
+	position = 25 -53+20 15
+	emission = 1 1 1
+	material = REFR
+#/
+
+/#
+[Triangle]
+	p0 = 0  20 35
+	p1 = 20 20 35
+	p2 = 20  20 35
+	emission = .80 .80 .20
+	material = DIFF
+#/
+
+[SceneImport]
+    path = "/Users/shuichih/Dev/rt/objs/venusm.obj"
+    scale = 0.025 0.025 0.025
+#	translate = 40 -47 10
+	translate = 0 -52 30
+    material = REFR
+    color = 0.9 0.9 0.9
+
+/#
+[SceneImport]
+    path = "/Users/shuichih/Dev/rt/objs/cube.obj"
+    scale = 40 40 40
+	translate = 30 0 0
+    material = REFR
+    color = 1 0.1 0.1
+#/
+
+/#
+[SceneImport]
+    path = "/Users/shuichih/Dev/rt/objs/slime_objs/slime_simple_high_tri.obj"
+    scale = 20 20 20
+    rotate = 0 0 0
+    translate = 30 5 15
+    material = REFR
+    faceReverse = true
+    color = 0.0 0.5 1.0
+#/
+
+/#
+[SceneImport]
+    path = "/Users/shuichih/Dev/rt/objs/slime_objs/slime_simple_high_tri.obj"
+    scale = 20 20 20
+    translate = -30 -53+8 15
+    material = REFR
+    faceReverse = true
+    color = 1.0 0.5 0.0
+#/
