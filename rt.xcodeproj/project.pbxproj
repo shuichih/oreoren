@@ -70,6 +70,7 @@
 		B263223514E7893A00158AF5 /* PhotonMapRenderer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PhotonMapRenderer.h; sourceTree = "<group>"; };
 		B263223814E78A5900158AF5 /* PhotonMap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PhotonMap.h; sourceTree = "<group>"; };
 		B263223914E7A5B700158AF5 /* Common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Common.h; sourceTree = "<group>"; };
+		B26355B11770B49200D3E834 /* SIMD.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SIMD.h; sourceTree = "<group>"; };
 		B26B25261616D72E00560892 /* RayTracingRenderer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RayTracingRenderer.cpp; sourceTree = "<group>"; };
 		B26B25271616D72E00560892 /* RayTracingRenderer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RayTracingRenderer.h; sourceTree = "<group>"; };
 		B26B252A1616DCC700560892 /* IRenderer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IRenderer.h; sourceTree = "<group>"; };
@@ -165,6 +166,7 @@
 		B209617B1483117300863694 /* rt */ = {
 			isa = PBXGroup;
 			children = (
+				B26355B11770B49200D3E834 /* SIMD.h */,
 				B2D8DDB91770884200712CE8 /* QBVHBase.cpp */,
 				B2D8DDBA1770884200712CE8 /* QBVHBase.h */,
 				B2E404C41760C6E10074F3A0 /* SIMD_QBVH.cpp */,
