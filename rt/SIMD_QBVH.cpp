@@ -131,12 +131,11 @@ void SIMD_QBVH::Build(const IShape** pShapes, int nShapes)
     printf("LeafShape=%d MeshTriangle=%d OtherPrim=%d\n", nLeafShapes, nTriangles_, nOtherPrims_);
     
     // 構築
-    SIMD_QBVH_NODE& rNode = pNodes_[0];
     iNodes_++;
-    BuildBranch(rNode, ppLeafShapes, nLeafShapes);
+    BuildBranch(0, ppLeafShapes, nLeafShapes);
     
     // 全体のBBoxを作成
-    bbox_ = SurroundBBox(rNode.bboxes);
+    bbox_ = SurroundBBox(pNodes_[0].bboxes);
     
     // realloc
     printf("Node=%d Leaf=%d\n", iNodes_, iLeaves_ );
@@ -155,7 +154,7 @@ void SIMD_QBVH::Build(const IShape** pShapes, int nShapes)
 }
 
 // 枝ノード構築
-void SIMD_QBVH::BuildBranch(SIMD_QBVH_NODE& rNode, const IShape** pShapes, int nShapes)
+void SIMD_QBVH::BuildBranch(int iCurrNode, const IShape** pShapes, int nShapes)
 {
     depth_++;
     
@@ -182,9 +181,12 @@ void SIMD_QBVH::BuildBranch(SIMD_QBVH_NODE& rNode, const IShape** pShapes, int n
     int axis_r = LargestAxis(bbox_r);
     
     // 交差判定では使ってないけど一応保存しておく
-    rNode.axis0 = axis;
-    rNode.axis1 = axis_l;
-    rNode.axis2 = axis_r;
+    {
+        SIMD_QBVH_NODE* pNode = &pNodes_[iCurrNode];
+        pNode->axis0 = axis;
+        pNode->axis1 = axis_l;
+        pNode->axis2 = axis_r;
+    }
     
     // leftとrightそれぞれpivot決める
     float pivot_l = ((bbox_l.Max() + bbox_l.Min()) * 0.5f).e[axis_l];
@@ -217,37 +219,43 @@ void SIMD_QBVH::BuildBranch(SIMD_QBVH_NODE& rNode, const IShape** pShapes, int n
         // 子が空なら特別なindexをセット
         if (nChildren[i] == 0) {
             //printf("-\n");
-            rNode.children[i] = INT_MIN;
+            SIMD_QBVH_NODE* pNode = &pNodes_[iCurrNode];
+            pNode->children[i] = INT_MIN;
         }
         // 子が4より多ければさらに枝に分割
         else if (nChildren[i] > 4) {
             //printf("=\n");
             //assert(iNodes_ < nNodeCapacity_);
-            rNode.children[i] = iNodes_;
-            SIMD_QBVH_NODE& rChildNode = GetNewNode();
-            BuildBranch(rChildNode, ppChildShapes[i], nChildren[i]);
+            SIMD_QBVH_NODE* pNode = &pNodes_[iCurrNode];
+            pNode->children[i] = iNodes_;
+            AddNewNode();
+            pNode = &pNodes_[iCurrNode]; // pNodes_ might be realloc in AddNewNode()
+            BuildBranch(pNode->children[i], ppChildShapes[i], nChildren[i]);
         }
         // 子が4以下だったら葉を作る
         else {
             //printf("*\n");
-            rNode.children[i] = INT_MIN; // 符号で枝と葉を区別
+            SIMD_QBVH_NODE* pNode = &pNodes_[iCurrNode];
+            pNode->children[i] = INT_MIN; // 符号で枝と葉を区別
             assert(iLeaves_ < (1<<30));
-            rNode.children[i] |= iLeaves_;
-            Leaf& rLeaf = GetNewLeaf();
+            pNode->children[i] |= iLeaves_;
+            Leaf& rLeaf = AddNewLeaf();
             
             rLeaf.iTriangles = iTriangles_;
             rLeaf.iOtherPrims = iOtherPrims_;
             BuildLeaf(rLeaf.nTriangles, rLeaf.nOtherPrims, ppChildShapes[i], nChildren[i]);
         }
     }
+    
     for (int i=0; i<2; i++) {
         for (int j=0; j<3; j++) {
-            rNode.bboxes[i][j] = _mm_set_ps(
+            //rNode.bboxes[i][j] = _mm_set_ps(
+            pNodes_[iCurrNode].bboxes[i][j] = _mm_set_ps(
                 childBBoxes[3].pp[i].e[j],
                 childBBoxes[2].pp[i].e[j],
                 childBBoxes[1].pp[i].e[j],
                 childBBoxes[0].pp[i].e[j]
-                                            );
+            );
         }
     }
     
@@ -325,10 +333,11 @@ BBox SIMD_QBVH::SurroundBBox(__m128 bboxes[2][3])
 }
 
 // 新しい枝を取得
-SIMD_QBVH::SIMD_QBVH_NODE& SIMD_QBVH::GetNewNode()
+int SIMD_QBVH::AddNewNode()
 {
     // ensure capacity
     if (iNodes_ >= nNodeCapacity_) {
+        //printf("capacity\n");
         nNodeCapacity_ *= 2;
         SIMD_QBVH_NODE* pNewNodes = new SIMD_QBVH_NODE[nNodeCapacity_];
         for (int i=0; i<iNodes_; i++) {
@@ -337,13 +346,11 @@ SIMD_QBVH::SIMD_QBVH_NODE& SIMD_QBVH::GetNewNode()
         delete pNodes_;
         pNodes_ = pNewNodes;
     }
-    SIMD_QBVH_NODE& rNode = pNodes_[iNodes_];
-    iNodes_++;
-    return rNode;
+    return ++iNodes_;
 }
 
 // 新しい葉を取得
-SIMD_QBVH::Leaf& SIMD_QBVH::GetNewLeaf()
+SIMD_QBVH::Leaf& SIMD_QBVH::AddNewLeaf()
 {
     // ensure capacity
     if (iLeaves_ >= nLeafCapacity_) {

@@ -113,12 +113,15 @@ Vec3 RayTracingRenderer::Irradiance(const Ray &r, int depth)
     
     real a = grassRefrIdx - airRefrIdx;
     real b = grassRefrIdx + airRefrIdx;
-    real R0 = a * a / (b * b); // 垂直反射率 0.25 / 2.5 = 0.1 @todo 根拠調査
+    real R0 = a * a / (b * b);
     real c = 1.f - (into ? -ddn : tdir.dot(n));
-    real fresnel = R0 + (1.f - R0)*c*c*c*c*c;
-    real Tr = 1.f - fresnel;
+    real Re = R0 + (1.f - R0)*c*c*c*c*c;
+    // レイの運ぶ放射輝度は屈折率の異なる物体間を移動するとき、屈折率の比の2乗の分だけ変化する
+    // 屈折率が単位立体角あたりの値だから
+    real nnt2 = nnt * nnt;
+    real Tr = (1.f - Re) * nnt2;
     // 反射屈折両方トレース
-    return Irradiance(reflRay, depth) * fresnel + Irradiance(Ray(x,tdir), depth).mult(f) * Tr;
+    return Irradiance(reflRay, depth) * Re + Irradiance(Ray(x,tdir), depth).mult(f) * Tr;
 }
 
 void RayTracingRenderer::RayTracing(Vec3* pColorBuf)

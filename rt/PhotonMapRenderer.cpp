@@ -150,10 +150,10 @@ void PhotonMapRenderer::TracePhoton(const Ray& r, const Vec3& power, PathInfo& p
     Vec3 tdir = (r.d * nnt - n * ((into ? 1.f : -1.f) * (ddn * nnt + sqrtf(cos2t)))).normalize();
     real a = grassRefrIdx - airRefrIdx;
     real b = grassRefrIdx + airRefrIdx;
-    real R0 = a * a / (b * b); // 垂直反射率 0.25 / 2.5 = 0.1 @todo 根拠調査
+    real R0 = a * a / (b * b);
     real c = 1.f - (into ? -ddn : tdir.dot(n));
-    real fresnel = R0 + (1.f - R0)*c*c*c*c*c;
-    real P = fresnel;
+    real Re = R0 + (1.f - R0)*c*c*c*c*c;
+    real P = Re;
     if ((real)erand48(xi_) < P)
         TracePhoton(reflRay, power, pathInfo);       // 反射
     else
@@ -257,13 +257,16 @@ Vec3 PhotonMapRenderer::Irradiance(const Ray &r, PathInfo& pathInfo)
         
         real a = grassRefrIdx - airRefrIdx;
         real b = grassRefrIdx + airRefrIdx;
-        real R0 = a * a / (b * b); // 垂直反射率 0.25 / 2.5 = 0.1 @todo 根拠調査
+        real R0 = a * a / (b * b);
         real c = 1.f - (into ? -ddn : tdir.dot(n));
-        real fresnel = R0 + (1.f - R0)*c*c*c*c*c;
-        real Tr = 1.f - fresnel;
+        real Re = R0 + (1.f - R0)*c*c*c*c*c;
+        // レイの運ぶ放射輝度は屈折率の異なる物体間を移動するとき、屈折率の比の2乗の分だけ変化する
+        // 屈折率が単位立体角あたりの値だから
+        real nnt2 = nnt * nnt;
+        real Tr = (1.f - Re) * nnt2;
         // 反射屈折両方トレース
         PathInfo pathInfo2(pathInfo);
-        return Irradiance(reflRay, pathInfo) * fresnel
+        return Irradiance(reflRay, pathInfo) * Re
              + Irradiance(Ray(x,tdir), pathInfo2).mult(color) * Tr;
     }
     

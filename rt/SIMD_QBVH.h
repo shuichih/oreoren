@@ -84,11 +84,11 @@ private:
     const IShape** FlattenLeafShapes(const IShape** ppFlatten, const IShape** ppShapes, int nShapes);
     BBox SurroundBBox(__m128 bboxes[2][3]);
     BBox SurroundBBox(const IShape** ppShapes, int nShapes);
-    void BuildBranch(SIMD_QBVH_NODE& rNode, const IShape** pShapes, int nShapes);
+    void BuildBranch(int iNode, const IShape** pShapes, int nShapes);
     int BuildLeaf(u8& nMeshTris, u8& nOtherPrims, const IShape** ppShapes, int nShapes);
     int BuildOtherPrimitive(const IShape** pShapes, int nShapes);
-    SIMD_QBVH_NODE& GetNewNode();
-    Leaf& GetNewLeaf();
+    int AddNewNode();
+    Leaf& AddNewLeaf();
     bool IntersectBranch(SIMD_QBVH_NODE& rNode, const Ray &r, float tmin, HitRecord& rec) const;
     bool IntersectLeaf(Leaf& leaf, const Ray& r, float tmin, HitRecord& rec) const;
     bool IntersectTriangle(SIMD_TRIANGLE& tri, const Ray& r, float tmin, float tmax, HitRecord& rec) const;

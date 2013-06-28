@@ -129,13 +129,12 @@ void SISD_QBVH::Build(const IShape** pShapes, int nShapes)
     printf("LeafShape=%d MeshTriangle=%d OtherPrim=%d\n", nLeafShapes, nTriangles_, nOtherPrims_);
     
     // 構築
-    SISD_QBVH_NODE& rNode = pNodes_[0];
     iNodes_++;
-    BuildBranch(rNode, ppLeafShapes, nLeafShapes);
+    BuildBranch(0, ppLeafShapes, nLeafShapes);
     
     // 全体のBBoxを作成
-    BBox bbox0 = BBox::Surround(rNode.bboxes[0], rNode.bboxes[1]);
-    BBox bbox1 = BBox::Surround(rNode.bboxes[2], rNode.bboxes[3]);
+    BBox bbox0 = BBox::Surround(pNodes_[0].bboxes[0], pNodes_[0].bboxes[1]);
+    BBox bbox1 = BBox::Surround(pNodes_[0].bboxes[2], pNodes_[0].bboxes[3]);
     bbox_ = BBox::Surround(bbox0, bbox1);
     
     // realloc
@@ -155,7 +154,7 @@ void SISD_QBVH::Build(const IShape** pShapes, int nShapes)
 }
 
 // 枝ノード構築
-void SISD_QBVH::BuildBranch(SISD_QBVH_NODE& rNode, const IShape** pShapes, int nShapes)
+void SISD_QBVH::BuildBranch(int iCurrNode, const IShape** pShapes, int nShapes)
 {
     depth_++;
     
@@ -182,9 +181,12 @@ void SISD_QBVH::BuildBranch(SISD_QBVH_NODE& rNode, const IShape** pShapes, int n
     int axis_r = LargestAxis(bbox_r);
     
     // 交差判定では使ってないけど一応保存しておく
-    rNode.axis0 = axis;
-    rNode.axis1 = axis_l;
-    rNode.axis2 = axis_r;
+    {
+        SISD_QBVH_NODE* pNode = &pNodes_[iCurrNode];
+        pNode->axis0 = axis;
+        pNode->axis1 = axis_l;
+        pNode->axis2 = axis_r;
+    }
     
     // leftとrightそれぞれpivot決める
     float pivot_l = ((bbox_l.Max() + bbox_l.Min()) * 0.5f).e[axis_l];
@@ -211,27 +213,30 @@ void SISD_QBVH::BuildBranch(SISD_QBVH_NODE& rNode, const IShape** pShapes, int n
     for (int i=0; i<4; i++) {
         
         // bbox求める
-        rNode.bboxes[i] = SurroundBBox(ppChildShapes[i], nChildren[i]);
+        pNodes_[iCurrNode].bboxes[i] = SurroundBBox(ppChildShapes[i], nChildren[i]);
         
         // 子が空なら特別なindexをセット
         if (nChildren[i] == 0) {
             //printf("-\n");
-            rNode.children[i] = INT_MIN;
+            SISD_QBVH_NODE* pNode = &pNodes_[iCurrNode];
+            pNode->children[i] = INT_MIN;
         }
         // 子が4より多ければさらに枝に分割
         else if (nChildren[i] > 4) {
             //printf("=\n");
-            rNode.children[i] = iNodes_;
-            SISD_QBVH_NODE& rChildNode = GetNewNode();
-            BuildBranch(rChildNode, ppChildShapes[i], nChildren[i]);
+            SISD_QBVH_NODE* pNode = &pNodes_[iCurrNode];
+            pNode->children[i] = iNodes_;
+            AddNewNode();
+            BuildBranch(pNode->children[i], ppChildShapes[i], nChildren[i]);
         }
         // 子が4以下だったら葉を作る
         else {
             //printf("*\n");
-            rNode.children[i] = INT_MIN; // 符号で枝と葉を区別
+            SISD_QBVH_NODE* pNode = &pNodes_[iCurrNode];
+            pNode->children[i] = INT_MIN; // 符号で枝と葉を区別
             assert(iLeaves_ < (1<<30));
-            rNode.children[i] |= iLeaves_;
-            Leaf& rLeaf = GetNewLeaf();
+            pNode->children[i] |= iLeaves_;
+            Leaf& rLeaf = AddNewLeaf();
             
             rLeaf.iTriangles = iTriangles_;
             rLeaf.iOtherPrims = iOtherPrims_;
@@ -288,7 +293,7 @@ BBox SISD_QBVH::SurroundBBox(const IShape** ppShapes, int nShapes)
 }
 
 // 新しい枝を取得
-SISD_QBVH::SISD_QBVH_NODE& SISD_QBVH::GetNewNode()
+int SISD_QBVH::AddNewNode()
 {
     // ensure capacity
     if (iNodes_ >= nNodeCapacity_) {
@@ -300,13 +305,11 @@ SISD_QBVH::SISD_QBVH_NODE& SISD_QBVH::GetNewNode()
         delete pNodes_;
         pNodes_ = pNewNodes;
     }
-    SISD_QBVH_NODE& rNode = pNodes_[iNodes_];
-    iNodes_++;
-    return rNode;
+    return ++iNodes_;
 }
 
 // 新しい葉を取得
-SISD_QBVH::Leaf& SISD_QBVH::GetNewLeaf()
+SISD_QBVH::Leaf& SISD_QBVH::AddNewLeaf()
 {
     // ensure capacity
     if (iLeaves_ >= nLeafCapacity_) {
