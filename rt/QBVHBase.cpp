@@ -9,38 +9,53 @@ using namespace std;
 #define INITIAL_NODE_NUM 10000 // about 1.2MB
 #define INITIAL_LEAF_NUM 30000 // about 0.72MB
 
-QBVHBase::QBVHBase()
+template <typename NODE_T>
+QBVHBase<NODE_T>::QBVHBase()
 : pTriangles_(NULL)
 , ppOtherPrims_(NULL)
-, nNodeCapacity_(0)
-, nTriangles_(0)
-, nOtherPrims_(0)
-, iNodes_(0)
-, iTriangles_(0)
-, iLeaves_(0)
-, iOtherPrims_(0)
-, depth_(0)
+, pNodes_(NULL)
+, pLeaves_(NULL)
 {
+    Reset();
+    
     nNodeCapacity_ = INITIAL_NODE_NUM;
     nLeafCapacity_ = INITIAL_LEAF_NUM;
     pLeaves_ = new Leaf[nLeafCapacity_];
 }
 
-QBVHBase::~QBVHBase()
+template <typename NODE_T>
+QBVHBase<NODE_T>::~QBVHBase()
 {
+    Reset();
 }
 
 // Build時に使うバッファを初期化
-void QBVHBase::Reset()
+template <typename NODE_T>
+void QBVHBase<NODE_T>::Reset()
 {
     delete [] pTriangles_;
     delete [] ppOtherPrims_;
     pTriangles_ = NULL;
     ppOtherPrims_ = NULL;
+    nTriangles_ = 0;
+    nOtherPrims_ = 0;
+    iNodes_ = 0;
+    iTriangles_ = 0;
+    iLeaves_ = 0;
+    iOtherPrims_ = 0;
+    depth_ = 0;
+    
+    delete pNodes_;
+    delete pLeaves_;
+    nNodeCapacity_ = INITIAL_NODE_NUM;
+    pNodes_ = new NODE_T[nNodeCapacity_];
+    nLeafCapacity_ = INITIAL_LEAF_NUM;
+    pLeaves_ = new Leaf[nLeafCapacity_];
 }
 
 // シェイプが葉になるタイプならtrueを返す
-bool QBVHBase::IsLeafType(ShapeType shapeType)
+template <typename NODE_T>
+bool QBVHBase<NODE_T>::IsLeafType(ShapeType shapeType)
 {
     return (shapeType == ST_MESH_TRIANGLE
          || shapeType == ST_SPHERE
@@ -48,22 +63,55 @@ bool QBVHBase::IsLeafType(ShapeType shapeType)
 }
 
 // シェイプがMeshTriangle以外の葉になるタイプならtrueを返す
-bool QBVHBase::IsOtherPrimType(ShapeType shapeType)
+template <typename NODE_T>
+bool QBVHBase<NODE_T>::IsOtherPrimType(ShapeType shapeType)
 {
     return (shapeType == ST_SPHERE
          || shapeType == ST_TRIANGLE);
 }
 
+template <typename NODE_T>
+bool QBVHBase<NODE_T>::IsMeshTriangleType(ShapeType shapeType)
+{
+    return shapeType == ST_MESH_TRIANGLE;
+}
+
+// BBoxの一番大きい軸
+template <typename NODE_T>
+int QBVHBase<NODE_T>::LargestAxis(const BBox& bbox)
+{
+    Vec3 bboxSize = bbox.pp[1] - bbox.pp[0];
+    int axis;
+    if (bboxSize.x > bboxSize.y) {
+        axis = (bboxSize.x > bboxSize.z) ? 0 : 2;
+    } else {
+        axis = (bboxSize.y > bboxSize.z) ? 1 : 2;
+    }
+    return axis;
+}
+
+//--------------------------------------------------------------------------------------------------
+// Build
+//--------------------------------------------------------------------------------------------------
+
 // 葉ノード総数をカウント
 // MESH, QBVHは葉にならない
-int QBVHBase::CountLeafShapes(const IShape** pShapes, int nShapes)
+template <typename NODE_T>
+int QBVHBase<NODE_T>::CountLeafShapes(const IShape** pShapes, int nShapes)
 {
     int ret = 0;
     for (int i=0; i<nShapes; i++) {
         int nChildren = pShapes[i]->GetChildNum();
         if (nChildren == 0) {
-            if (IsLeafType(pShapes[i]->GetType())) {
+            ShapeType st = pShapes[i]->GetType();
+            if (IsLeafType(st)) {
                 ret++;
+            }
+            if (IsOtherPrimType(st)) {
+                nOtherPrims_++;
+            }
+            if (IsMeshTriangleType(st)) {
+                nTriangles_++;
             }
         } else {
             ret += CountLeafShapes(pShapes[i]->GetChildren(), nChildren);
@@ -73,7 +121,8 @@ int QBVHBase::CountLeafShapes(const IShape** pShapes, int nShapes)
 }
 
 // 葉のシェイプだけをフラットな配列にする
-const IShape** QBVHBase::FlattenLeafShapes(const IShape** ppFlatten, const IShape** ppShapes, int nShapes)
+template <typename NODE_T>
+const IShape** QBVHBase<NODE_T>::FlattenLeafShapes(const IShape** ppFlatten, const IShape** ppShapes, int nShapes)
 {
     for (int i=0; i<nShapes; i++) {
         int nChildren = ppShapes[i]->GetChildNum();
@@ -87,8 +136,35 @@ const IShape** QBVHBase::FlattenLeafShapes(const IShape** ppFlatten, const IShap
     return ppFlatten;
 }
 
+// 構築
+template <typename NODE_T>
+void QBVHBase<NODE_T>::Build(const IShape** pShapes, int nShapes)
+{
+    Reset();
+    
+    // 全ての葉のシェイプをフラットな配列に
+    int nLeafShapes = CountLeafShapes(pShapes, nShapes);
+    const IShape** ppLeafShapes = new const IShape*[nLeafShapes];
+    FlattenLeafShapes(ppLeafShapes, pShapes, nShapes);
+    
+    // MeshTriangleとその他のシェイプの領域を確保
+    pTriangles_ = new Triangle[nTriangles_];
+    ppOtherPrims_ = new const IShape*[nOtherPrims_];
+    printf("LeafShape=%d MeshTriangle=%d OtherPrim=%d\n", nLeafShapes, nTriangles_, nOtherPrims_);
+    
+    // 構築
+    iNodes_++;
+    BuildBranch(0, ppLeafShapes, nLeafShapes);
+    
+    // 全体のBBoxを作成
+    MakeWholeBBox();
+    
+    ShrinkBuffersToFit();
+}
+
 // 葉ノード構築
-int QBVHBase::BuildLeaf(u8& nMeshTris, u8& nOtherPrims, const IShape** ppShapes, int nShapes)
+template <typename NODE_T>
+int QBVHBase<NODE_T>::BuildLeaf(u8& nMeshTris, u8& nOtherPrims, const IShape** ppShapes, int nShapes)
 {
     nMeshTris = 0;
     nOtherPrims = 0;
@@ -118,7 +194,8 @@ int QBVHBase::BuildLeaf(u8& nMeshTris, u8& nOtherPrims, const IShape** ppShapes,
 }
 
 // 全Shapeを含むBBoxを返す
-BBox QBVHBase::SurroundBBox(const IShape** ppShapes, int nShapes)
+template <typename NODE_T>
+BBox QBVHBase<NODE_T>::SurroundBBox(const IShape** ppShapes, int nShapes)
 {
     if (nShapes == 0) {
         return BBox();
@@ -131,8 +208,26 @@ BBox QBVHBase::SurroundBBox(const IShape** ppShapes, int nShapes)
     return bbox;
 }
 
+// 新しい枝を取得
+template <typename NODE_T>
+int QBVHBase<NODE_T>::AddNewNode()
+{
+    // ensure capacity
+    if (iNodes_ >= nNodeCapacity_) {
+        nNodeCapacity_ *= 2;
+        NODE_T* pNewNodes = new NODE_T[nNodeCapacity_];
+        for (int i=0; i<iNodes_; i++) {
+            pNewNodes[i] = pNodes_[i];
+        }
+        delete pNodes_;
+        pNodes_ = pNewNodes;
+    }
+    return ++iNodes_;
+}
+
 // 新しい葉を取得
-QBVHBase::Leaf& QBVHBase::GetNewLeaf()
+template <typename NODE_T>
+typename QBVHBase<NODE_T>::Leaf& QBVHBase<NODE_T>::AddNewLeaf()
 {
     // ensure capacity
     if (iLeaves_ >= nLeafCapacity_) {
@@ -149,14 +244,53 @@ QBVHBase::Leaf& QBVHBase::GetNewLeaf()
     return rLeaf;
 }
 
+// バッファを使用サイズに合わせてシュリンクする
+template <typename NODE_T>
+void QBVHBase<NODE_T>::ShrinkBuffersToFit()
+{
+    // realloc
+    printf("Node=%d Leaf=%d\n", iNodes_, iLeaves_);
+    NODE_T* pNewNodes = new NODE_T[iNodes_];
+    for (int i=0; i<iNodes_; i++) {
+        pNewNodes[i] = pNodes_[i];
+    }
+    delete pNodes_;
+    pNodes_ = pNewNodes;
+    
+    Leaf* pNewLeaves = new Leaf[iLeaves_];
+    for (int i=0; i<iLeaves_; i++) {
+        pNewLeaves[i] = pLeaves_[i];
+    }
+    delete pLeaves_;
+    
+    pLeaves_ = pNewLeaves;
+}
+
 // ツリー全体のBBを返す
-BBox QBVHBase::BoundingBox() const
+template <typename NODE_T>
+BBox QBVHBase<NODE_T>::BoundingBox() const
 {
     return bbox_;
 }
 
+//--------------------------------------------------------------------------------------------------
+// Intersection
+//--------------------------------------------------------------------------------------------------
+
+// 交差判定
+template <typename NODE_T>
+bool QBVHBase<NODE_T>::Intersect(const Ray &r, float tmin, float tmax, HitRecord& rec) const
+{
+    if (!bbox_.RayIntersect(r, tmin, tmax)) return false;
+    
+    rec.t = tmax;
+    
+    return IntersectBranch(pNodes_[0], r, tmin, rec);
+}
+
 //　葉の交差判定
-bool QBVHBase::IntersectLeaf(Leaf& leaf, const Ray& r, float tmin, HitRecord& rec) const
+template <typename NODE_T>
+bool QBVHBase<NODE_T>::IntersectLeaf(Leaf& leaf, const Ray& r, float tmin, HitRecord& rec) const
 {
     bool ret = false;
     Triangle* pTri = &pTriangles_[leaf.iTriangles];
@@ -177,7 +311,8 @@ bool QBVHBase::IntersectLeaf(Leaf& leaf, const Ray& r, float tmin, HitRecord& re
 }
 
 // 三角形交差判定
-bool QBVHBase::IntersectTriangle(Triangle& tri, const Ray& r, float tmin, float tmax, HitRecord& rec) const
+template <typename NODE_T>
+bool QBVHBase<NODE_T>::IntersectTriangle(Triangle& tri, const Ray& r, float tmin, float tmax, HitRecord& rec) const
 {
     // based PHISICALLY BASED RENDERING 2ND EDITION, 3.6.2
     Vec3 e1 = tri.p[1] - tri.p[0];
@@ -233,8 +368,18 @@ bool QBVHBase::IntersectTriangle(Triangle& tri, const Ray& r, float tmin, float 
     return true;
 }
 
+// レイキャスト
+template <typename NODE_T>
+int QBVHBase<NODE_T>::RayCast(vector<HitRecord>& hits, int nHits, const Ray &r, float tmin, float tmax) const
+{
+    if (!bbox_.RayIntersect(r, tmin, tmax)) return nHits;
+    
+    return RayCastBranch(hits, nHits, pNodes_[0], r, tmin, tmax);
+}
+
 // 葉に対するレイキャスト
-int QBVHBase::RayCastLeaf(vector<HitRecord>& hits, int nHits, Leaf& leaf, const Ray &r, float tmin, float tmax) const
+template <typename NODE_T>
+int QBVHBase<NODE_T>::RayCastLeaf(vector<HitRecord>& hits, int nHits, Leaf& leaf, const Ray &r, float tmin, float tmax) const
 {
     Triangle* pTri = &pTriangles_[leaf.iTriangles];
     int nTri = leaf.nTriangles;
@@ -259,7 +404,8 @@ int QBVHBase::RayCastLeaf(vector<HitRecord>& hits, int nHits, Leaf& leaf, const 
 }
 
 // シェイプをpivotの左右に分ける
-int QBVHBase::QSplit(const IShape** pShapes, int nShapes, float pivot, int axis)
+template <typename NODE_T>
+int QBVHBase<NODE_T>::QSplit(const IShape** pShapes, int nShapes, float pivot, int axis)
 {
     BBox bbox;
     double centroid;
@@ -285,15 +431,8 @@ int QBVHBase::QSplit(const IShape** pShapes, int nShapes, float pivot, int axis)
     return mid_idx;
 }
 
-// BBoxの一番大きい軸
-int QBVHBase::LargestAxis(const BBox& bbox)
-{
-    Vec3 bboxSize = bbox.pp[1] - bbox.pp[0];
-    int axis;
-    if (bboxSize.x > bboxSize.y) {
-        axis = (bboxSize.x > bboxSize.z) ? 0 : 2;
-    } else {
-        axis = (bboxSize.y > bboxSize.z) ? 1 : 2;
-    }
-    return axis;
-}
+//--------------------------------------------------------------------------------------------------
+// 明示的インスタンス化
+//--------------------------------------------------------------------------------------------------
+template class QBVHBase<SISD_QBVH_NODE>;
+template class QBVHBase<SIMD_QBVH_NODE>;
