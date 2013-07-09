@@ -36,6 +36,7 @@ enum Section
     SEC_RECTANGLE,
     SEC_CUBOID,
     SEC_SCENEIMPORT,
+    SEC_WATERSURFACE,
     SEC_NUM,
 };
 
@@ -46,6 +47,7 @@ enum ItemValueType
     IVT_INT,
     IVT_FLOAT,
     IVT_BOOL,
+    IVT_VEC2,
     IVT_VEC3,
     IVT_STR,
     IVT_MTL,
@@ -219,12 +221,14 @@ public:
     bool ParseInt(void* pVal, const string& val);
     bool ParseFloat(void* pVal, const string& str);
     bool ParseBool(void* pVal, const string& str);
+    bool ParseVec2(void* pVal, const string& str);
     bool ParseVec3(void* pVal, const string& str);
     bool ParseString(void* pVal, string& str);
     bool ParseMaterial(void* pVal, const string& str);
     string IntToString(void* pVal);
     string FloatToString(void* pVal);
     string BoolToString(void* pVal);
+    string Vec2ToString(void* pVal);
     string Vec3ToString(void* pVal);
     string MaterialToString(void* pVal);
     
@@ -324,6 +328,30 @@ public:
     
 private:
     SceneImportConfig conf_;
+    ItemDesc* pItemDesc_;
+    Scene* pScene_;
+};
+
+
+//--------------------------------------------------------------------------------
+// NoiseSurfaceセクションパーサ
+class NoiseSurfaceParser : public SectionParser
+{
+public:
+    NoiseSurfaceParser(const char* pName, Scene* pScene);
+    virtual ~NoiseSurfaceParser();
+    
+    virtual bool OnLeave();
+    
+private:
+    Vec3 center_;
+    Vec3 scale_;
+    Vec3 rotate_;
+    Vec2 division_;
+    Refl_t material_;
+    Vec3 color_;
+    bool noisyHeight_;
+    bool noisyColor_;
     ItemDesc* pItemDesc_;
     Scene* pScene_;
 };

@@ -1,7 +1,6 @@
 #ifndef SEVERE3D_TUPLE2_H
 #define SEVERE3D_TUPLE2_H
 
-#include "vecmath_def.h"
 
 /**
  * x, yの２つの要素を持つクラスです。
@@ -17,10 +16,7 @@ public:
             T x;
 			T y;
         };
-        struct {
-            T e0;
-			T e1;
-        };
+        T e[2];
     };
 
 

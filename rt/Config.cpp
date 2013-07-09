@@ -10,6 +10,7 @@
 #include "MeshLoader.h"
 #include "SimpleArithmetic.h"
 #include "LightSource.h"
+#include "PerlinNoise.h"
 
 using namespace std;
 
@@ -67,8 +68,9 @@ bool SectionParser::OnParseLine(const char* pStr)
             case IVT_INT:   result = ParseInt  (item.pValAddr, val); break;
             case IVT_FLOAT: result = ParseFloat(item.pValAddr, val); break;
             case IVT_BOOL:  result = ParseBool (item.pValAddr, val); break;
+            case IVT_VEC2:  result = ParseVec2 (item.pValAddr, val); break;
             case IVT_VEC3:  result = ParseVec3 (item.pValAddr, val); break;
-            case IVT_STR:   result = ParseString(item.pValAddr, val); break;
+                case IVT_STR:   result = ParseString(item.pValAddr, val); break;
             case IVT_MTL:   result = ParseMaterial(item.pValAddr, val); break;
                 default:
                 result = false;
@@ -136,6 +138,23 @@ bool SectionParser::ParseFloat(void* pVal, const string& str)
     return true;
 }
 
+bool SectionParser::ParseVec2(void* pVal, const string& str)
+{
+    vector<string> strVals = StringUtils::Split(str, ' ');
+    if (strVals.size() != 2) {
+        return false;
+    }
+    
+    Vec2& vec2 = *((Vec2*)pVal);
+    for (int i=0; i < 2; i++) {
+        if (!ParseFloat(&vec2.e[i], strVals[i])) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
 bool SectionParser::ParseVec3(void* pVal, const string& str)
 {
     vector<string> strVals = StringUtils::Split(str, ' ');
@@ -193,6 +212,7 @@ void SectionParser::Print()
             case IVT_INT:   valStr = IntToString(item.pValAddr);      break;
             case IVT_FLOAT: valStr = FloatToString(item.pValAddr);    break;
             case IVT_BOOL:  valStr = BoolToString(item.pValAddr);     break;
+            case IVT_VEC2:  valStr = Vec2ToString(item.pValAddr);     break;
             case IVT_VEC3:  valStr = Vec3ToString(item.pValAddr);     break;
             case IVT_STR:   valStr = *((string*)item.pValAddr);       break;
             case IVT_MTL:   valStr = MaterialToString(item.pValAddr); break;
@@ -222,6 +242,14 @@ string SectionParser::BoolToString(void* pVal)
 {
     char str[64];
     sprintf(str, "%s", (*((bool*)pVal)) ? "true" : "false");
+    return str;
+}
+
+string SectionParser::Vec2ToString(void* pVal)
+{
+    char str[128];
+    Vec2& vec2 = *((Vec2*)pVal);
+    sprintf(str, "%f %f", vec2.x, vec2.y);
     return str;
 }
 
@@ -633,6 +661,113 @@ bool SceneImportParser::OnLeave()
 
 //--------------------------------------------------------------------------------
 
+NoiseSurfaceParser::NoiseSurfaceParser(const char* pName, Scene* pScene)
+: SectionParser(pName, NULL, 0)
+, scale_(1, 1, 1)
+, division_(10, 10)
+, material_(DIFF)
+, color_(1, 1, 1)
+, noisyHeight_(true)
+, noisyColor_(false)
+{
+    ItemDesc itemDesc[] = {
+        { "center", IVT_VEC3, &center_ },
+        { "scale", IVT_VEC3, &scale_ },
+        { "rotate", IVT_VEC3, &rotate_ },
+        { "division", IVT_VEC2, &division_ },
+        { "material", IVT_MTL, &material_ },
+        { "color", IVT_VEC3, &color_ },
+        { "noisyHeight", IVT_BOOL, &noisyHeight_ },
+        { "noisyColor", IVT_BOOL, &noisyColor_ },
+    };
+    paryItemDesc_ = CreateItemDesc(itemDesc, ARRAY_SZ(itemDesc));
+    nItem_ = ARRAY_SZ(itemDesc);
+    
+    pScene_ = pScene;
+}
+
+NoiseSurfaceParser::~NoiseSurfaceParser()
+{
+}
+
+bool NoiseSurfaceParser::OnLeave()
+{
+    PerlinNoise2D noise;
+    noise.SetInterporatorType(Interp_Linear);
+    
+    int divX = division_.e[0];
+    int divZ = division_.e[1];
+    if (divX <= 0 || divZ <= 0) {
+        printf("[Error] Config: divX and divY of a NoiseSurface must be >=1\n");
+        return false;
+    }
+    
+    int nVertices = (divX + 1) * (divZ + 1);
+    int nFaces = divX * divZ * 2;
+    Mesh* pMesh = new Mesh(nVertices, nFaces);
+    
+    // vertices
+    float maxColor = 0;
+    for (int z=0; z<=divZ; z++) {
+        for (int x=0; x<=divX; x++) {
+            int iVert = (divX+1) * z + x;
+            float y = noisyHeight_
+                ? noise.Noise(x, z) * 0.5f // -0.5 to 0.5
+                : 0;
+            Vec3 pos(
+                x/(float)divX - 0.5f,
+                y,
+                z/(float)divZ - 0.5f
+            );
+            pMesh->pVertices[iVert].pos = pos;
+            if (noisyColor_) {
+                Vec3 c = color_ * noise.Noise(x, z);
+                pMesh->pVertices[iVert].color = c;
+                maxColor = std::max(maxColor, c.x);
+                maxColor = std::max(maxColor, c.y);
+                maxColor = std::max(maxColor, c.z);
+            }
+        }
+    }
+    for (int i=0; i<nVertices; i++) {
+        // normalize vertex color in 0 to 1
+        pMesh->pVertices[i].color /= maxColor;
+    }
+    // faces
+    for (int z=0; z<divZ; z++) {
+        for (int x=0; x<divX; x++) {
+            int iFace = (divX * z + x) * 2;
+            int iVerts[4] = {
+                (divX+1) * z + x,
+                (divX+1) * z + x + 1,
+                (divX+1) * (z+1) + x,
+                (divX+1) * (z+1) + x + 1,
+            };
+            pMesh->pFaces[iFace].indices[0] = iVerts[0];
+            pMesh->pFaces[iFace].indices[1] = iVerts[2];
+            pMesh->pFaces[iFace].indices[2] = iVerts[1];
+            pMesh->pFaces[iFace+1].indices[0] = iVerts[1];
+            pMesh->pFaces[iFace+1].indices[1] = iVerts[2];
+            pMesh->pFaces[iFace+1].indices[2] = iVerts[3];
+        }
+    }
+    
+    pMesh->scale(scale_);
+    pMesh->rotateXYZ(rotate_);
+    pMesh->translate(center_);
+    pMesh->material_ = material_;
+    pMesh->CalcBoundingBox();
+    pMesh->CalcFaceNormals();
+    pMesh->CalcVertexNormals();
+    pMesh->SetUseFaceNormal(false);
+    pMesh->colorUnit_ = noisyColor_ ? CU_Vertex : CU_Mesh;
+    pScene_->AddShape(pMesh);
+    
+    return true;
+}
+
+//--------------------------------------------------------------------------------
+
 Config::Config()
     : windowWidth(256)
     , windowHeight(256)
@@ -735,6 +870,7 @@ Config::Config()
     parsers_[SEC_RECTANGLE]   = new RectangleParser("[Rectangle]", &scene);
     parsers_[SEC_CUBOID]      = new CuboidParser("[Cuboid]", &scene);
     parsers_[SEC_SCENEIMPORT] = new SceneImportParser("[SceneImport]", &scene);
+    parsers_[SEC_WATERSURFACE]= new NoiseSurfaceParser("[NoiseSurface]", &scene);
 }
 
 Config::~Config()

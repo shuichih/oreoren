@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cfloat>
 #include "vector3.h"
+#include "tuple2.h"
 
 #define USE_FLOAT
 
@@ -47,6 +48,7 @@ const double PI_INV = 1.0 / M_PI;
 //using namespace severe3d;
 
 typedef Vector3f Vec3;
+typedef Tuple2f Vec2;
 typedef Vec3 RGB;
 
 template <typename T>

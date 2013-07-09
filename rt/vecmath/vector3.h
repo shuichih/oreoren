@@ -212,6 +212,18 @@ public:
         sub(t1);
         return *this;
     }
+    Vector3& operator*=(const Tuple3<T>& t1) {
+        this->x *= t1.x;
+        this->y *= t1.y;
+        this->z *= t1.z;
+        return *this;
+    }
+    Vector3& operator/=(const Tuple3<T>& t1) {
+        this->x /= t1.x;
+        this->y /= t1.y;
+        this->z /= t1.z;
+        return *this;
+    }
     Vector3& operator*=(T s) {
         scale(s);
         return *this;

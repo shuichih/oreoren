@@ -4,7 +4,7 @@
 windowWidth=256
 windowHeight=256
 drawBBox=false
-rendererType=2
+rendererType=0
 
 [BVH]
 build = true
@@ -200,6 +200,7 @@ nSamples = 64
 	material = DIFF
 #/
 
+/#
 [SceneImport]
     path = "/Users/shuichih/Dev/rt/objs/venusm.obj"
     scale = 0.025 0.025 0.025
@@ -213,6 +214,7 @@ nSamples = 64
 	translate = 40 -52 30
     material = REFR
     color = 0.9 0.9 0.9
+#/
 
 /#
 [SceneImport]
@@ -253,3 +255,13 @@ nSamples = 64
     faceReverse = true
     color = 1.0 0.5 0.0
 #/
+
+[NoiseSurface]
+    center = 0 -30 0
+    scale = 100 2 100
+    rotate = 90 0 0
+    division = 50 50
+    material = DIFF
+    color = 0.9 0.9 1
+    noisyHeight = true
+    noisyColor = true

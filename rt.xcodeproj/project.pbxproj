@@ -35,6 +35,7 @@
 		B2D8DDBB1770884200712CE8 /* QBVHBase.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2D8DDB91770884200712CE8 /* QBVHBase.cpp */; };
 		B2D9EE84170D5C09000EABF4 /* Ray.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2D9EE82170D5C09000EABF4 /* Ray.cpp */; };
 		B2E404C61760C6E10074F3A0 /* SIMD_QBVH.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2E404C41760C6E10074F3A0 /* SIMD_QBVH.cpp */; };
+		B2E9208117868181005AD7A7 /* PerlinNoise.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2E9207F17868181005AD7A7 /* PerlinNoise.cpp */; };
 		B2F4FECF15153367002EB635 /* LightSource.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2F4FECE15153367002EB635 /* LightSource.cpp */; };
 		B2F762DD16EC91F100F1407D /* matrix4.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2F762D516EC91F100F1407D /* matrix4.cpp */; };
 		B2F762DE16EC91F100F1407D /* quat4.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2F762DA16EC91F100F1407D /* quat4.cpp */; };
@@ -115,6 +116,9 @@
 		B2D9EE83170D5C09000EABF4 /* Ray.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Ray.h; sourceTree = "<group>"; };
 		B2E404C41760C6E10074F3A0 /* SIMD_QBVH.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SIMD_QBVH.cpp; sourceTree = "<group>"; };
 		B2E404C51760C6E10074F3A0 /* SIMD_QBVH.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SIMD_QBVH.h; sourceTree = "<group>"; };
+		B2E9207F17868181005AD7A7 /* PerlinNoise.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PerlinNoise.cpp; sourceTree = "<group>"; };
+		B2E9208017868181005AD7A7 /* PerlinNoise.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PerlinNoise.h; sourceTree = "<group>"; };
+		B2E9208717887AA6005AD7A7 /* Random.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Random.h; sourceTree = "<group>"; };
 		B2EAF8ED1750E73700C325A8 /* BVHType.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BVHType.h; sourceTree = "<group>"; };
 		B2F4FECC15153359002EB635 /* LightSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LightSource.h; sourceTree = "<group>"; };
 		B2F4FECE15153367002EB635 /* LightSource.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LightSource.cpp; sourceTree = "<group>"; };
@@ -166,6 +170,9 @@
 		B209617B1483117300863694 /* rt */ = {
 			isa = PBXGroup;
 			children = (
+				B2E9208717887AA6005AD7A7 /* Random.h */,
+				B2E9207F17868181005AD7A7 /* PerlinNoise.cpp */,
+				B2E9208017868181005AD7A7 /* PerlinNoise.h */,
 				B26355B11770B49200D3E834 /* SIMD.h */,
 				B2D8DDB91770884200712CE8 /* QBVHBase.cpp */,
 				B2D8DDBA1770884200712CE8 /* QBVHBase.h */,
@@ -347,6 +354,7 @@
 				B2B203F01710092F0049928A /* SISD_QBVH.cpp in Sources */,
 				B2E404C61760C6E10074F3A0 /* SIMD_QBVH.cpp in Sources */,
 				B2D8DDBB1770884200712CE8 /* QBVHBase.cpp in Sources */,
+				B2E9208117868181005AD7A7 /* PerlinNoise.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
