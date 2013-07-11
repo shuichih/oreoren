@@ -16,7 +16,7 @@
 
 
 // Direct
-// Coarstic  LSD+E
+// Caustic  LSD+E
 // Indirect  LD(S|D)*DE
 // Shadow
 using namespace std;
@@ -25,10 +25,10 @@ using namespace std;
 PhotonMapRenderer2::PhotonMapRenderer2()
 : pCurrPm_(NULL)
 , pPhotonMap_(NULL)
-, pCoarsticPhotonMap_(NULL)
+, pCausticPhotonMap_(NULL)
 , pShadowPhotonMap_(NULL)
 , pFilter_(NULL)
-, pCoarsticFilter_(NULL)
+, pCausticFilter_(NULL)
 {
 }
 
@@ -40,14 +40,15 @@ PhotonMapRenderer2::~PhotonMapRenderer2()
 
 void PhotonMapRenderer2::SetConfig(const Config& config)
 {
-    pConfig_ = &config;
-    pPmConfig_ = &pConfig_->photonMapConf;
-    pCoarsticPmConfig_ = &pConfig_->coarsticPmConf;
-    pShadowPmConfig_ = &pConfig_->shadowPmConf;
+    pConf_ = &config;
+    pPmRenConf_ = &pConf_->pmRendererConf;
+    pPmConf_ = &pConf_->photonMapConf;
+    pCausticPmConf_ = &pConf_->causticPmConf;
+    pShadowPmConf_ = &pConf_->shadowPmConf;
     
-    InitializePhotonMap(&pPhotonMap_, *pPmConfig_, &pFilter_);
-    InitializePhotonMap(&pCoarsticPhotonMap_, *pCoarsticPmConfig_, &pCoarsticFilter_);
-    InitializePhotonMap(&pShadowPhotonMap_, *pShadowPmConfig_, NULL);
+    InitializePhotonMap(&pPhotonMap_, *pPmConf_, &pFilter_);
+    InitializePhotonMap(&pCausticPhotonMap_, *pCausticPmConf_, &pCausticFilter_);
+    InitializePhotonMap(&pShadowPhotonMap_, *pShadowPmConf_, NULL);
 }
 
 void PhotonMapRenderer2::InitializePhotonMap(Photon_map** ppPm, const PhotonMapConfig& pmConf, PhotonFilter** ppFilter)
@@ -88,7 +89,7 @@ Vec3 PhotonMapRenderer2::GlossyRay(const Vec3& w, float exponent)
 
 void PhotonMapRenderer2::TracePhoton(const Ray& r, const Vec3& power, PathInfo& pathInfo)
 {
-    if (++pathInfo.depth > pPmConfig_->maxPhotonBounce)
+    if (++pathInfo.depth > pPmConf_->maxPhotonBounce)
     {
         return;
     }
@@ -134,10 +135,10 @@ void PhotonMapRenderer2::TracePhoton(const Ray& r, const Vec3& power, PathInfo& 
         pathInfo.diffuseDepth++;
         bool direct = (pathInfo.diffuseDepth == 1);
         
-        if (traceFlag_ == Trace_Coarstic) {
+        if (traceFlag_ == Trace_Caustic) {
             
             // 屈折を経たPhotonのみをストア
-            if (pathInfo.refractionDepth > 1)
+            if (pathInfo.refractionDepth > 0)
             {
                 pCurrPm_->store(power.e, x.e, r.d.e, true, lightNo_);
             }
@@ -205,6 +206,7 @@ void PhotonMapRenderer2::TracePhoton(const Ray& r, const Vec3& power, PathInfo& 
     real c = 1.f - (into ? -ddn : tdir.dot(n));
     real Re = R0 + (1.f - R0)*c*c*c*c*c;
     real P = Re;
+    // @todo ロシアンルーレット使う.青い本P79
     if ((real)erand48(xi_) < P)
         TracePhoton(reflRay, power, pathInfo);       // 反射
     else
@@ -216,7 +218,7 @@ void PhotonMapRenderer2::TracePhoton(const Ray& r, const Vec3& power, PathInfo& 
 Vec3 PhotonMapRenderer2::Irradiance(const Ray &r, PathInfo& pathInfo)
 {
     // max refl
-    if (++pathInfo.depth > pPmConfig_->maxRayBounce)
+    if (++pathInfo.depth > pPmRenConf_->maxRayBounce)
     {
         return Vec3();
     }
@@ -236,40 +238,48 @@ Vec3 PhotonMapRenderer2::Irradiance(const Ray &r, PathInfo& pathInfo)
         Vec3 irrad;
         const float BRDF = PI_INV;
         
-        const float peDist = pShadowPmConfig_->estimateDist;
-        const int peNum = pShadowPmConfig_->nEstimatePhotons;
+        const float peDist = pShadowPmConf_->estimateDist;
+        const int peNum = pShadowPmConf_->nEstimatePhotons;
         float peRatio = pShadowPhotonMap_->penumbra_estimate(lightNo_, x.e, nl, peDist, peNum);
         
         //printf("pe=%f\n", peRatio);
-#if 0
-        // 影度合い別に可視化
-        if (peRatio == 1.f) {
-            // direct
-            return Vec3(0, .2f, .5f);
+        if (pPmRenConf_->drawShadowEstimate)
+        {
+            // 影度合い別に可視化
+            if (peRatio == 1.f) {
+                // direct
+                return Vec3(0, .2f, .5f);
+            }
+            else if (peRatio == 0) {
+                // umbra
+                return Vec3(0, 0, 0);
+            }
+            else {
+                // penumbra
+                return Vec3(.5f, .5f, .5f);
+            }
         }
-        else if (peRatio == 0) {
-            // umbra
-            return Vec3(0, 0, 0);
-        }
-        else {
-            // penumbra
-            return Vec3(.5f, .5f, .5f);
-        }
-#endif
         
         // Direct Light
-        for (int i=0; i<pScene_->litSrcs_.size(); i++) {
-            irrad += BRDF * pScene_->litSrcs_[i]->DirectLight(x, nl, *pScene_, peRatio);
+        if (pPmRenConf_->directLight) {
+            for (int i=0; i<pScene_->litSrcs_.size(); i++) {
+                irrad += BRDF * pScene_->litSrcs_[i]->DirectLight(x, nl, *pScene_, peRatio);
+            }
         }
         
         // Indirect Light
-        Vec3 tmpIrrad;
-        pPhotonMap_->irradiance_estimate(tmpIrrad.e, x.e, nl, pPmConfig_->estimateDist, pPmConfig_->nEstimatePhotons);
-        irrad += tmpIrrad;
+        if (pPmRenConf_->indirectLight) {
+            Vec3 tmpIrrad;
+            pPhotonMap_->irradiance_estimate(tmpIrrad.e, x.e, nl, pPmConf_->estimateDist, pPmConf_->nEstimatePhotons);
+            irrad += tmpIrrad;
+        }
         
-        // Coarstics
-        pCoarsticPhotonMap_->irradiance_estimate(tmpIrrad.e, x.e, nl, pCoarsticPmConfig_->estimateDist, pCoarsticPmConfig_->nEstimatePhotons);
-        irrad += tmpIrrad;
+        // Caustics
+        if (pPmRenConf_->caustics) {
+            Vec3 tmpIrrad;
+            pCausticPhotonMap_->irradiance_estimate(tmpIrrad.e, x.e, nl, pCausticPmConf_->estimateDist, pCausticPmConf_->nEstimatePhotons);
+            irrad += tmpIrrad;
+        }
         
         return Vec3(irrad.x * color.x, irrad.y * color.y, irrad.z * color.z);
     }
@@ -281,14 +291,14 @@ Vec3 PhotonMapRenderer2::Irradiance(const Ray &r, PathInfo& pathInfo)
         // Imperfect SPECULAR reflection
         
         // 指数的に追跡回数が増えるのを防ぐ
-        if (pathInfo.glossyDepth >= pPmConfig_->nMaxGlossyBounce) {
+        if (pathInfo.glossyDepth >= pPmRenConf_->nMaxGlossyBounce) {
             // Ideal SPECULAR reflectionで近似
             return Irradiance(Ray(x,r.d-n*2.f*n.dot(r.d)), pathInfo);
         }
         pathInfo.glossyDepth++;
         
         Vec3 irrad;
-        const u32 nSamples = pPmConfig_->nGlossyRays;
+        const u32 nSamples = pPmRenConf_->nGlossyRays;
         for (int i = 0; i < nSamples; i++) {
             
             Vec3 rdir = r.d - n * 2.f * n.dot(r.d); // reflected ray
@@ -326,8 +336,9 @@ Vec3 PhotonMapRenderer2::Irradiance(const Ray &r, PathInfo& pathInfo)
         real Re = R0 + (1.f - R0)*c*c*c*c*c;
         // レイの運ぶ放射輝度は屈折率の異なる物体間を移動するとき、屈折率の比の2乗の分だけ変化する
         // 屈折率が単位立体角あたりの値だから
-        real nnt2 = nnt * nnt;
-        real Tr = (1.f - Re) * nnt2;
+        // と思ったけど、この関数ではレイが放射輝度を運んでいるわけではないので、いらないっぽい
+        //real nnt2 = nnt * nnt;
+        real Tr = (1.f - Re);// * nnt2;
         // 反射屈折両方トレース
         PathInfo pathInfo2(pathInfo);
         return Irradiance(reflRay, pathInfo) * Re
@@ -349,17 +360,17 @@ void PhotonMapRenderer2::PhotonTracing()
     }
     
     // 各ライトからライトの明るさに応じてフォトンをばらまく
-    if (pPmConfig_->enable) {
+    if (pPmConf_->enable) {
         printf("<Indirect Photon Map>\n");
-        PhotonTracing_(*pPhotonMap_, *pPmConfig_, nLit, sumFlux, Trace_Indirect);
+        PhotonTracing_(*pPhotonMap_, *pPmConf_, nLit, sumFlux, Trace_Indirect);
     }
-    if (pCoarsticPmConfig_->enable) {
-        printf("<Coarstic Photon Map>\n");
-        PhotonTracing_(*pCoarsticPhotonMap_, *pCoarsticPmConfig_, nLit, sumFlux, Trace_Coarstic);
+    if (pCausticPmConf_->enable) {
+        printf("<Caustic Photon Map>\n");
+        PhotonTracing_(*pCausticPhotonMap_, *pCausticPmConf_, nLit, sumFlux, Trace_Caustic);
     }
-    if (pShadowPmConfig_->enable) {
+    if (pShadowPmConf_->enable) {
         printf("<Shadow Photon Map>\n");
-        PhotonTracing_(*pShadowPhotonMap_, *pShadowPmConfig_, nLit, sumFlux, Trace_Shadow);
+        PhotonTracing_(*pShadowPhotonMap_, *pShadowPmConf_, nLit, sumFlux, Trace_Shadow);
     }
 }
 
@@ -371,7 +382,7 @@ void PhotonMapRenderer2::PhotonTracing_(
     double sumFlux,
     PhotonMapRenderer2::TraceFlag traceFlag)
 {
-    const int c_nPhotonsPerThread = pmConfig.nTracePhotonsPerThread;
+    const int c_nPhotonsPerThread = pPmRenConf_->nTracePhotonsPerThread;
     const int c_nPhotons = pmConfig.nPhotons;
     
     pCurrPm_ = &photonMap;
@@ -387,6 +398,7 @@ void PhotonMapRenderer2::PhotonTracing_(
         int nPhotonsPerThread = c_nPhotonsPerThread > 0 ? c_nPhotonsPerThread : nPhotons;
         int nThread = ceilf(nPhotons / (float)nPhotonsPerThread);
         
+        #pragma omp flush
         #pragma omp parallel for num_threads(4) schedule(dynamic, 1)
         for (int t=0; t<nThread; t++) {
             int nPhotonThisThread = (t == nThread-1) ?
@@ -411,6 +423,7 @@ void PhotonMapRenderer2::PhotonTracing_(
                 TracePhoton(ray, power, pathInfo);
             }
         }
+        #pragma omp flush
         
         printf("%d photons traced.\n", iPhoton);
         
@@ -423,9 +436,9 @@ void PhotonMapRenderer2::PhotonTracing_(
 
 void PhotonMapRenderer2::RayTracing(Vec3* pColorBuf)
 {
-    const u32 w = pConfig_->windowWidth;
-    const u32 h = pConfig_->windowHeight;
-    const u32 nSub = pPmConfig_->nSubPixelsSqrt;
+    const u32 w = pConf_->windowWidth;
+    const u32 h = pConf_->windowHeight;
+    const u32 nSub = pPmConf_->nSubPixelsSqrt;
     const real subPixelFactor = 1.0f / (real)(nSub*nSub);
     
     // バッファクリア
@@ -435,8 +448,8 @@ void PhotonMapRenderer2::RayTracing(Vec3* pColorBuf)
         }
     }
     
-    Ray camRay = Ray(pConfig_->camera.position, pConfig_->camera.direction);
-    real fovY = pConfig_->camera.fovY;
+    Ray camRay = Ray(pConf_->camera.position, pConf_->camera.direction);
+    real fovY = pConf_->camera.fovY;
     
     // 投影面のXY軸
     const Vec3 proj_plane_axis_x = Vec3(w * fovY / h, 0.f, 0.f);
@@ -476,7 +489,7 @@ void PhotonMapRenderer2::RayTracing(Vec3* pColorBuf)
                     //        cy*( ( (sy+.5f + dy)/2.f + y)/h - .5f) + camRay.d;
                     real dx = 0;
                     real dy = 0;
-                    if (pPmConfig_->useTentFilter) {
+                    if (pPmRenConf_->useTentFilter) {
                         real r1 = (float)(2*erand48(xi_));
                         real r2 = (float)(2*erand48(xi_));
                         dx = (r1 < 1) ? sqrtf(r1)-1 : 1-sqrtf(2-r1);
@@ -512,7 +525,7 @@ void PhotonMapRenderer2::Run(Vec3* pColorBuf, const Scene& scene)
 {
     xi_[0] = 0;
 	xi_[1] = 0;
-	xi_[2] = (unsigned short)pPmConfig_->nPhotons;
+	xi_[2] = (unsigned short)pPmConf_->nPhotons;
     
     pScene_ = &scene;
     

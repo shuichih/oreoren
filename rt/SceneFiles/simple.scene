@@ -38,7 +38,7 @@ nFinalGetheringRays = 64
 nMaxGlossyBounce = 1
 nGlossyRays = 256
 
-[CoarsticPhotonMap]
+[CausticPhotonMap]
 enable = true
 nPhotons = 40000
 nMaxStorePhotons = 400000

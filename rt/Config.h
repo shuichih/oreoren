@@ -24,6 +24,7 @@ enum Section
 {
     SEC_GENERAL,
     SEC_BVH,
+    SEC_PMRENDERER,
     SEC_PHOTONMAP,
     SEC_COARSTICPM,
     SEC_SHADOWPM,
@@ -144,17 +145,9 @@ struct PhotonMapConfig
     u32 nEstimatePhotons;
     float estimateDist;
     float estimateEllipseScale;
+    u32 maxPhotonBounce;
     bool enableConeFilter;
     float coneFilterK;
-    u32 maxPhotonBounce;
-    u32 maxRayBounce;
-    bool useBVH;
-    u32 nTracePhotonsPerThread;
-    bool useTentFilter;
-    bool finalGethering;
-    u32 nFinalGetheringRays;
-    u32 nMaxGlossyBounce;
-    u32 nGlossyRays;
     
     PhotonMapConfig()
     : enable(true)
@@ -163,17 +156,9 @@ struct PhotonMapConfig
     , nEstimatePhotons(200)
     , estimateDist(15.f)
     , estimateEllipseScale(0.2f)
+    , maxPhotonBounce(5)
     , enableConeFilter(true)
     , coneFilterK(1.1f)
-    , maxPhotonBounce(5)
-    , maxRayBounce(5)
-    , useBVH(true)
-    , nTracePhotonsPerThread(10000)
-    , useTentFilter(false)
-    , finalGethering(false)
-    , nFinalGetheringRays(64)
-    , nMaxGlossyBounce(1)
-    , nGlossyRays(64)
     {}
 };
 
@@ -200,6 +185,40 @@ struct BVHConfig
     , useSIMD(true)
     , draw(false)
     , drawDepth(7)
+    {}
+};
+
+struct PhotonMapRendererConfig
+{
+    bool directLight;
+    bool indirectLight;
+    bool caustics;
+    bool shadowEstimate;
+    bool drawShadowEstimate;
+    int nSubPixelSqrt;
+    u32 nTracePhotonsPerThread;
+    u32 maxRayBounce;
+    bool useBVH;
+    bool finalGethering;
+    u32 nFinalGetheringRays;
+    u32 nMaxGlossyBounce;
+    u32 nGlossyRays;
+    bool useTentFilter;
+    
+    PhotonMapRendererConfig()
+    : directLight(true)
+    , indirectLight(true)
+    , caustics(true)
+    , shadowEstimate(true)
+    , drawShadowEstimate(false)
+    , maxRayBounce(5)
+    , useBVH(true)
+    , nTracePhotonsPerThread(10000)
+    , useTentFilter(false)
+    , finalGethering(false)
+    , nFinalGetheringRays(64)
+    , nMaxGlossyBounce(1)
+    , nGlossyRays(64)
     {}
 };
 
@@ -373,8 +392,9 @@ public:
     bool drawBBox;
     RendererType rendererType;
     BVHConfig bvhConf;
+    PhotonMapRendererConfig pmRendererConf;
     PhotonMapConfig photonMapConf;
-    PhotonMapConfig coarsticPmConf;
+    PhotonMapConfig causticPmConf;
     PhotonMapConfig shadowPmConf;
     RayTracingConfig rayTracingConf;
     PostEffectConfig postEffect;

@@ -4,7 +4,7 @@
 windowWidth=256
 windowHeight=256
 drawBBox=false
-rendererType=0
+rendererType=2
 
 [BVH]
 build = true
@@ -20,11 +20,20 @@ nSubPixelSqrt = 1
 useTentFilter = false
 distanceToProjPlane=140
 
-# @todo [PhotonMapRenderer]
-# @todo direct=true
-# @todo indirect=true
-# @todo coarstic=true
-# @todo shadowEstimate=true
+[PhotonMapRenderer]
+directLight = true
+indirectLight = true
+caustic = true
+shadowEstimate = true
+drawShadowEstimate = false
+nSubPixelSqrt = 1
+nTracePhotonsPerThread = 10000
+maxRayBounce = 10
+useBVH = true
+#finalGethering = true
+nFinalGetheringRays = 64
+nMaxGlossyBounce = 1
+nGlossyRays = 256
 
 [PhotonMap] # for Indirect Light
 enable = true
@@ -34,29 +43,20 @@ nMaxStorePhotons = 200000
 nEstimatePhotons = 1000
 estimateDist = 25.0
 estimateEllipseScale = 0.2
-nSubPixelSqrt = 1
+maxPhotonBounce = 10
 enableConeFilter = true
 coneFilterK = 1.1   # kに比例してWeightが軽くなる
-nTracePhotonsPerThread = 10000
-maxPhotonBounce = 10
-maxRayBounce = 10
-useBVH = true
-#finalGethering = true
-nFinalGetheringRays = 64
-nMaxGlossyBounce = 1
-nGlossyRays = 256
 
-[CoarsticPhotonMap]
+[CausticPhotonMap]
 enable = true
 #nPhotons = 40000
 nPhotons = 400000
 nMaxStorePhotons = 400000
 nEstimatePhotons = 200
-estimateDist = 5
+estimateDist = 4
 estimateEllipseScale = 0.2
 enableConeFilter = true
 coneFilterK = 1.1   # kに比例してWeightが軽くなる
-nTracePhotonsPerThread = 10000
 maxPhotonBounce = 40
 useBVH = true
 
@@ -90,24 +90,24 @@ flux = 25000 25000 25000
 
 # 直接光、間接光など要素ごとに比べる
 
-/#
 [LightSource]
 type = AREA
-p0 = -5 52  5
-p1 = -5 52 -5
-p2 =  5 52 -5
-p3 =  5 52  5
-flux = 10000 10000 10000
-nSamples = 8
-#/
+p0 = -3 52  3
+p1 = -3 52 -3
+p2 =  3 52 -3
+p3 =  3 52  3
+flux = 20000 20000 20000
+nSamples = 64
 
+/#
 [LightSource]
 type = SPHERE
 position = 0 50 65
 radius = 5
-flux = 35000 35000 35000
+flux = 50000 50000 50000
 #nSamples = 128
 nSamples = 64
+#/
 
 # 手前がプラス
 # @todo emission -> color
@@ -183,13 +183,11 @@ nSamples = 64
     margin = 0 0 0
     randColor = true
 
-/#
 [Sphere] #Glass
 	radius = 20
 	position = 25 -53+20 15
 	emission = 1 1 1
 	material = REFR
-#/
 
 /#
 [Triangle]
@@ -257,11 +255,12 @@ nSamples = 64
 #/
 
 [NoiseSurface]
-    center = 0 -30 0
-    scale = 100 2 100
-    rotate = 90 0 0
-    division = 50 50
-    material = DIFF
-    color = 0.9 0.9 1
+    center = 0 -35 0
+    scale = 150 3 150
+    rotate = 0 0 0
+    division = 200 200
+    material = REFR
+    color = 0.8 1.0 0.95
     noisyHeight = true
-    noisyColor = true
+    noisyColor = false
+

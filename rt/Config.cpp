@@ -693,7 +693,7 @@ NoiseSurfaceParser::~NoiseSurfaceParser()
 bool NoiseSurfaceParser::OnLeave()
 {
     PerlinNoise2D noise;
-    noise.SetInterporatorType(Interp_Linear);
+    noise.SetInterporatorType(Interp_Hermite5d);
     
     int divX = division_.e[0];
     int divZ = division_.e[1];
@@ -708,11 +708,14 @@ bool NoiseSurfaceParser::OnLeave()
     
     // vertices
     float maxColor = 0;
+    float invDivX = (1.f / divX) * 15; // 調整方法考える
+    float invDivZ = (1.f / divZ) * 15;
+    float amp = 1;
     for (int z=0; z<=divZ; z++) {
         for (int x=0; x<=divX; x++) {
             int iVert = (divX+1) * z + x;
             float y = noisyHeight_
-                ? noise.Noise(x, z) * 0.5f // -0.5 to 0.5
+                ? noise.Noise(x*invDivX, z*invDivZ) * amp
                 : 0;
             Vec3 pos(
                 x/(float)divX - 0.5f,
@@ -721,7 +724,7 @@ bool NoiseSurfaceParser::OnLeave()
             );
             pMesh->pVertices[iVert].pos = pos;
             if (noisyColor_) {
-                Vec3 c = color_ * noise.Noise(x, z);
+                Vec3 c = color_ * noise.Noise(x*invDivX, z*invDivZ) * amp;
                 pMesh->pVertices[iVert].color = c;
                 maxColor = std::max(maxColor, c.x);
                 maxColor = std::max(maxColor, c.y);
@@ -729,9 +732,11 @@ bool NoiseSurfaceParser::OnLeave()
             }
         }
     }
-    for (int i=0; i<nVertices; i++) {
-        // normalize vertex color in 0 to 1
-        pMesh->pVertices[i].color /= maxColor;
+    if (noisyColor_) {
+        for (int i=0; i<nVertices; i++) {
+            // normalize vertex color in 0 to 1
+            pMesh->pVertices[i].color /= maxColor;
+        }
     }
     // faces
     for (int z=0; z<divZ; z++) {
@@ -753,6 +758,7 @@ bool NoiseSurfaceParser::OnLeave()
     }
     
     pMesh->scale(scale_);
+    pMesh->color_ = color_;
     pMesh->rotateXYZ(rotate_);
     pMesh->translate(center_);
     pMesh->material_ = material_;
@@ -789,6 +795,22 @@ Config::Config()
         { "draw", IVT_BOOL, &bvhConf.draw },
         { "drawDepth", IVT_INT, &bvhConf.drawDepth },
     };
+    ItemDesc pmRendererDesc[] = {
+        { "directLight", IVT_BOOL, &pmRendererConf.directLight },
+        { "indirectLight", IVT_BOOL, &pmRendererConf.indirectLight },
+        { "caustics", IVT_BOOL, &pmRendererConf.caustics },
+        { "shadowEstimate", IVT_BOOL, &pmRendererConf.shadowEstimate },
+        { "drawShadowEstimate", IVT_BOOL, &pmRendererConf.drawShadowEstimate },
+        { "useBVH", IVT_BOOL, &pmRendererConf.useBVH },
+        { "maxRayBounce", IVT_INT, &pmRendererConf.maxRayBounce },
+        { "useBVH", IVT_BOOL, &pmRendererConf.useBVH },
+        { "nTracePhotonsPerThread", IVT_INT, &pmRendererConf.nTracePhotonsPerThread },
+        { "useTentFilter", IVT_BOOL, &pmRendererConf.useTentFilter },
+        { "finalGethering", IVT_BOOL, &pmRendererConf.finalGethering },
+        { "nFinalGetheringRays", IVT_INT, &pmRendererConf.nFinalGetheringRays },
+        { "nMaxGlossyBounce", IVT_INT, &pmRendererConf.nMaxGlossyBounce },
+        { "nGlossyRays", IVT_INT, &pmRendererConf.nGlossyRays }
+    };
     ItemDesc photonMapDesc[] = {
         { "enable", IVT_BOOL, &photonMapConf.enable },
         { "nPhotons", IVT_INT, &photonMapConf.nPhotons },
@@ -800,27 +822,17 @@ Config::Config()
         { "enableConeFilter", IVT_BOOL, &photonMapConf.enableConeFilter },
         { "coneFilterK", IVT_FLOAT, &photonMapConf.coneFilterK },
         { "maxPhotonBounce", IVT_INT, &photonMapConf.maxPhotonBounce },
-        { "maxRayBounce", IVT_INT, &photonMapConf.maxRayBounce },
-        { "useBVH", IVT_BOOL, &photonMapConf.useBVH },
-        { "nTracePhotonsPerThread", IVT_INT, &photonMapConf.nTracePhotonsPerThread },
-        { "useTentFilter", IVT_BOOL, &photonMapConf.useTentFilter },
-        { "finalGethering", IVT_BOOL, &photonMapConf.finalGethering },
-        { "nFinalGetheringRays", IVT_INT, &photonMapConf.nFinalGetheringRays },
-        { "nMaxGlossyBounce", IVT_INT, &photonMapConf.nMaxGlossyBounce },
-        { "nGlossyRays", IVT_INT, &photonMapConf.nGlossyRays }
     };
-    ItemDesc coarsticPmDesc[] = {
-        { "enable", IVT_BOOL, &coarsticPmConf.enable },
-        { "nPhotons", IVT_INT, &coarsticPmConf.nPhotons },
-        { "nMaxStorePhotons", IVT_INT, &coarsticPmConf.nMaxStorePhotons },
-        { "nEstimatePhotons", IVT_INT, &coarsticPmConf.nEstimatePhotons },
-        { "estimateDist", IVT_FLOAT, &coarsticPmConf.estimateDist},
-        { "estimateEllipseScale", IVT_FLOAT, &coarsticPmConf.estimateEllipseScale },
-        { "enableConeFilter", IVT_BOOL, &coarsticPmConf.enableConeFilter },
-        { "coneFilterK", IVT_FLOAT, &coarsticPmConf.coneFilterK },
-        { "maxPhotonBounce", IVT_INT, &coarsticPmConf.maxPhotonBounce },
-        { "useBVH", IVT_BOOL, &coarsticPmConf.useBVH },
-        { "nTracePhotonsPerThread", IVT_INT, &coarsticPmConf.nTracePhotonsPerThread }
+    ItemDesc causticPmDesc[] = {
+        { "enable", IVT_BOOL, &causticPmConf.enable },
+        { "nPhotons", IVT_INT, &causticPmConf.nPhotons },
+        { "nMaxStorePhotons", IVT_INT, &causticPmConf.nMaxStorePhotons },
+        { "nEstimatePhotons", IVT_INT, &causticPmConf.nEstimatePhotons },
+        { "estimateDist", IVT_FLOAT, &causticPmConf.estimateDist},
+        { "estimateEllipseScale", IVT_FLOAT, &causticPmConf.estimateEllipseScale },
+        { "enableConeFilter", IVT_BOOL, &causticPmConf.enableConeFilter },
+        { "coneFilterK", IVT_FLOAT, &causticPmConf.coneFilterK },
+        { "maxPhotonBounce", IVT_INT, &causticPmConf.maxPhotonBounce },
     };
     ItemDesc shadowPmDesc[] = {
         { "enable", IVT_BOOL, &shadowPmConf.enable },
@@ -849,8 +861,9 @@ Config::Config()
     
     ItemDesc* pGeneralItemDesc = CreateItemDesc(generalDesc, ARRAY_SZ(generalDesc));
     ItemDesc* pbvhItemDesc = CreateItemDesc(bvhDesc, ARRAY_SZ(bvhDesc));
+    ItemDesc* pPmRendererItemDesc = CreateItemDesc(pmRendererDesc, ARRAY_SZ(pmRendererDesc));
     ItemDesc* pPhotonMapItemDesc = CreateItemDesc(photonMapDesc, ARRAY_SZ(photonMapDesc));
-    ItemDesc* pCoarsticPmItemDesc = CreateItemDesc(coarsticPmDesc, ARRAY_SZ(coarsticPmDesc));
+    ItemDesc* pCausticPmItemDesc = CreateItemDesc(causticPmDesc, ARRAY_SZ(causticPmDesc));
     ItemDesc* pShadowPmItemDesc = CreateItemDesc(shadowPmDesc, ARRAY_SZ(shadowPmDesc));
     ItemDesc* pRayTracingItemDesc = CreateItemDesc(rayTracingDesc, ARRAY_SZ(rayTracingDesc));
     ItemDesc* pPostEffectItemDesc = CreateItemDesc(postEffectDesc, ARRAY_SZ(postEffectDesc));
@@ -858,8 +871,9 @@ Config::Config()
  
     parsers_[SEC_GENERAL]     = new SectionParser("[General]", pGeneralItemDesc, ARRAY_SZ(generalDesc));
     parsers_[SEC_BVH]         = new SectionParser("[BVH]", pbvhItemDesc, ARRAY_SZ(bvhDesc));
-    parsers_[SEC_PHOTONMAP]   = new SectionParser("[PhotonMap]",   pPhotonMapItemDesc, ARRAY_SZ(photonMapDesc));
-    parsers_[SEC_COARSTICPM]  = new SectionParser("[CoarsticPhotonMap]", pCoarsticPmItemDesc, ARRAY_SZ(coarsticPmDesc));
+    parsers_[SEC_PHOTONMAP]   = new SectionParser("[PhotonMap]", pPhotonMapItemDesc, ARRAY_SZ(photonMapDesc));
+    parsers_[SEC_PMRENDERER]  = new SectionParser("[PhotonMapRenderer]", pPmRendererItemDesc, ARRAY_SZ(pmRendererDesc));
+    parsers_[SEC_COARSTICPM]  = new SectionParser("[CausticPhotonMap]", pCausticPmItemDesc, ARRAY_SZ(causticPmDesc));
     parsers_[SEC_SHADOWPM]    = new SectionParser("[ShadowPhotonMap]", pShadowPmItemDesc, ARRAY_SZ(shadowPmDesc));
     parsers_[SEC_RAYTRACING]  = new SectionParser("[RayTracing]", pRayTracingItemDesc, ARRAY_SZ(rayTracingDesc));
     parsers_[SEC_POSTEFFECT]  = new SectionParser("[PostEffect]", pPostEffectItemDesc, ARRAY_SZ(postEffectDesc));

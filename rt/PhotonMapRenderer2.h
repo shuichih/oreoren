@@ -25,7 +25,7 @@ private:
     
     enum TraceFlag {
         Trace_Indirect = 0,
-        Trace_Coarstic = 1,
+        Trace_Caustic = 1,
         Trace_Shadow   = 2,
     };
     
@@ -60,17 +60,18 @@ private:
     Vec3 Irradiance(const Ray &r, PathInfo& pathInfo);
     
     unsigned short xi_[3];
-    const Config* pConfig_;
+    const Config* pConf_;
+    const PhotonMapRendererConfig* pPmRenConf_;
+    const PhotonMapConfig* pPmConf_; // indirectPmConfig
+    const PhotonMapConfig* pCausticPmConf_;
+    const PhotonMapConfig* pShadowPmConf_;
     const Scene* pScene_;
     Photon_map* pCurrPm_;
     Photon_map* pPhotonMap_; // indirectPhotonMap
-    Photon_map* pCoarsticPhotonMap_;
+    Photon_map* pCausticPhotonMap_;
     Photon_map* pShadowPhotonMap_;
-    const PhotonMapConfig* pPmConfig_; // indirectPmConfig
-    const PhotonMapConfig* pCoarsticPmConfig_;
-    const PhotonMapConfig* pShadowPmConfig_;
     PhotonFilter* pFilter_;
-    PhotonFilter* pCoarsticFilter_;
+    PhotonFilter* pCausticFilter_;
     std::vector<HitRecord> shadyHits_;
     
     TraceFlag traceFlag_;

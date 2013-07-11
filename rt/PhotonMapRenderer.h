@@ -46,8 +46,9 @@ private:
     void RayTracing(Vec3* pColorBuf);
     Vec3 Irradiance(const Ray &r, PathInfo& pathInfo);
     
-    const Config* pConfig_;
-    const PhotonMapConfig* pPmConfig_;
+    const Config* pConf_;
+    const PhotonMapRendererConfig* pPmRenConf_;
+    const PhotonMapConfig* pPmConf_;
     Photon_map* pPhotonMap_;
     unsigned short xi_[3];
     PhotonFilter* pFilter_;

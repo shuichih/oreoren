@@ -14,7 +14,7 @@
 
 
 // Direct
-// Coarstic  LSD+E
+// Caustic  LSD+E
 // Indirect  LD(S|D)*DE
 // Shadow
 using namespace std;
@@ -34,23 +34,24 @@ PhotonMapRenderer::~PhotonMapRenderer()
 
 void PhotonMapRenderer::SetConfig(const Config& config)
 {
-    pConfig_ = &config;
-    pPmConfig_ = &pConfig_->photonMapConf;
+    pConf_ = &config;
+    pPmConf_ = &config.photonMapConf;
+    pPmRenConf_ = &config.pmRendererConf;
     
     if (pPhotonMap_ != NULL) delete pPhotonMap_;
-    pPhotonMap_ = new Photon_map(pPmConfig_->nPhotons * pPmConfig_->maxPhotonBounce); // ちと多め
+    pPhotonMap_ = new Photon_map(pPmConf_->nPhotons * pPmConf_->maxPhotonBounce); // ちと多め
     
     if (pFilter_ != NULL) delete pFilter_;
-    if (pPmConfig_->enableConeFilter) {
-        pFilter_ = new ConeFilter(pPmConfig_->coneFilterK);
-        ((ConeFilter*)pFilter_)->SetK(pPmConfig_->coneFilterK);
+    if (pPmConf_->enableConeFilter) {
+        pFilter_ = new ConeFilter(pPmConf_->coneFilterK);
+        ((ConeFilter*)pFilter_)->SetK(pPmConf_->coneFilterK);
         pPhotonMap_->SetFilter(pFilter_);
     }
     else {
         pPhotonMap_->SetFilter(NULL);
     }
     
-    pPhotonMap_->SetEstimateEllipseScale(pPmConfig_->estimateEllipseScale);
+    pPhotonMap_->SetEstimateEllipseScale(pPmConf_->estimateEllipseScale);
 }
 
 Vec3 PhotonMapRenderer::GlossyRay(const Vec3& w, float exponent)
@@ -73,7 +74,7 @@ Vec3 PhotonMapRenderer::GlossyRay(const Vec3& w, float exponent)
 void PhotonMapRenderer::TracePhoton(const Ray& r, const Vec3& power, PathInfo& pathInfo)
 {
     // max refl
-    if (++pathInfo.depth > pPmConfig_->maxPhotonBounce)
+    if (++pathInfo.depth > pPmConf_->maxPhotonBounce)
     {
         return;
     }
@@ -166,7 +167,7 @@ void PhotonMapRenderer::TracePhoton(const Ray& r, const Vec3& power, PathInfo& p
 Vec3 PhotonMapRenderer::Irradiance(const Ray &r, PathInfo& pathInfo)
 {
     // max refl
-    if (++pathInfo.depth > pPmConfig_->maxRayBounce)
+    if (++pathInfo.depth > pPmRenConf_->maxRayBounce)
     {
         return Vec3();
     }
@@ -187,8 +188,8 @@ Vec3 PhotonMapRenderer::Irradiance(const Ray &r, PathInfo& pathInfo)
         pathInfo.diffuseDepth++;
         Vec3 irrad;
         //fprintf(stderr, "irrad %f %f %f\r", irrad[0], irrad[1], irrad[2]);
-        if (pPmConfig_->finalGethering && pathInfo.diffuseDepth <= 1) {
-            for (int i=0; i<pPmConfig_->nFinalGetheringRays; i++) {
+        if (pPmRenConf_->finalGethering && pathInfo.diffuseDepth <= 1) {
+            for (int i=0; i<pPmRenConf_->nFinalGetheringRays; i++) {
                 real r1 = 2.f*(real)(M_PI*erand48(xi_));
                 real r2 = (real)erand48(xi_); // => 1-cos^2θ = 1-sqrt(1-r_2)^2 = r_2
                 real r2s = sqrtf(r2);    // => sinθ = sqrt(1-cos^2θ) = sqrt(r_2)
@@ -203,9 +204,9 @@ Vec3 PhotonMapRenderer::Irradiance(const Ray &r, PathInfo& pathInfo)
                 // 入射方向と法線のcosθ掛けるのとimportance samplingしたので確率密度関数cosθで割るのとで
                 // 相殺するような。
             }
-            irrad /= pPmConfig_->nFinalGetheringRays;
+            irrad /= pPmRenConf_->nFinalGetheringRays;
         } else {
-            pPhotonMap_->irradiance_estimate(irrad.e, x.e, nl, pPmConfig_->estimateDist, pPmConfig_->nEstimatePhotons);
+            pPhotonMap_->irradiance_estimate(irrad.e, x.e, nl, pPmConf_->estimateDist, pPmConf_->nEstimatePhotons);
         }
         return Vec3(irrad.x * color.x, irrad.y * color.y, irrad.z * color.z);
     }
@@ -217,14 +218,14 @@ Vec3 PhotonMapRenderer::Irradiance(const Ray &r, PathInfo& pathInfo)
         // Imperfect SPECULAR reflection
         
         // 指数的に追跡回数が増えるのを防ぐ
-        if (pathInfo.glossyDepth >= pPmConfig_->nMaxGlossyBounce) {
+        if (pathInfo.glossyDepth >= pPmRenConf_->nMaxGlossyBounce) {
             // Ideal SPECULAR reflectionで近似
             return Irradiance(Ray(x,r.d-n*2.f*n.dot(r.d)), pathInfo);
         }
         pathInfo.glossyDepth++;
         
         Vec3 irrad;
-        const u32 nSamples = pPmConfig_->nGlossyRays;
+        const u32 nSamples = pPmRenConf_->nGlossyRays;
         for (int i = 0; i < nSamples; i++) {
             
             Vec3 rdir = r.d - n * 2.f * n.dot(r.d); // reflected ray
@@ -289,10 +290,10 @@ void PhotonMapRenderer::PhotonTracing()
     for (int i=0; i<nLit; i++) {
         const LightSource* pLit = pScene_->litSrcs_[i];
         float nPhotonRatio = (float)(pLit->GetFlux().sum() / sumFlux);
-        u32 nPhotons = (u32)(pPmConfig_->nPhotons * nPhotonRatio);
+        u32 nPhotons = (u32)(pPmConf_->nPhotons * nPhotonRatio);
         
         const int nPhotonsPerThread =
-            pPmConfig_->nTracePhotonsPerThread > 0 ? pPmConfig_->nTracePhotonsPerThread : nPhotons;
+            pPmRenConf_->nTracePhotonsPerThread > 0 ? pPmRenConf_->nTracePhotonsPerThread : nPhotons;
         int nThread = ceilf(nPhotons / (float)nPhotonsPerThread);
         
         #pragma omp parallel for num_threads(4) schedule(dynamic, 1)
@@ -304,10 +305,10 @@ void PhotonMapRenderer::PhotonTracing()
                 #pragma omp atomic
                 iPhoton++;
                 
-                if (iPhoton % (pPmConfig_->nPhotons / 100) == 0) {
+                if (iPhoton % (pPmConf_->nPhotons / 100) == 0) {
                     #pragma omp critical
                     {
-                        fprintf(stderr, "PhotonTracing %5.2f%%\n", 100. * iPhoton / pPmConfig_->nPhotons);
+                        fprintf(stderr, "PhotonTracing %5.2f%%\n", 100. * iPhoton / pPmConf_->nPhotons);
                     }
                 }
                 
@@ -330,9 +331,9 @@ void PhotonMapRenderer::PhotonTracing()
 
 void PhotonMapRenderer::RayTracing(Vec3* pColorBuf)
 {
-    const u32 w = pConfig_->windowWidth;
-    const u32 h = pConfig_->windowHeight;
-    const u32 nSub = pPmConfig_->nSubPixelsSqrt;
+    const u32 w = pConf_->windowWidth;
+    const u32 h = pConf_->windowHeight;
+    const u32 nSub = pPmConf_->nSubPixelsSqrt;
     const real subPixelFactor = 1.0f / (real)(nSub*nSub);
     
     // バッファクリア
@@ -342,8 +343,8 @@ void PhotonMapRenderer::RayTracing(Vec3* pColorBuf)
         }
     }
     
-    Ray camRay = Ray(pConfig_->camera.position, pConfig_->camera.direction);
-    real fovY = pConfig_->camera.fovY;
+    Ray camRay = Ray(pConf_->camera.position, pConf_->camera.direction);
+    real fovY = pConf_->camera.fovY;
     
     // 投影面のXY軸
     const Vec3 proj_plane_axis_x = Vec3(w * fovY / h, 0.f, 0.f);
@@ -383,7 +384,7 @@ void PhotonMapRenderer::RayTracing(Vec3* pColorBuf)
                     //        cy*( ( (sy+.5f + dy)/2.f + y)/h - .5f) + camRay.d;
                     real dx = 0;
                     real dy = 0;
-                    if (pPmConfig_->useTentFilter) {
+                    if (pPmRenConf_->useTentFilter) {
                         real r1 = (float)(2*erand48(xi_));
                         real r2 = (float)(2*erand48(xi_));
                         dx = (r1 < 1) ? sqrtf(r1)-1 : 1-sqrtf(2-r1);
@@ -419,7 +420,7 @@ void PhotonMapRenderer::Run(Vec3* pColorBuf, const Scene& scene)
 {
     xi_[0] = 0;
 	xi_[1] = 0;
-	xi_[2] = (unsigned short)pPmConfig_->nPhotons;
+	xi_[2] = (unsigned short)pPmConf_->nPhotons;
     
     pScene_ = &scene;
     
