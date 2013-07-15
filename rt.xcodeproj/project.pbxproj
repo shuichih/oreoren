@@ -64,6 +64,7 @@
 		B20FAF55150FCEE500846A20 /* PhotonFilter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PhotonFilter.h; sourceTree = "<group>"; };
 		B20FCA5716D8EA6400EE1E33 /* ONB.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ONB.cpp; sourceTree = "<group>"; };
 		B20FCA5816D8EA6400EE1E33 /* ONB.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ONB.h; sourceTree = "<group>"; };
+		B2246870178E6B1400A901EC /* Material.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Material.h; sourceTree = "<group>"; };
 		B241435716EC8CD500CC30D7 /* vector3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = vector3.h; path = vecmath/vector3.h; sourceTree = "<group>"; };
 		B241BA0B1612B0940040CEA7 /* venus.scene */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = venus.scene; path = SceneFiles/venus.scene; sourceTree = "<group>"; };
 		B24B55AA1754F0690072B6B4 /* simple.scene */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = simple.scene; path = SceneFiles/simple.scene; sourceTree = "<group>"; };
@@ -170,6 +171,7 @@
 		B209617B1483117300863694 /* rt */ = {
 			isa = PBXGroup;
 			children = (
+				B2246870178E6B1400A901EC /* Material.h */,
 				B2E9208717887AA6005AD7A7 /* Random.h */,
 				B2E9207F17868181005AD7A7 /* PerlinNoise.cpp */,
 				B2E9208017868181005AD7A7 /* PerlinNoise.h */,

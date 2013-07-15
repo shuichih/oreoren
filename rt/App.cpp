@@ -156,6 +156,9 @@ void App::Render()
 
 void App::RenderScene(Vec3* pRealColorBuf)
 {
+    // @todo check if light is exist, camera is exist
+    // CheckScene();
+    
     // Render using photonmap
     pRenderer_->Run(pRealColorBuf, config.scene);
     
@@ -276,10 +279,10 @@ void App::DrawBVH(const IShape* pShape, int depth)
 
 void App::DrawBBox()
 {
-    std::vector<const IShape*>& shapes = config.scene.shapes_;
-    for (int i=0; i<shapes.size(); i++) {
-        if (!shapes[i]->IsBVH()) {
-            const BBox& bbox = shapes[i]->BoundingBox();
+    for (int i=0; i<config.scene.GetShapeNum(); i++) {
+        const IShape* pShape = config.scene.GetShape(i);
+        if (!pShape->IsBVH()) {
+            const BBox& bbox = pShape->BoundingBox();
             Vec3 center = bbox.Center();
             Vec3 size = bbox.Size();
             

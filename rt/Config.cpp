@@ -11,6 +11,7 @@
 #include "SimpleArithmetic.h"
 #include "LightSource.h"
 #include "PerlinNoise.h"
+#include "Material.h"
 
 using namespace std;
 
@@ -27,8 +28,8 @@ ItemDesc* CreateItemDesc(ItemDesc* pInitialDescs, int num)
 
 };
 
-SectionParser::SectionParser(const char* pName, ItemDesc* paryItemDesc, u32 nItem)
-: pName_(pName), paryItemDesc_(paryItemDesc), nItem_(nItem)
+SectionParser::SectionParser(const char* pName, Scene* pScene, ItemDesc* paryItemDesc, u32 nItem)
+: pName_(pName), pScene_(pScene), paryItemDesc_(paryItemDesc), nItem_(nItem)
 {
 }
 
@@ -65,12 +66,13 @@ bool SectionParser::OnParseLine(const char* pStr)
         if (key == item.pName) {
             bool result = true;
             switch (item.type) {
-            case IVT_INT:   result = ParseInt  (item.pValAddr, val); break;
-            case IVT_FLOAT: result = ParseFloat(item.pValAddr, val); break;
-            case IVT_BOOL:  result = ParseBool (item.pValAddr, val); break;
-            case IVT_VEC2:  result = ParseVec2 (item.pValAddr, val); break;
-            case IVT_VEC3:  result = ParseVec3 (item.pValAddr, val); break;
-                case IVT_STR:   result = ParseString(item.pValAddr, val); break;
+            case IVT_INT:   result = ParseInt     (item.pValAddr, val); break;
+            case IVT_FLOAT: result = ParseFloat   (item.pValAddr, val); break;
+            case IVT_BOOL:  result = ParseBool    (item.pValAddr, val); break;
+            case IVT_VEC2:  result = ParseVec2    (item.pValAddr, val); break;
+            case IVT_VEC3:  result = ParseVec3    (item.pValAddr, val); break;
+            case IVT_STR:   result = ParseString  (item.pValAddr, val); break;
+            case IVT_REFL:  result = ParseRefl    (item.pValAddr, val); break;
             case IVT_MTL:   result = ParseMaterial(item.pValAddr, val); break;
                 default:
                 result = false;
@@ -185,7 +187,7 @@ bool SectionParser::ParseString(void* pVal, string& str)
     return true;
 }
 
-bool SectionParser::ParseMaterial(void* pVal, const string& str)
+bool SectionParser::ParseRefl(void* pVal, const string& str)
 {
     Refl_t val;
     if (str == "DIFF") val = DIFF;
@@ -198,6 +200,18 @@ bool SectionParser::ParseMaterial(void* pVal, const string& str)
     }
     
     *((Refl_t*)pVal) = val;
+    return true;
+}
+
+bool SectionParser::ParseMaterial(void* pVal, const string& str)
+{
+    Material* pMtl = pScene_->GetMaterial(str);
+    if (pMtl) {
+        *((Material**)pVal) = pMtl;
+    } else {
+        *((Material**)pVal) = pScene_->GetDefaultMaterial();
+        printf("WARN!! A material %s is not found.\n", str.c_str());
+    }
     return true;
 }
 
@@ -215,6 +229,7 @@ void SectionParser::Print()
             case IVT_VEC2:  valStr = Vec2ToString(item.pValAddr);     break;
             case IVT_VEC3:  valStr = Vec3ToString(item.pValAddr);     break;
             case IVT_STR:   valStr = *((string*)item.pValAddr);       break;
+            case IVT_REFL:  valStr = ReflToString(item.pValAddr);     break;
             case IVT_MTL:   valStr = MaterialToString(item.pValAddr); break;
             default:
                 break;
@@ -261,32 +276,64 @@ string SectionParser::Vec3ToString(void* pVal)
     return str;
 }
 
-string SectionParser::MaterialToString(void* pVal)
+string SectionParser::ReflToString(void* pVal)
 {
-    Refl_t mtl = *((Refl_t*)pVal);
-    if (mtl == DIFF) return "DIFF";
-    else if (mtl == SPEC) return "SPEC";
-    else if (mtl == REFR) return "REFR";
-    else if (mtl == PHONGMETAL) return "PHONGMETAL";
-    
+    Refl_t refl = *((Refl_t*)pVal);
+    if (refl == DIFF) return "DIFF";
+    else if (refl == SPEC) return "SPEC";
+    else if (refl == REFR) return "REFR";
+    else if (refl == PHONGMETAL) return "PHONGMETAL";
     return "";
 }
 
-//--------------------------------------------------------------------------------
+string SectionParser::MaterialToString(void* pVal)
+{
+    Material* pMtl = *((Material**)pVal);
+    return pMtl->name;
+}
 
+//--------------------------------------------------------------------------------
+MaterialParser::MaterialParser(const char* pName, Scene* pScene)
+: SectionParser(pName, pScene, NULL, 0)
+{
+    ItemDesc desc[] = {
+        { "name", IVT_STR, &material_.name },
+        { "refl", IVT_REFL, &material_.refl },
+        { "color", IVT_VEC3, &material_.color },
+        { "refrIndex", IVT_FLOAT, &material_.refractiveIndex }
+    };
+    paryItemDesc_ = CreateItemDesc(desc, ARRAY_SZ(desc));
+    nItem_ = ARRAY_SZ(desc);
+}
+
+MaterialParser::~MaterialParser()
+{
+}
+
+bool MaterialParser::OnLeave()
+{
+    if (pScene_->GetMaterial(material_.name)) {
+        printf("WARN!! The material %s is already exist.\n", material_.name.c_str());
+        return false;
+    }
+    Material* pMtl = new Material(material_);
+    pScene_->AddMaterial(pMtl->name, pMtl);
+    material_.Reset();
+    return true;
+}
+
+//--------------------------------------------------------------------------------
 SphereParser::SphereParser(const char* pName, Scene* pScene)
-: SectionParser(pName, NULL, 0)
+: SectionParser(pName, pScene, NULL, 0)
+, sphere_(1, Vec3(), NULL)
 {
     ItemDesc sphereDesc[] = {
-        { "radius", IVT_FLOAT, &sphere_.rad },
-        { "position", IVT_VEC3, &sphere_.p },
-        { "emission", IVT_VEC3, &sphere_.c },
-        { "material", IVT_MTL, &sphere_.refl },
+        { "radius", IVT_FLOAT, &sphere_.radius },
+        { "position", IVT_VEC3, &sphere_.position },
+        { "material", IVT_MTL, &sphere_.pMaterial },
     };
     paryItemDesc_ = CreateItemDesc(sphereDesc, ARRAY_SZ(sphereDesc));
     nItem_ = ARRAY_SZ(sphereDesc);
-    
-    pScene_ = pScene;
 }
 
 SphereParser::~SphereParser()
@@ -296,26 +343,23 @@ SphereParser::~SphereParser()
 bool SphereParser::OnLeave()
 {
     pScene_->AddShape(new Sphere(sphere_));
-    sphere_ = Sphere();
+    sphere_ = Sphere(1, Vec3(), NULL);
     return true;
 }
 
 //--------------------------------------------------------------------------------
 
 TriangleParser::TriangleParser(const char* pName, Scene* pScene)
-: SectionParser(pName, NULL, 0)
+: SectionParser(pName, pScene, NULL, 0)
 {
     ItemDesc itemDescs[] = {
         { "p0", IVT_VEC3, &triangle_.p0 },
         { "p1", IVT_VEC3, &triangle_.p1 },
         { "p2", IVT_VEC3, &triangle_.p2 },
-        { "emission", IVT_VEC3, &triangle_.color },
-        { "material", IVT_MTL, &triangle_.refl },
+        { "material", IVT_MTL, &triangle_.pMaterial },
     };
     paryItemDesc_ = CreateItemDesc(itemDescs, ARRAY_SZ(itemDescs));
     nItem_ = ARRAY_SZ(itemDescs);
-    
-    pScene_ = pScene;
 }
 
 TriangleParser::~TriangleParser()
@@ -334,20 +378,17 @@ bool TriangleParser::OnLeave()
 //--------------------------------------------------------------------------------
 
 RectangleParser::RectangleParser(const char* pName, Scene* pScene)
-: SectionParser(pName, NULL, 0)
+: SectionParser(pName, pScene, NULL, 0)
 {
     ItemDesc itemDescs[] = {
         { "p0", IVT_VEC3, &triangles_[0].p0 },
         { "p1", IVT_VEC3, &triangles_[0].p1 },
         { "p2", IVT_VEC3, &triangles_[0].p2 },
         { "p3", IVT_VEC3, &triangles_[1].p2 },
-        { "emission", IVT_VEC3, &triangles_[0].color },
-        { "material", IVT_MTL, &triangles_[0].refl },
+        { "material", IVT_MTL, &triangles_[0].pMaterial },
     };
     paryItemDesc_ = CreateItemDesc(itemDescs, ARRAY_SZ(itemDescs));
     nItem_ = ARRAY_SZ(itemDescs);
-    
-    pScene_ = pScene;
 }
 
 RectangleParser::~RectangleParser()
@@ -358,8 +399,7 @@ bool RectangleParser::OnLeave()
 {
     triangles_[1].p0 = triangles_[0].p0;
     triangles_[1].p1 = triangles_[0].p2;
-    triangles_[1].color = triangles_[0].color;
-    triangles_[1].refl = triangles_[0].refl;
+    triangles_[1].pMaterial = triangles_[0].pMaterial;
     triangles_[0].CalcNormal();
     triangles_[1].CalcNormal();
     pScene_->AddShape(new Triangle(triangles_[0]));
@@ -372,12 +412,11 @@ bool RectangleParser::OnLeave()
 //--------------------------------------------------------------------------------
 
 CuboidParser::CuboidParser(const char* pName, Scene* pScene)
-: SectionParser(pName, NULL, 0)
+: SectionParser(pName, pScene, NULL, 0)
 , scale_(1, 1, 1)
 , rotate_()
 , position_()
-, emission_(.5f, .5f, .5f)
-, material_(DIFF)
+, pMaterial_(NULL)
 , repeat_(1, 1, 1)
 , interval_(0)
 , randColor_(false)
@@ -386,8 +425,7 @@ CuboidParser::CuboidParser(const char* pName, Scene* pScene)
         { "scale", IVT_VEC3, &scale_ },
         { "rotate", IVT_VEC3, &rotate_ },
         { "position", IVT_VEC3, &position_ },
-        { "emission", IVT_VEC3, &emission_ },
-        { "material", IVT_MTL, &material_ },
+        { "material", IVT_MTL, &pMaterial_ },
         { "repeat", IVT_VEC3, &repeat_ },
         { "interval", IVT_INT, &interval_ },
         { "margin", IVT_VEC3, &margin_ },
@@ -395,7 +433,6 @@ CuboidParser::CuboidParser(const char* pName, Scene* pScene)
     };
     paryItemDesc_ = CreateItemDesc(itemDescs, ARRAY_SZ(itemDescs));
     nItem_ = ARRAY_SZ(itemDescs);
-    pScene_ = pScene;
 }
 
 CuboidParser::~CuboidParser()
@@ -429,7 +466,8 @@ bool CuboidParser::OnLeave()
         { 3, 7, 4 }, // back
         { 3, 4, 0 },
     };
-    unsigned short xi[3] = { emission_.x*65535, emission_.y, emission_.z };
+    // @todo Replace to Random
+    unsigned short xi[3] = { 12345, 23456, 34567 };
     
     // Repeatされた数だけCuboid Meshを作る
     vector<Mesh*> meshes;
@@ -442,7 +480,7 @@ bool CuboidParser::OnLeave()
             for (int rz=0; rz<nRz; rz++) {
                 if ((rx+ry+rz) % interval != 0) continue;
                 
-                Mesh* pMesh = new Mesh(8, 12);
+                Mesh* pMesh = new Mesh(8, 12, NULL/*@todo*/);
                 Mesh& rMesh = *pMesh;
                 meshes.push_back(pMesh);
                 
@@ -462,7 +500,7 @@ bool CuboidParser::OnLeave()
                     //b = b * (1-r3) + r3;
                     color = Vec3(r, g, b);
                 } else {
-                    color = emission_;
+                    color = pMaterial_->color;
                 }
                 
                 for (int i=0; i<8; i++) {
@@ -473,7 +511,7 @@ bool CuboidParser::OnLeave()
                     for (int j=0; j<3; j++) {
                         rMesh.pFaces[i].indices[j] = indices[i][j];
                     }
-                    rMesh.pFaces[i].color_ = color;
+                    rMesh.pFaces[i].pMaterial = pMaterial_;
                 }
                 
                 float mx = margin_.x;
@@ -491,7 +529,7 @@ bool CuboidParser::OnLeave()
     
     // Meshを統合
     int nMeshes = (int)meshes.size();
-    Mesh* pMesh = new Mesh(8*nMeshes, 12*nMeshes);
+    Mesh* pMesh = new Mesh(8*nMeshes, 12*nMeshes, NULL/*@todo*/);
     for (int i=0; i<nMeshes; i++) {
         Mesh& rSrcMesh = *meshes[i];
         int sf = 12*i;
@@ -500,8 +538,11 @@ bool CuboidParser::OnLeave()
             pMesh->pVertices[sv+j] = rSrcMesh.pVertices[j];
         }
         for (int j=0; j<rSrcMesh.nFaces; j++) {
-            pMesh->pFaces[sf+j] = rSrcMesh.pFaces[j];
-            pMesh->pFaces[sf+j].pMesh = pMesh;
+            MeshTriangle& rFace = pMesh->pFaces[sf+j];
+            rFace = rSrcMesh.pFaces[j];
+            rFace.pMesh = pMesh;
+            // @todo material
+            // rFace.pMaterial = pMesh;
             for (int k=0; k<3; k++) {
                 pMesh->pFaces[sf+j].indices[k] += sv;
                 //printf("%d\n", pMesh->pFaces[s+j].indices[k]);
@@ -518,7 +559,7 @@ bool CuboidParser::OnLeave()
     pMesh->scale(scale);
     pMesh->rotateXYZ(rotate_);
     pMesh->translate(position_);
-    pMesh->material_ = material_;
+    pMesh->SetMaterial(pMaterial_);
     pMesh->CalcBoundingBox();
     pMesh->CalcFaceNormals();
     pMesh->CalcVertexNormals();
@@ -541,7 +582,7 @@ bool CuboidParser::OnLeave()
 //--------------------------------------------------------------------------------
 
 LightSourceParser::LightSourceParser(const char* pName, Scene* pScene)
-: SectionParser(pName, NULL, 0)
+: SectionParser(pName, pScene, NULL, 0)
 {
     ItemDesc litSrcDesc[] = {
         // common
@@ -560,8 +601,6 @@ LightSourceParser::LightSourceParser(const char* pName, Scene* pScene)
     };
     paryItemDesc_ = CreateItemDesc(litSrcDesc, ARRAY_SZ(litSrcDesc));
     nItem_ = ARRAY_SZ(litSrcDesc);
-    
-    pScene_ = pScene;
 }
 
 LightSourceParser::~LightSourceParser()
@@ -582,20 +621,22 @@ bool LightSourceParser::OnLeave()
             conf_.nSamples
         );
         
+        Material* pMtl = pScene_->GetLightMaterial();
         Vec3 p2[3] = { p[0], p[2], p[3] };
-        IShape* pLitShape0 = new AreaLightShape((AreaLightSource*)pLitSrc, p, conf_.flux, LIGHT);
-        IShape* pLitShape1 = new AreaLightShape((AreaLightSource*)pLitSrc, p2, conf_.flux, LIGHT);
+        IShape* pLitShape0 = new AreaLightShape((AreaLightSource*)pLitSrc, p, conf_.flux, pMtl);
+        IShape* pLitShape1 = new AreaLightShape((AreaLightSource*)pLitSrc, p2, conf_.flux, pMtl);
         pScene_->AddShape(pLitShape0);
         pScene_->AddShape(pLitShape1);
     }
     else if (StringUtils::Stricmp(conf_.typeStr, "SPHERE") == 0) {
         pLitSrc = new SphereLightSource(conf_.position, conf_.radius, conf_.flux, conf_.nSamples);
+        Material* pMtl = pScene_->GetLightMaterial();
         IShape* pLitShape = new SphereLightShape(
             (SphereLightSource*)pLitSrc,
             conf_.radius,
             conf_.position,
             conf_.flux,
-            LIGHT);
+            pMtl);
         pScene_->AddShape(pLitShape);
     }
     else {
@@ -610,21 +651,18 @@ bool LightSourceParser::OnLeave()
 //--------------------------------------------------------------------------------
 
 SceneImportParser::SceneImportParser(const char* pName, Scene* pScene)
-: SectionParser(pName, NULL, 0)
+: SectionParser(pName, pScene, NULL, 0)
 {
     ItemDesc itemDesc[] = {
         { "path", IVT_STR, &conf_.path },
         { "scale", IVT_VEC3, &conf_.scale },
         { "translate", IVT_VEC3, &conf_.translate },
         { "rotate", IVT_VEC3, &conf_.rotate },
-        { "material", IVT_MTL, &conf_.material },
+        { "material", IVT_MTL, &conf_.pMaterial },
         { "faceReverse", IVT_BOOL, &conf_.faceReverse },
-        { "color", IVT_VEC3, &conf_.color },
     };
     paryItemDesc_ = CreateItemDesc(itemDesc, ARRAY_SZ(itemDesc));
     nItem_ = ARRAY_SZ(itemDesc);
-    
-    pScene_ = pScene;
 }
 
 SceneImportParser::~SceneImportParser()
@@ -649,8 +687,7 @@ bool SceneImportParser::OnLeave()
     pMesh->translate(conf_.translate);
     pScene_->AddShape(pMesh);
     pMesh->CalcBoundingBox();
-    pMesh->material_ = conf_.material;
-    pMesh->color_ = conf_.color;
+    pMesh->SetMaterial(conf_.pMaterial);
     
     // Bounding BoxとNormal計算
     pMesh->CalcBoundingBox();
@@ -662,11 +699,10 @@ bool SceneImportParser::OnLeave()
 //--------------------------------------------------------------------------------
 
 NoiseSurfaceParser::NoiseSurfaceParser(const char* pName, Scene* pScene)
-: SectionParser(pName, NULL, 0)
+: SectionParser(pName, pScene, NULL, 0)
 , scale_(1, 1, 1)
 , division_(10, 10)
-, material_(DIFF)
-, color_(1, 1, 1)
+, pMaterial_(NULL) // @todo
 , noisyHeight_(true)
 , noisyColor_(false)
 {
@@ -675,15 +711,12 @@ NoiseSurfaceParser::NoiseSurfaceParser(const char* pName, Scene* pScene)
         { "scale", IVT_VEC3, &scale_ },
         { "rotate", IVT_VEC3, &rotate_ },
         { "division", IVT_VEC2, &division_ },
-        { "material", IVT_MTL, &material_ },
-        { "color", IVT_VEC3, &color_ },
+        { "material", IVT_MTL, &pMaterial_ },
         { "noisyHeight", IVT_BOOL, &noisyHeight_ },
         { "noisyColor", IVT_BOOL, &noisyColor_ },
     };
     paryItemDesc_ = CreateItemDesc(itemDesc, ARRAY_SZ(itemDesc));
     nItem_ = ARRAY_SZ(itemDesc);
-    
-    pScene_ = pScene;
 }
 
 NoiseSurfaceParser::~NoiseSurfaceParser()
@@ -704,7 +737,7 @@ bool NoiseSurfaceParser::OnLeave()
     
     int nVertices = (divX + 1) * (divZ + 1);
     int nFaces = divX * divZ * 2;
-    Mesh* pMesh = new Mesh(nVertices, nFaces);
+    Mesh* pMesh = new Mesh(nVertices, nFaces, NULL/*@todo*/);
     
     // vertices
     float maxColor = 0;
@@ -724,7 +757,7 @@ bool NoiseSurfaceParser::OnLeave()
             );
             pMesh->pVertices[iVert].pos = pos;
             if (noisyColor_) {
-                Vec3 c = color_ * noise.Noise(x*invDivX, z*invDivZ) * amp;
+                Vec3 c = pMaterial_->color * noise.Noise(x*invDivX, z*invDivZ) * amp;
                 pMesh->pVertices[iVert].color = c;
                 maxColor = std::max(maxColor, c.x);
                 maxColor = std::max(maxColor, c.y);
@@ -758,15 +791,15 @@ bool NoiseSurfaceParser::OnLeave()
     }
     
     pMesh->scale(scale_);
-    pMesh->color_ = color_;
     pMesh->rotateXYZ(rotate_);
     pMesh->translate(center_);
-    pMesh->material_ = material_;
+    pMesh->SetMaterial(pMaterial_);
     pMesh->CalcBoundingBox();
     pMesh->CalcFaceNormals();
     pMesh->CalcVertexNormals();
     pMesh->SetUseFaceNormal(false);
     pMesh->colorUnit_ = noisyColor_ ? CU_Vertex : CU_Mesh;
+    pMesh->SetMaterial(pMaterial_);
     pScene_->AddShape(pMesh);
     
     return true;
@@ -798,12 +831,10 @@ Config::Config()
     ItemDesc pmRendererDesc[] = {
         { "directLight", IVT_BOOL, &pmRendererConf.directLight },
         { "indirectLight", IVT_BOOL, &pmRendererConf.indirectLight },
-        { "caustics", IVT_BOOL, &pmRendererConf.caustics },
+        { "caustic", IVT_BOOL, &pmRendererConf.caustic },
         { "shadowEstimate", IVT_BOOL, &pmRendererConf.shadowEstimate },
         { "drawShadowEstimate", IVT_BOOL, &pmRendererConf.drawShadowEstimate },
-        { "useBVH", IVT_BOOL, &pmRendererConf.useBVH },
         { "maxRayBounce", IVT_INT, &pmRendererConf.maxRayBounce },
-        { "useBVH", IVT_BOOL, &pmRendererConf.useBVH },
         { "nTracePhotonsPerThread", IVT_INT, &pmRendererConf.nTracePhotonsPerThread },
         { "useTentFilter", IVT_BOOL, &pmRendererConf.useTentFilter },
         { "finalGethering", IVT_BOOL, &pmRendererConf.finalGethering },
@@ -845,7 +876,6 @@ Config::Config()
     ItemDesc rayTracingDesc[] = {
         { "nSubPixelSqrt", IVT_INT, &rayTracingConf.nSubPixelsSqrt },
         { "maxRayBounce", IVT_INT, &rayTracingConf.maxRayBounce },
-        { "useBVH", IVT_BOOL, &rayTracingConf.useBVH },
         { "useTentFilter", IVT_BOOL, &rayTracingConf.useTentFilter },
         { "distanceToProjPlane", IVT_FLOAT, &rayTracingConf.distanceToProjPlane }
     };
@@ -854,13 +884,13 @@ Config::Config()
         { "toneMap.keyValue", IVT_FLOAT, &postEffect.toneMapKeyValue }
     };
     ItemDesc cameraDesc[] = {
-        { "camera.position", IVT_VEC3, &camera.position },
-        { "camera.direction", IVT_VEC3, &camera.direction },
-        { "camera.fovY", IVT_FLOAT, &camera.fovY },
+        { "position", IVT_VEC3, &camera.position },
+        { "direction", IVT_VEC3, &camera.direction },
+        { "fovY", IVT_FLOAT, &camera.fovY },
     };
     
     ItemDesc* pGeneralItemDesc = CreateItemDesc(generalDesc, ARRAY_SZ(generalDesc));
-    ItemDesc* pbvhItemDesc = CreateItemDesc(bvhDesc, ARRAY_SZ(bvhDesc));
+    ItemDesc* pBvhItemDesc = CreateItemDesc(bvhDesc, ARRAY_SZ(bvhDesc));
     ItemDesc* pPmRendererItemDesc = CreateItemDesc(pmRendererDesc, ARRAY_SZ(pmRendererDesc));
     ItemDesc* pPhotonMapItemDesc = CreateItemDesc(photonMapDesc, ARRAY_SZ(photonMapDesc));
     ItemDesc* pCausticPmItemDesc = CreateItemDesc(causticPmDesc, ARRAY_SZ(causticPmDesc));
@@ -869,15 +899,15 @@ Config::Config()
     ItemDesc* pPostEffectItemDesc = CreateItemDesc(postEffectDesc, ARRAY_SZ(postEffectDesc));
     ItemDesc* pCameraItemDesc = CreateItemDesc(cameraDesc, ARRAY_SZ(cameraDesc));
  
-    parsers_[SEC_GENERAL]     = new SectionParser("[General]", pGeneralItemDesc, ARRAY_SZ(generalDesc));
-    parsers_[SEC_BVH]         = new SectionParser("[BVH]", pbvhItemDesc, ARRAY_SZ(bvhDesc));
-    parsers_[SEC_PHOTONMAP]   = new SectionParser("[PhotonMap]", pPhotonMapItemDesc, ARRAY_SZ(photonMapDesc));
-    parsers_[SEC_PMRENDERER]  = new SectionParser("[PhotonMapRenderer]", pPmRendererItemDesc, ARRAY_SZ(pmRendererDesc));
-    parsers_[SEC_COARSTICPM]  = new SectionParser("[CausticPhotonMap]", pCausticPmItemDesc, ARRAY_SZ(causticPmDesc));
-    parsers_[SEC_SHADOWPM]    = new SectionParser("[ShadowPhotonMap]", pShadowPmItemDesc, ARRAY_SZ(shadowPmDesc));
-    parsers_[SEC_RAYTRACING]  = new SectionParser("[RayTracing]", pRayTracingItemDesc, ARRAY_SZ(rayTracingDesc));
-    parsers_[SEC_POSTEFFECT]  = new SectionParser("[PostEffect]", pPostEffectItemDesc, ARRAY_SZ(postEffectDesc));
-    parsers_[SEC_CAMERA]      = new SectionParser("[Camera]", pCameraItemDesc, ARRAY_SZ(cameraDesc));
+    parsers_[SEC_GENERAL]     = new SectionParser("[General]", &scene, pGeneralItemDesc, ARRAY_SZ(generalDesc));
+    parsers_[SEC_BVH]         = new SectionParser("[BVH]", &scene, pBvhItemDesc, ARRAY_SZ(bvhDesc));
+    parsers_[SEC_RAYTRACING]  = new SectionParser("[RayTracing]", &scene, pRayTracingItemDesc, ARRAY_SZ(rayTracingDesc));
+    parsers_[SEC_PMRENDERER]  = new SectionParser("[PhotonMapRenderer]", &scene, pPmRendererItemDesc, ARRAY_SZ(pmRendererDesc));
+    parsers_[SEC_PHOTONMAP]   = new SectionParser("[PhotonMap]", &scene, pPhotonMapItemDesc, ARRAY_SZ(photonMapDesc));
+    parsers_[SEC_COARSTICPM]  = new SectionParser("[CausticPhotonMap]", &scene, pCausticPmItemDesc, ARRAY_SZ(causticPmDesc));
+    parsers_[SEC_SHADOWPM]    = new SectionParser("[ShadowPhotonMap]", &scene, pShadowPmItemDesc, ARRAY_SZ(shadowPmDesc));
+    parsers_[SEC_MATERIAL]    = new MaterialParser("[Material]", &scene );
+    parsers_[SEC_CAMERA]      = new SectionParser("[Camera]", &scene, pCameraItemDesc, ARRAY_SZ(cameraDesc));
     parsers_[SEC_LIGHTSOURCE] = new LightSourceParser("[LightSource]", &scene);
     parsers_[SEC_SPHERE]      = new SphereParser("[Sphere]", &scene);
     parsers_[SEC_TRIANGLE]    = new TriangleParser("[Triangle]", &scene);
@@ -885,6 +915,7 @@ Config::Config()
     parsers_[SEC_CUBOID]      = new CuboidParser("[Cuboid]", &scene);
     parsers_[SEC_SCENEIMPORT] = new SceneImportParser("[SceneImport]", &scene);
     parsers_[SEC_WATERSURFACE]= new NoiseSurfaceParser("[NoiseSurface]", &scene);
+    parsers_[SEC_POSTEFFECT]  = new SectionParser("[PostEffect]", &scene, pPostEffectItemDesc, ARRAY_SZ(postEffectDesc));
 }
 
 Config::~Config()

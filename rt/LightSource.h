@@ -103,7 +103,7 @@ private:
 class AreaLightShape : public Triangle
 {
 public:
-    AreaLightShape(AreaLightSource* pLitSrc, const Vec3 points[3], const RGB& color, Refl_t refl);
+    AreaLightShape(AreaLightSource* pLitSrc, const Vec3 points[3], const RGB& color, Material* pMtl);
     virtual ~AreaLightShape() {};
     
     virtual Vec3 SelfIrradiance() const;
@@ -144,7 +144,7 @@ private:
 class SphereLightShape : public Sphere
 {
 public:
-    SphereLightShape(SphereLightSource* pLitSrc, float radius, const Vec3& pos, const RGB& color, Refl_t refl);
+    SphereLightShape(SphereLightSource* pLitSrc, float radius, const Vec3& pos, const RGB& color, Material* pMtl);
     virtual ~SphereLightShape() {};
     
     virtual Vec3 SelfIrradiance();

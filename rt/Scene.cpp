@@ -7,6 +7,7 @@
 #include "vecmath/matrix4.h"
 #include "simd.h"
 #include "Ray.h"
+#include "Material.h"
 #include "SISD_QBVH.h"
 #include "SIMD_QBVH.h"
 
@@ -36,19 +37,29 @@ int IShape::RayCast(vector<HitRecord>& hits, int nHits, const Ray& r, float tmin
 }
 
 //--------------------------------------------------------------------------------
-
-Sphere::Sphere()
-: rad(1.f), p(), c(1.f, 1.f, 1.f), refl(DIFF)
+ShapeBase::~ShapeBase()
 {
 }
 
-Sphere::Sphere(const Sphere& sphere)
-: rad(sphere.rad), p(sphere.p), c(sphere.c), refl(sphere.refl)
+ShapeBase::ShapeBase(Material* pMtl)
+: pMaterial(pMtl)
 {
 }
 
-Sphere::Sphere(real rad_, Vec3 p_, Vec3 c_, Refl_t refl_)
- : rad(rad_), p(p_), c(c_), refl(refl_)
+void ShapeBase::SetMaterial(Material* pMtl)
+{
+    pMaterial = pMtl;
+}
+
+Material* ShapeBase::GetMaterial() const
+{
+    return pMaterial;
+}
+
+//--------------------------------------------------------------------------------
+
+Sphere::Sphere(real rad, Vec3 pos, Material* pMtl)
+ : ShapeBase(pMtl), radius(rad), position(pos)
 {
 }
 
@@ -63,17 +74,17 @@ ShapeType Sphere::GetType() const
 
 BBox Sphere::BoundingBox() const
 {
-    Vec3 radv(rad, rad, rad);
-    return BBox(p - radv, p + radv);
+    Vec3 radv(radius, radius, radius);
+    return BBox(position - radv, position + radv);
 }
 
 // returns distance, 0 if nohit
 bool Sphere::Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) const
 {
     // Solve t^2*d.d + 2*t*(o-p).d + (o-p).(o-p)-R^2 = 0
-    Vec3 op = p-r.o;
+    Vec3 op = position - r.o;
     real b = op.dot(r.d);
-    real det = b * b - op.dot(op) + rad * rad;
+    real det = b * b - op.dot(op) + radius * radius;
     if (det <= 0.f) {
         return false;
     }
@@ -89,21 +100,22 @@ bool Sphere::Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) con
     }
     
     rec.t = t;
-    rec.normal = ((r.o + r.d * t) - p).normalize();
-    rec.color = c;
-    rec.refl = refl;
+    rec.normal = ((r.o + r.d * t) - position).normalize();
+    rec.pMaterial = pMaterial;
+    rec.color = pMaterial->color;
     return true;
 }
 
 
 //--------------------------------------------------------------------------------
-Triangle::Triangle(const Vec3& _p0, const Vec3& _p1, const Vec3& _p2, const RGB& _color, Refl_t _refl)
-    : p0(_p0), p1(_p1), p2(_p2), color(_color), refl(_refl)
+Triangle::Triangle(const Vec3& _p0, const Vec3& _p1, const Vec3& _p2, Material* pMtl)
+: ShapeBase(pMtl), p0(_p0), p1(_p1), p2(_p2)
 {
     CalcNormal();
 }
 
 Triangle::Triangle()
+: ShapeBase(NULL)
 {
     CalcNormal();
 }
@@ -300,15 +312,16 @@ bool Triangle::Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) c
     
     rec.t = t;
     rec.normal = normal;
-    rec.color = color;
-    rec.refl = refl;
+    rec.color = pMaterial->color;
+    rec.pMaterial = pMaterial;
     return true;
 }
 #endif
 
 //--------------------------------------------------------------------------------
 MeshTriangle::MeshTriangle() 
-    : pMesh(NULL)
+: ShapeBase(NULL)
+, pMesh(NULL)
 {
     indices[0] = 0; 
     indices[1] = 0; 
@@ -456,15 +469,17 @@ bool MeshTriangle::Intersect(const Ray &r, float tmin, float tmax, HitRecord &re
     }
     
     if (pMesh->colorUnit_ == CU_Mesh) {
-        rec.color = pMesh->color_;
+        rec.pMaterial = pMesh->GetMaterial();
+        rec.color = rec.pMaterial->color;
     } else if (pMesh->colorUnit_ == CU_Face) {
-        rec.color = this->color_;
+        rec.pMaterial = pMaterial;
+        rec.color = pMaterial->color;
     } else {
+        rec.pMaterial = pMaterial;
         rec.color = ((pMesh->pVertices[indices[0]].color * b0)
                   +  (pMesh->pVertices[indices[1]].color * b1)
                   +  (pMesh->pVertices[indices[2]].color * b2)) / 3;
     }
-    rec.refl = pMesh->material_;
     return true;
 }
 
@@ -476,11 +491,10 @@ bool MeshTriangle::Intersect(const Ray &r, float tmin, float tmax, HitRecord &re
 //}
 
 //--------------------------------------------------------------------------------
-Mesh::Mesh(u32 nVertices_, u32 nFaces_)
-    : material_(DIFF)
-    , color_(1, 1, 1)
-    , useFaceNormal_(false)
-    , colorUnit_(CU_Mesh)
+Mesh::Mesh(u32 nVertices_, u32 nFaces_, Material* pMtl)
+: ShapeBase(pMtl)
+, useFaceNormal_(false)
+, colorUnit_(CU_Mesh)
 {
     pVertices = new Vertex[nVertices_];
     pFaces = new MeshTriangle[nFaces_];
@@ -584,7 +598,6 @@ bool Mesh::Intersect(const Ray &r, float tmin, float tmax, HitRecord& rec) const
 int Mesh::GetChildNum() const
 {
     return nFaces;
-    //return 0;
 }
 
 const IShape** Mesh::GetChildren() const
@@ -648,8 +661,17 @@ void Mesh::translate(real x, real y, real z)
 
 //--------------------------------------------------------------------------------
 Scene::Scene()
-    : pBVH_(NULL)
+: pBVH_(NULL)
 {
+    defaultMaterial_.name = "default";
+    defaultMaterial_.color = Vec3(1.f, 1.f, 0);
+    defaultMaterial_.refl = DIFF;
+    defaultMaterial_.refractiveIndex = 1.f;
+    
+    lightMaterial_.name = "light";
+    lightMaterial_.color = Vec3(1.f, 1.f, 1.f); // not used
+    lightMaterial_.refl = LIGHT;
+    lightMaterial_.refractiveIndex = 1.f; // not used
 }
 
 Scene::~Scene()
@@ -660,6 +682,13 @@ Scene::~Scene()
     for (int i=0; i<shapes_.size(); i++) {
         delete shapes_[i];
     }
+    MaterialMap::iterator it = materialMap_.begin();
+    MaterialMap::iterator ed = materialMap_.end();
+    for ( ; it!=ed; ++it) {
+        Material* pMtl = it->second;
+        delete pMtl;
+    }
+    materialMap_.clear();
 }
 
 void Scene::AddLightSource(const LightSource* pLitSrc)
@@ -667,8 +696,11 @@ void Scene::AddLightSource(const LightSource* pLitSrc)
     litSrcs_.push_back(pLitSrc);
 }
 
-void Scene::AddShape(const IShape* pShape)
+void Scene::AddShape(IShape* pShape)
 {
+    if (pShape->GetMaterial() == NULL) {
+        pShape->SetMaterial(&defaultMaterial_);
+    }
     shapes_.push_back(pShape);
 }
 
@@ -695,8 +727,7 @@ bool Scene::Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) cons
 {
     if (pBVH_) {
         return pBVH_->Intersect(r, tmin, tmax, rec);
-    }
-    else {
+    } else {
         rec.t = tmax;
         size_t nShapes = shapes_.size();
         const std::vector<const IShape*>& shapes = shapes_;
@@ -722,5 +753,31 @@ int Scene::RayCast(vector<HitRecord>& hits, int nHits, const Ray& r, float tmin,
     }
     
     return nHits;
+}
+
+Material* Scene::GetDefaultMaterial()
+{
+    return &defaultMaterial_;
+}
+
+Material* Scene::GetLightMaterial()
+{
+    return &lightMaterial_;
+}
+
+Material* Scene::GetMaterial(string name)
+{
+    MaterialMap::iterator it = materialMap_.find(name.c_str());
+    if (it != materialMap_.end()) {
+        return it->second;
+    }
+    return NULL;
+}
+
+bool Scene::AddMaterial(std::string name, Material* pMtl)
+{
+    pair<MaterialMap::iterator, bool> result
+        = materialMap_.insert(pair<string, Material*>(name, pMtl));
+    return result.second;
 }
 

@@ -1,8 +1,8 @@
 [General]
-#windowWidth=1366
-#windowHeight=768
-windowWidth=256
-windowHeight=256
+windowWidth=800
+windowHeight=700
+#windowWidth=256
+#windowHeight=256
 drawBBox=false
 rendererType=2
 
@@ -13,8 +13,50 @@ useSIMD = true
 draw = false
 drawDepth = 7
 
+[Material]
+name = Mirror
+color = .999 .999 .999
+refl = SPEC
+
+[Material]
+name = Glass
+color = 1 1 1
+refl = REFR
+refrIndex = 1.5
+
+[Material]
+name = Glass2
+color = 0.9 0.9 0.9
+refl = REFR
+refrIndex = 1.5
+
+[Material]
+name = Black
+color = 0.1 0.1 0.1
+refl = DIFF
+
+[Material]
+name = CornellRed
+color = .75 .25 .25
+refl = DIFF
+
+[Material]
+name = CornellBlue
+color = .25 .25 .75
+refl = DIFF
+
+[Material]
+name = CornellGray
+color = .75 .75 .75
+refl = DIFF
+
+[Material]
+name = Water
+refl = REFR
+color = 0.8 1.0 0.95
+refrIndex = 1.333
+
 [RayTracing]
-useBVH = true
 maxRayBounce = 6
 nSubPixelSqrt = 1
 useTentFilter = false
@@ -24,12 +66,11 @@ distanceToProjPlane=140
 directLight = true
 indirectLight = true
 caustic = true
-shadowEstimate = true
+shadowEstimate = false
 drawShadowEstimate = false
 nSubPixelSqrt = 1
 nTracePhotonsPerThread = 10000
 maxRayBounce = 10
-useBVH = true
 #finalGethering = true
 nFinalGetheringRays = 64
 nMaxGlossyBounce = 1
@@ -58,7 +99,6 @@ estimateEllipseScale = 0.2
 enableConeFilter = true
 coneFilterK = 1.1   # kに比例してWeightが軽くなる
 maxPhotonBounce = 40
-useBVH = true
 
 [ShadowPhotonMap]
 enable = true
@@ -68,17 +108,14 @@ nEstimatePhotons = 300
 estimateDist = 9.0
 estimateEllipseScale = 1.0
 
-# @todo RendererのConfigとPhotonMapデータ構造自体のコンフィグを分ける
-# 2つ以上のLightでpenumbra_estimate test
-
 [PostEffect]
 toneMap.enabled = false
 toneMap.keyValue = 0.045
 
 [Camera]
-camera.position = 0 12 285
-camera.direction = 0 -0.04 -1.0
-camera.fovY = 0.5135
+position = 0 12 285
+direction = 0 -0.04 -1.0
+fovY = 0.5135
 
 /#
 [LightSource]
@@ -88,14 +125,12 @@ position = 0 50 70
 flux = 25000 25000 25000
 #/
 
-# 直接光、間接光など要素ごとに比べる
-
 [LightSource]
 type = AREA
-p0 = -3 52  3
-p1 = -3 52 -3
-p2 =  3 52 -3
-p3 =  3 52  3
+p0 = -10 52  10
+p1 = -10 52 -10
+p2 =  10 52 -10
+p3 =  10 52  10
 flux = 20000 20000 20000
 nSamples = 64
 
@@ -117,150 +152,64 @@ nSamples = 64
     p1 = -62 -53  95
     p2 = -62 -53 -95
     p3 = -62  53 -95
-	emission = .75 .25 .25
-	material = DIFF
+    material = CornellRed
 
 [Rectangle] #Right
     p0 = 62  53 -95
     p1 = 62 -53 -95
     p2 = 62 -53  95
     p3 = 62  53  95
-	emission = .25 .25 .75
-	material = DIFF
-
-/#
-[Rectangle] #Back
-    p0 = -62  53 -95
-    p1 = -62 -53 -95
-    p2 =  62 -53 -95
-    p3 =  62  53 -95
-	emission = .75 .75 .75
-	material = DIFF
-#/
-
-/#
-[Rectangle] #Front
-    p0 =  62  53  95
-    p1 =  62 -53  95
-    p2 = -62 -53  95
-    p3 = -62  53  95
-	emission = .75 .75 .75
-	material = DIFF
-#/
+    material = CornellBlue
 
 [Rectangle] #Bottom
     p0 = -62 -53 -95
     p1 = -62 -53  95
     p2 =  62 -53  95
     p3 =  62 -53 -95
-	emission = .75 .75 .75
-	material = DIFF
+    material = CornellGray
 
 [Rectangle] #Top
     p0 = -62  53 -95
     p1 = -62  53  95
     p2 =  62  53  95
     p3 =  62  53 -95
-	emission = .75 .75 .75
-	material = DIFF
+    material = CornellGray
 
-/#
-[Sphere] #Mirror
+[Sphere]
 	radius = 20
 	position = +10 -53+20 -25
-	emission = .999 .999 .999
-	material = SPEC
-#/
+    material = Mirror
 
+/#
 [Cuboid]
     scale = 12 12 12
     rotate = 30 30 0
     position = 0 0 -100
-    emission = 0.1 0.1 0.1
-    material = DIFF
+    material = Black
     repeat = 7 7 7
     interval = 1
     margin = 0 0 0
     randColor = true
+#/
 
-[Sphere] #Glass
+/#
+[Sphere]
 	radius = 20
 	position = 25 -53+20 15
-	emission = 1 1 1
-	material = REFR
-
-/#
-[Triangle]
-	p0 = 0  20 35
-	p1 = 20 20 35
-	p2 = 20  20 35
-	emission = .80 .80 .20
-	material = DIFF
+    material = CornellGray
 #/
 
-/#
 [SceneImport]
     path = "/Users/shuichih/Dev/rt/objs/venusm.obj"
     scale = 0.025 0.025 0.025
-	translate = 0 -52 30
-    material = REFR
-    color = 0.9 0.9 0.9
-    
-[SceneImport]
-    path = "/Users/shuichih/Dev/rt/objs/venusm.obj"
-    scale = 0.025 0.025 0.025
-	translate = 40 -52 30
-    material = REFR
-    color = 0.9 0.9 0.9
-#/
-
-/#
-[SceneImport]
-    path = "/Users/shuichih/Dev/rt/objs/venusm.obj"
-    scale = 0.025 0.025 0.025
-	translate = -40 -52 30
-    material = REFR
-    color = 0.9 0.9 0.9
-#/
-
-
-/#
-[SceneImport]
-    path = "/Users/shuichih/Dev/rt/objs/cube.obj"
-    scale = 40 40 40
-	translate = 30 0 0
-    material = REFR
-    color = 1 0.1 0.1
-#/
-
-/#
-[SceneImport]
-    path = "/Users/shuichih/Dev/rt/objs/slime_objs/slime_simple_high_tri.obj"
-    scale = 20 20 20
-    rotate = 0 0 0
-    translate = 30 5 15
-    material = REFR
-    faceReverse = true
-    color = 0.0 0.5 1.0
-#/
-
-/#
-[SceneImport]
-    path = "/Users/shuichih/Dev/rt/objs/slime_objs/slime_simple_high_tri.obj"
-    scale = 20 20 20
-    translate = -30 -53+8 15
-    material = REFR
-    faceReverse = true
-    color = 1.0 0.5 0.0
-#/
+    translate = -40 -52 30
+    material = Glass2
 
 [NoiseSurface]
     center = 0 -35 0
     scale = 150 3 150
     rotate = 0 0 0
     division = 200 200
-    material = REFR
-    color = 0.8 1.0 0.95
+    material = Water
     noisyHeight = true
     noisyColor = false
-

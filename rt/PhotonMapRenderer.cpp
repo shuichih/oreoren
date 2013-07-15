@@ -11,6 +11,7 @@
 #include "Config.h"
 #include "Timer.h"
 #include "Ray.h"
+#include "Material.h"
 
 
 // Direct
@@ -88,7 +89,7 @@ void PhotonMapRenderer::TracePhoton(const Ray& r, const Vec3& power, PathInfo& p
     Vec3 n = rec.normal;
     Vec3 nl = n.dot(r.d) < 0.f ? n : n*-1.f; // 交点の法線, 裏面ヒット考慮
     Vec3 color = rec.color;
-    Refl_t refl = rec.refl;
+    Refl_t refl = rec.pMaterial->refl;
     
     // Ideal DIFFUSE reflection
     if (refl == DIFF || refl == LIGHT) { // 光源表面はLambert面という事にしておく
@@ -136,8 +137,8 @@ void PhotonMapRenderer::TracePhoton(const Ray& r, const Vec3& power, PathInfo& p
     Ray reflRay(x, r.d - n * 2.f * n.dot(r.d));
     bool into = n.dot(nl) > 0.f;  // Ray from outside going in?
     real airRefrIdx = 1.f;
-    real grassRefrIdx = 1.5f;
-    real nnt = into ? airRefrIdx/grassRefrIdx : grassRefrIdx/airRefrIdx;
+    real refrIdx = rec.pMaterial->refractiveIndex;
+    real nnt = into ? airRefrIdx/refrIdx : refrIdx/airRefrIdx;
     real ddn = r.d.dot(nl);   // レイと法線のcos
     real cos2t;
     
@@ -149,8 +150,8 @@ void PhotonMapRenderer::TracePhoton(const Ray& r, const Vec3& power, PathInfo& p
     
     // 屈折方向
     Vec3 tdir = (r.d * nnt - n * ((into ? 1.f : -1.f) * (ddn * nnt + sqrtf(cos2t)))).normalize();
-    real a = grassRefrIdx - airRefrIdx;
-    real b = grassRefrIdx + airRefrIdx;
+    real a = refrIdx - airRefrIdx;
+    real b = refrIdx + airRefrIdx;
     real R0 = a * a / (b * b);
     real c = 1.f - (into ? -ddn : tdir.dot(n));
     real Re = R0 + (1.f - R0)*c*c*c*c*c;
@@ -180,7 +181,7 @@ Vec3 PhotonMapRenderer::Irradiance(const Ray &r, PathInfo& pathInfo)
     Vec3 n = rec.normal;
     Vec3 nl = n.dot(r.d) < 0.f ? n : n * -1.f;   // 交点の法線
     Vec3 color = rec.color;
-    Refl_t refl = rec.refl;
+    Refl_t refl = rec.pMaterial->refl;
     
     // 0.5にしたらカラーが反射率になってるから暗くなるだけ。IDEALでない反射は扱えない。カラーと混ぜるとかもない。
     // Ideal DIFFUSE reflection
@@ -243,8 +244,8 @@ Vec3 PhotonMapRenderer::Irradiance(const Ray &r, PathInfo& pathInfo)
         Ray reflRay(x, rdir);
         bool into = n.dot(nl) > 0.f; // Ray from outside going in?
         real airRefrIdx = 1.f;
-        real grassRefrIdx = 1.5f;
-        real nnt = into ? airRefrIdx/grassRefrIdx : grassRefrIdx/airRefrIdx;
+        real refrIdx = rec.pMaterial->refractiveIndex;
+        real nnt = into ? airRefrIdx/refrIdx : refrIdx/airRefrIdx;
         real ddn = r.d.dot(nl); // レイと法線のcos
         real cos2t;
         
@@ -256,8 +257,8 @@ Vec3 PhotonMapRenderer::Irradiance(const Ray &r, PathInfo& pathInfo)
         Vec3 tdir = (r.d * nnt - n * ((into ? 1.f : -1.f) * (ddn * nnt + sqrtf(cos2t)))).normalize();
         //mx = x + rdir * EPSILON; // 自己ヒット抑止にレイ始点をちょっと進めてみる
         
-        real a = grassRefrIdx - airRefrIdx;
-        real b = grassRefrIdx + airRefrIdx;
+        real a = refrIdx - airRefrIdx;
+        real b = refrIdx + airRefrIdx;
         real R0 = a * a / (b * b);
         real c = 1.f - (into ? -ddn : tdir.dot(n));
         real Re = R0 + (1.f - R0)*c*c*c*c*c;
@@ -278,17 +279,17 @@ Vec3 PhotonMapRenderer::Irradiance(const Ray &r, PathInfo& pathInfo)
 void PhotonMapRenderer::PhotonTracing()
 {
     // すべてのライトの合計の明るさを求める
-    u32 nLit = (u32)pScene_->litSrcs_.size();
+    u32 nLit = pScene_->GetLightNum();
     double sumFlux = 0;
     for (int i=0; i<nLit; i++) {
-        const Vec3& flux = pScene_->litSrcs_[i]->GetFlux();
+        const Vec3& flux = pScene_->GetLight(i)->GetFlux();
         sumFlux += flux.sum(); // sumでなく輝度を使った方が精度が上がる
     }
     
     // 各ライトからライトの明るさに応じてフォトンをばらまく
     u32 iPhoton = 0;
     for (int i=0; i<nLit; i++) {
-        const LightSource* pLit = pScene_->litSrcs_[i];
+        const LightSource* pLit = pScene_->GetLight(i);
         float nPhotonRatio = (float)(pLit->GetFlux().sum() / sumFlux);
         u32 nPhotons = (u32)(pPmConf_->nPhotons * nPhotonRatio);
         

@@ -9,6 +9,7 @@
 #include "BVH.h"
 #include "Config.h"
 #include "Ray.h"
+#include "Material.h"
 
 using namespace std;
 
@@ -43,23 +44,23 @@ Vec3 RayTracingRenderer::Irradiance(const Ray &r, int depth)
     Vec3 n = rec.normal;
     Vec3 nl = n.dot(r.d) < 0.f ? n : n * -1.f;   // 交点の法線
     Vec3 f = rec.color;
-    Refl_t refl = rec.refl;
+    Refl_t refl = rec.pMaterial->refl;
     
     
     // 0.5にしたらカラーが反射率になってるから暗くなるだけ。IDEALでない反射は扱えない。カラーと混ぜるとかもない。
     // Ideal DIFFUSE reflection
     if (refl == DIFF){
         Vec3 litPos;
-        LightSourceType litType = pScene_->litSrcs_[0]->GetType();
+        LightSourceType litType = pScene_->GetLight(0)->GetType();
         if (litType == Lit_Point) {
-            litPos = ((PointLightSource*)pScene_->litSrcs_[0])->position_;
+            litPos = ((PointLightSource*)pScene_->GetLight(0))->position_;
         } else if (litType == Lit_Area) {
-            AreaLightSource* pLitSrc = (AreaLightSource*)pScene_->litSrcs_[0];
+            AreaLightSource* pLitSrc = (AreaLightSource*)pScene_->GetLight(0);
             litPos = (pLitSrc->p_[0] + pLitSrc->p_[1] + pLitSrc->p_[2] + pLitSrc->p_[3]) * 0.25f;
         } else if (litType == Lit_Sphere) {
-            litPos = ((SphereLightSource*)pScene_->litSrcs_[0])->position_;
+            litPos = ((SphereLightSource*)pScene_->GetLight(0))->position_;
         } else {
-            litPos = ((SphereLightSource*)pScene_->litSrcs_[0])->position_;
+            litPos = ((SphereLightSource*)pScene_->GetLight(0))->position_;
             assert(false);
         }
         Vec3 L = (litPos - x).normalize();
@@ -99,8 +100,8 @@ Vec3 RayTracingRenderer::Irradiance(const Ray &r, int depth)
     Ray reflRay(x, r.d - n * 2.f * n.dot(r.d));
     bool into = n.dot(nl) > 0.f; // Ray from outside going in?
     real airRefrIdx = 1.f;
-    real grassRefrIdx = 1.5f;
-    real nnt = into ? airRefrIdx/grassRefrIdx : grassRefrIdx/airRefrIdx;
+    real refrIdx = rec.pMaterial->refractiveIndex;
+    real nnt = into ? airRefrIdx/refrIdx : refrIdx/airRefrIdx;
     real ddn = r.d.dot(nl); // レイと法線のcos
     real cos2t;
     
@@ -111,8 +112,8 @@ Vec3 RayTracingRenderer::Irradiance(const Ray &r, int depth)
     // 屈折方向
     Vec3 tdir = (r.d * nnt - n * ((into ? 1.f : -1.f) * (ddn * nnt + sqrtf(cos2t)))).normalize();
     
-    real a = grassRefrIdx - airRefrIdx;
-    real b = grassRefrIdx + airRefrIdx;
+    real a = refrIdx - airRefrIdx;
+    real b = refrIdx + airRefrIdx;
     real R0 = a * a / (b * b);
     real c = 1.f - (into ? -ddn : tdir.dot(n));
     real Re = R0 + (1.f - R0)*c*c*c*c*c;

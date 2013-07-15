@@ -13,6 +13,7 @@
 #include "Config.h"
 #include "Timer.h"
 #include "Ray.h"
+#include "Material.h"
 
 
 // Direct
@@ -103,7 +104,7 @@ void PhotonMapRenderer2::TracePhoton(const Ray& r, const Vec3& power, PathInfo& 
     Vec3 n = rec.normal;
     Vec3 nl = n.dot(r.d) < 0.f ? n : n*-1.f; // 交点の法線, 裏面ヒット考慮
     Vec3 color = rec.color;
-    Refl_t refl = rec.refl;
+    Refl_t refl = rec.pMaterial->refl;
     
     // 影フォトン
     if (traceFlag_ == Trace_Shadow) {
@@ -119,7 +120,7 @@ void PhotonMapRenderer2::TracePhoton(const Ray& r, const Vec3& power, PathInfo& 
         //printf("%d\n", nHits);
         for (int i=0; i<nHits; i++) {
             HitRecord& sh_rec = shadyHits_.at(i);
-            if (sh_rec.refl == DIFF && sh_rec.normal.dot(r.d) < 0) {
+            if (sh_rec.pMaterial->refl == DIFF && sh_rec.normal.dot(r.d) < 0) {
                 //printf("hit\n");
                 Vec3 sh_x = r.o + r.d * sh_rec.t;
                 pCurrPm_->store((-1.f*power).e, sh_x.e, r.d.e, false, lightNo_);
@@ -186,9 +187,10 @@ void PhotonMapRenderer2::TracePhoton(const Ray& r, const Vec3& power, PathInfo& 
     // Ideal dielectric REFRACTION
     Ray reflRay(x, r.d - n * 2.f * n.dot(r.d));
     bool into = n.dot(nl) > 0.f;  // Ray from outside going in?
+    // @todo airRefrIdxを現在レイがある物体のrefrIdxにしてpathInfoに含める
     real airRefrIdx = 1.f;
-    real grassRefrIdx = 1.5f;
-    real nnt = into ? airRefrIdx/grassRefrIdx : grassRefrIdx/airRefrIdx;
+    real refrIdx = rec.pMaterial->refractiveIndex;
+    real nnt = into ? airRefrIdx/refrIdx : refrIdx/airRefrIdx;
     real ddn = r.d.dot(nl);   // レイと法線のcos
     real cos2t;
     
@@ -200,8 +202,8 @@ void PhotonMapRenderer2::TracePhoton(const Ray& r, const Vec3& power, PathInfo& 
     
     // 屈折方向
     Vec3 tdir = (r.d * nnt - n * ((into ? 1.f : -1.f) * (ddn * nnt + sqrtf(cos2t)))).normalize();
-    real a = grassRefrIdx - airRefrIdx;
-    real b = grassRefrIdx + airRefrIdx;
+    real a = refrIdx - airRefrIdx;
+    real b = refrIdx + airRefrIdx;
     real R0 = a * a / (b * b);
     real c = 1.f - (into ? -ddn : tdir.dot(n));
     real Re = R0 + (1.f - R0)*c*c*c*c*c;
@@ -230,7 +232,7 @@ Vec3 PhotonMapRenderer2::Irradiance(const Ray &r, PathInfo& pathInfo)
     Vec3 n = rec.normal;
     Vec3 nl = n.dot(r.d) < 0.f ? n : n * -1.f;   // 交点の法線
     Vec3 color = rec.color;
-    Refl_t refl = rec.refl;
+    Refl_t refl = rec.pMaterial->refl;
     
     // Ideal DIFFUSE reflection
     if (refl == DIFF) {
@@ -262,8 +264,8 @@ Vec3 PhotonMapRenderer2::Irradiance(const Ray &r, PathInfo& pathInfo)
         
         // Direct Light
         if (pPmRenConf_->directLight) {
-            for (int i=0; i<pScene_->litSrcs_.size(); i++) {
-                irrad += BRDF * pScene_->litSrcs_[i]->DirectLight(x, nl, *pScene_, peRatio);
+            for (int i=0; i<pScene_->GetLightNum(); i++) {
+                irrad += BRDF * pScene_->GetLight(i)->DirectLight(x, nl, *pScene_, peRatio);
             }
         }
         
@@ -275,7 +277,7 @@ Vec3 PhotonMapRenderer2::Irradiance(const Ray &r, PathInfo& pathInfo)
         }
         
         // Caustics
-        if (pPmRenConf_->caustics) {
+        if (pPmRenConf_->caustic) {
             Vec3 tmpIrrad;
             pCausticPhotonMap_->irradiance_estimate(tmpIrrad.e, x.e, nl, pCausticPmConf_->estimateDist, pCausticPmConf_->nEstimatePhotons);
             irrad += tmpIrrad;
@@ -316,8 +318,8 @@ Vec3 PhotonMapRenderer2::Irradiance(const Ray &r, PathInfo& pathInfo)
         Ray reflRay(x, rdir);
         bool into = n.dot(nl) > 0.f; // Ray from outside going in?
         real airRefrIdx = 1.f;
-        real grassRefrIdx = 1.5f;
-        real nnt = into ? airRefrIdx/grassRefrIdx : grassRefrIdx/airRefrIdx;
+        real refrIdx = rec.pMaterial->refractiveIndex;
+        real nnt = into ? airRefrIdx/refrIdx : refrIdx/airRefrIdx;
         real ddn = r.d.dot(nl); // レイと法線のcos
         real cos2t;
         
@@ -329,8 +331,8 @@ Vec3 PhotonMapRenderer2::Irradiance(const Ray &r, PathInfo& pathInfo)
         Vec3 tdir = (r.d * nnt - n * ((into ? 1.f : -1.f) * (ddn * nnt + sqrtf(cos2t)))).normalize();
         //mx = x + rdir * EPSILON; // 自己ヒット抑止にレイ始点をちょっと進めてみる
         
-        real a = grassRefrIdx - airRefrIdx;
-        real b = grassRefrIdx + airRefrIdx;
+        real a = refrIdx - airRefrIdx;
+        real b = refrIdx + airRefrIdx;
         real R0 = a * a / (b * b);
         real c = 1.f - (into ? -ddn : tdir.dot(n));
         real Re = R0 + (1.f - R0)*c*c*c*c*c;
@@ -352,10 +354,10 @@ Vec3 PhotonMapRenderer2::Irradiance(const Ray &r, PathInfo& pathInfo)
 void PhotonMapRenderer2::PhotonTracing()
 {
     // すべてのライトの合計の明るさを求める
-    u32 nLit = (u32)pScene_->litSrcs_.size();
+    u32 nLit = (u32)pScene_->GetLightNum();
     double sumFlux = 0;
     for (int i=0; i<nLit; i++) {
-        const Vec3& flux = pScene_->litSrcs_[i]->GetFlux();
+        const Vec3& flux = pScene_->GetLight(i)->GetFlux();
         sumFlux += flux.sum(); // sumでなく輝度を使った方が精度が上がる
     }
     
@@ -391,7 +393,7 @@ void PhotonMapRenderer2::PhotonTracing_(
     // 各ライトからライトの明るさに応じてフォトンをばらまく
     u32 iPhoton = 0;
     for (int i=0; i<nLit; i++) {
-        const LightSource* pLit = pScene_->litSrcs_[i];
+        const LightSource* pLit = pScene_->GetLight(i);
         float nPhotonRatio = (float)(pLit->GetFlux().sum() / sumFlux);
         u32 nPhotons = (u32)(c_nPhotons * nPhotonRatio);
         

@@ -73,7 +73,7 @@ struct SIMD_QBVH_NODE
 * Quad Bounding Volume Hierarchy Base.
  */
 template <typename NODE_T>
-class QBVHBase : public IShape
+class QBVHBase : public ShapeBase
 {
 public:
     static int QSplit(const IShape** pShapes, int nShapes, float pivot, int axis);
@@ -103,7 +103,13 @@ protected:
         u8 nOtherPrims;
     };
     
-    //
+    // child index access
+    void SetChildEmpty(int& child);
+    void SetChildNode(int& child, int index);
+    void SetChildLeaf(int& child, int index);
+    bool IsChildEmpty(int child) const;
+    int GetChildIndex(int child) const;
+    bool IsChildNode(int child) const;
     
     // for build
     void Reset();

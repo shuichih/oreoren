@@ -5,6 +5,7 @@
 #include "ONB.h"
 #include "vector3.h"
 #include "Ray.h"
+#include "Material.h"
 
 //--------------------------------------------------------------------------------
 
@@ -52,12 +53,20 @@ Vec3 PointLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const Sc
     
     HitRecord rec;
     Vec3 ldir = position_ - pos;
+    
+    if (normal.dot(ldir) <= 0) {
+        return Vec3();
+    }
+    
     float r2 = ldir.lengthSquared();
     float r = sqrtf(ldir.lengthSquared());
     ldir.normalize();
     Ray ray(pos, ldir);
     float pdf = 1.f / (4 * PI * r2); // pdfではないような?
     if (penumbra == 1.f || !scene.Intersect(ray, EPSILON, r, rec)) {
+        // @todo cosX, cosYがマイナスになってないか確認
+        //float tmp = normal.dot(ldir);
+        //assert(tmp <== 0);
         return normal.dot(ldir) * flux_ * pdf;
     } else {
         return Vec3();
@@ -121,8 +130,12 @@ float AreaLightSource::CalcTriangleArea(const Vec3& p0, const Vec3& p1, const Ve
 Ray AreaLightSource::GenerateRay() const
 {
     real b0 = (real)erand48(xi_);
-    real b1 = (1.0f - b0) * (real)erand48(xi_);
-    real b2 = 1.0f - b0 - b1;
+    real b1 = (real)erand48(xi_);
+    real b2 = (real)erand48(xi_);
+    real isum = 1.f / (b0 + b1 + b2);
+    b0 *= isum;
+    b1 *= isum;
+    b2 *= isum;
     Vec3 pos = ((real)erand48(xi_) < 0.5f) ?
         (p_[0] * b0 + p_[1] * b1 + p_[2] * b2):
         (p_[0] * b0 + p_[2] * b1 + p_[3] * b2);
@@ -143,7 +156,7 @@ Vec3 AreaLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const Sce
         return Vec3();
     }
     
-    if (normal.dot(this->normal_) > 0.0f) {
+    if (normal.dot(this->normal_) >= 0.0f) {
         return Vec3();
     }
 
@@ -153,13 +166,22 @@ Vec3 AreaLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const Sce
     
     for (int i=0; i<nSamples_; i++) {
         real b0 = (real)erand48(xi_);
-        real b1 = (1.0f - b0) * (real)erand48(xi_);
-        real b2 = 1.0f - b0 - b1;
+        real b1 = (real)erand48(xi_);
+        real b2 = (real)erand48(xi_);
+        real isum = 1.f / (b0 + b1 + b2);
+        b0 *= isum;
+        b1 *= isum;
+        b2 *= isum;
         Vec3 lpos = ((real)erand48(xi_) < 0.5f) ?
             (p_[0] * b0 + p_[1] * b1 + p_[2] * b2):
             (p_[0] * b0 + p_[2] * b1 + p_[3] * b2);
         
         Vec3 ldir = lpos - pos;
+        if (ldir.dot(normal) <= 0) {
+            // 面光源が上ある場合の球の横の縁など
+            continue;
+        }
+        
         float r2 = ldir.lengthSquared();
         float r = sqrtf(r2);
         ldir.normalize();
@@ -177,8 +199,8 @@ Vec3 AreaLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const Sce
 
 //--------------------------------------------------------------------------------
 
-AreaLightShape::AreaLightShape(AreaLightSource* pLitSrc, const Vec3 ps[3], const RGB& color, Refl_t refl)
-: Triangle(ps[0], ps[1], ps[2], color, refl)
+AreaLightShape::AreaLightShape(AreaLightSource* pLitSrc, const Vec3 ps[3], const RGB& color, Material* pMtl)
+: Triangle(ps[0], ps[1], ps[2], pMtl)
 {
     pLightSource_ = pLitSrc;
 }
@@ -200,18 +222,6 @@ bool AreaLightShape::Intersect(const Ray& r, float tmin, float tmax, HitRecord& 
 
 
 //--------------------------------------------------------------------------------
-
-/*
-SphereLightSource::SphereLightSource()
-: position_()
-, radius_(1)
-{
-	xi_[0] = 0;
-	xi_[1] = 0;
-	xi_[2] = (unsigned short)(position_.x + position_.y + position_.z
-                              + flux_.x + flux_.y + flux_.z);
-}
-*/
 
 SphereLightSource::SphereLightSource(const Vec3& position, float radius, const Vec3& flux, int nSamples)
 : LightSource(Lit_Sphere, flux)
@@ -300,6 +310,7 @@ Vec3 SphereLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const S
         if (penumbra == 1.f || !scene.Intersect(ray, EPSILON, xc_len, rec)) {
             float cosX = ln.dot(-1.f * a);
             float cosY = normal.dot(a);
+            // @todo cosX, cosYがマイナスになってないか確認
             Vec3 lit_irrad = flux_ / (4 * PI * radius_ * radius_ * xlx2);
             irrad += cosX * cosY * lit_irrad / (pdf * nSamples_);
         }
@@ -310,8 +321,8 @@ Vec3 SphereLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const S
 
 //--------------------------------------------------------------------------------
 
-SphereLightShape::SphereLightShape(SphereLightSource* pLitSrc, float radius, const Vec3& pos, const RGB& color, Refl_t refl)
-: Sphere(radius, pos, color, refl)
+SphereLightShape::SphereLightShape(SphereLightSource* pLitSrc, float radius, const Vec3& pos, const RGB& color, Material* pMtl)
+: Sphere(radius, pos, pMtl)
 {
     pLightSource_ = pLitSrc;
     pLightSource_->SetShape(this);

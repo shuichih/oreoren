@@ -14,7 +14,6 @@ nSubPixelSqrt = 1
 coneFilterK = 1.1   # kに比例してWeightが軽くなる
 maxPhotonBounce = 5
 maxRayBounce = 5
-useBVH = true
 
 [PostEffect]
 toneMap.enabled = false

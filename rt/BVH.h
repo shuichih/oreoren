@@ -20,6 +20,8 @@ public:
     BVH(const IShape* s1, const IShape* s2, const BBox& bbox);
     virtual ~BVH();
     
+    virtual Material* GetMaterial() const;
+    virtual void SetMaterial(Material* pMtl);
     virtual ShapeType GetType() const;
     virtual BBox BoundingBox() const;
     virtual bool Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) const;

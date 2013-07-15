@@ -4,7 +4,10 @@
 #include "Common.h"
 #include "BBox.h"
 #include <vector>
+#include <string>
+#include <map>
 #include "BVHType.h"
+#include "Material.h"
 
 
 class IShape;
@@ -12,16 +15,6 @@ class LightSource;
 class BVH;
 
 // material type
-// @todo introduce Material class
-enum Refl_t
-{
-    DIFF,
-    SPEC,
-    REFR,
-    PHONGMETAL,
-    LIGHT
-};
-
 enum ColorUnit
 {
     CU_Mesh,
@@ -44,8 +37,8 @@ struct HitRecord
 {
     real t;
     Vec3 normal;
-    Vec3 color;
-    Refl_t refl;
+    RGB color;
+    Material* pMaterial;
     bool hitLit;
     const IShape* pShape;
     HitRecord()
@@ -65,31 +58,41 @@ public:
     virtual int GetChildNum() const { return 0; }
     virtual const IShape** GetChildren() const { return NULL; }
     virtual ShapeType GetType() const = 0;
+    virtual void SetMaterial(Material* pMtl) = 0;
+    virtual Material* GetMaterial() const = 0;
 };
 
-class Sphere : public IShape
+class ShapeBase : public IShape
 {
 public:
-    Sphere();
-    Sphere(const Sphere& rhs);
-    Sphere(real radius_, Vec3 p_, Vec3 c_, Refl_t refl_);
+    virtual ~ShapeBase();
+    
+    ShapeBase(Material* pMtl);
+    virtual void SetMaterial(Material* pMtl);
+    virtual Material* GetMaterial() const;
+    
+    Material* pMaterial;
+};
+
+class Sphere : public ShapeBase
+{
+public:
+    Sphere(real radius, Vec3 position, Material* pMtl);
     virtual ~Sphere();
     
     virtual ShapeType GetType() const;
     virtual BBox BoundingBox() const;
     virtual bool Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) const;
     
-    real rad;   // radius
-    Vec3 p;      // position
-    Vec3 c;      // color
-    Refl_t refl;    // reflection type (DIFFuse, SPECular, REFRactive)
+    real radius;
+    Vec3 position;
 };
 
-class Triangle : public IShape
+class Triangle : public ShapeBase
 {
 public:
     Triangle();
-    Triangle(const Vec3& _p0, const Vec3& _p1, const Vec3& _p2, const RGB& _color, Refl_t _refl);
+    Triangle(const Vec3& _p0, const Vec3& _p1, const Vec3& _p2, Material* pMaterial);
     virtual ~Triangle();
     
     virtual ShapeType GetType() const;
@@ -101,8 +104,6 @@ public:
     Vec3 p1;
     Vec3 p2;
     Vec3 normal;
-    RGB color;
-    Refl_t refl;
 };
 
 struct Vertex
@@ -114,7 +115,7 @@ struct Vertex
 
 class Mesh;
 
-class MeshTriangle : public IShape
+class MeshTriangle : public ShapeBase
 {
 public:
     MeshTriangle();
@@ -128,14 +129,13 @@ public:
     
     u32 indices[3];
     Vec3 normal;
-    RGB color_;
     Mesh* pMesh;
 };
 
-class Mesh : public IShape
+class Mesh : public ShapeBase
 {
 public:
-    Mesh(u32 nVertices, u32 nFaces);
+    Mesh(u32 nVertices, u32 nFaces, Material* pMtl);
     virtual ~Mesh();
 
     void SetUseFaceNormal(bool useFaceNormal);
@@ -162,8 +162,6 @@ public:
     u32             nVertices;
     u32             nFaces;
     BBox            bbox_;
-    Refl_t          material_;
-    RGB             color_;
     ColorUnit       colorUnit_;
     bool            useFaceNormal_;
 };
@@ -171,15 +169,29 @@ public:
 class Scene
 {
 public:
+    typedef std::map<std::string, Material*> MaterialMap;
+    
     Scene();
     ~Scene();
     
     void AddLightSource(const LightSource* pLitSrc);
-    void AddShape(const IShape* pShape);
+    void AddShape(IShape* pShape);
     bool Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) const;
     int RayCast(std::vector<HitRecord>& shapes, int nHits, const Ray& r, float tmin, float tmax) const;
     void BuildBVH(BVHType bvhType);
+    inline u32 GetShapeNum() const { return (u32)shapes_.size(); }
+    inline const IShape* GetShape(u32 index) const { return shapes_[index]; }
+    inline u32 GetLightNum() const { return (u32)litSrcs_.size(); }
+    inline const LightSource* GetLight(u32 index) const { return litSrcs_[index]; }
+    Material* GetMaterial(std::string name);
+    Material* GetDefaultMaterial();
+    Material* GetLightMaterial();
+    bool AddMaterial(std::string name, Material* pMtl);
     
+private:
+    Material defaultMaterial_;
+    Material lightMaterial_;
+    MaterialMap materialMap_;
     std::vector<const LightSource*> litSrcs_;
     std::vector<const IShape*> shapes_;
     IShape* pBVH_;

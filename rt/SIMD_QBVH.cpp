@@ -86,27 +86,23 @@ void SIMD_QBVH::BuildBranch(int iCurrNode, const IShape** pShapes, int nShapes)
         if (nChildren[i] == 0) {
             //printf("-\n");
             SIMD_QBVH_NODE* pNode = &pNodes_[iCurrNode];
-            pNode->children[i] = INT_MIN;
+            SetChildEmpty(pNode->children[i]);
         }
         // 子が4より多ければさらに枝に分割
         else if (nChildren[i] > 4) {
             //printf("=\n");
             //assert(iNodes_ < nNodeCapacity_);
             SIMD_QBVH_NODE* pNode = &pNodes_[iCurrNode];
-            pNode->children[i] = iNodes_;
-            AddNewNode();
-            pNode = &pNodes_[iCurrNode]; // pNodes_ might be realloc in AddNewNode()
-            BuildBranch(pNode->children[i], ppChildShapes[i], nChildren[i]);
+            SetChildNode(pNode->children[i], iNodes_);
+            AddNewNode(); // increments iNodes_
+            BuildBranch(iNodes_ - 1, ppChildShapes[i], nChildren[i]);
         }
         // 子が4以下だったら葉を作る
         else {
             //printf("*\n");
             SIMD_QBVH_NODE* pNode = &pNodes_[iCurrNode];
-            pNode->children[i] = INT_MIN; // 符号で枝と葉を区別
-            assert(iLeaves_ < (1<<30));
-            pNode->children[i] |= iLeaves_;
+            SetChildLeaf(pNode->children[i], iLeaves_);
             Leaf& rLeaf = AddNewLeaf();
-            
             rLeaf.iTriangles = iTriangles_;
             rLeaf.iOtherPrims = iOtherPrims_;
             BuildLeaf(rLeaf.nTriangles, rLeaf.nOtherPrims, ppChildShapes[i], nChildren[i]);
@@ -226,18 +222,19 @@ bool SIMD_QBVH::IntersectBranch(SIMD_QBVH_NODE& rNode, const Ray &r, float tmin,
             dbg_maxx.e[i], dbg_maxy.e[i], dbg_maxz.e[i]);
         */
         
-        if (((1 << i) & hit) && (rNode.children[i] != INT_MIN)) {
+        if (((1 << i) & hit) && !IsChildEmpty(rNode.children[i])) {
             //printf("hit!\n");
+            int iChild = GetChildIndex(rNode.children[i]);
+            
             // 枝
-            if ((rNode.children[i] & (0x01 << 31)) == 0) {
-                bool hit = IntersectBranch(pNodes_[rNode.children[i]], r, tmin, rec);
+            if (IsChildNode(rNode.children[i])) {
+                bool hit = IntersectBranch(pNodes_[iChild], r, tmin, rec);
                 ret = ret || hit;
             }
             // 葉
             else {
                 //printf("Leaf!\n");
-                int iLeaves = (rNode.children[i] & 0x7FFFFFFF);
-                Leaf& rLeaf = pLeaves_[iLeaves];
+                Leaf& rLeaf = pLeaves_[iChild];
                 assert((rLeaf.nTriangles + rLeaf.nOtherPrims) > 0);
                 bool hit = IntersectLeaf(rLeaf, r, tmin, rec);
                 ret = ret || hit;
@@ -261,14 +258,15 @@ int SIMD_QBVH::RayCastBranch(vector<HitRecord>& hits, int nHits, SIMD_QBVH_NODE&
     
     for (int i=0; i<4; i++) {
         if ((1 << i) & hit) {
+            int iChild = GetChildIndex(rNode.children[i]);
+            
             // 枝
-            if ((rNode.children[i] & (0x01 << 31)) == 0) {
-                nHits = RayCastBranch(hits, nHits, pNodes_[rNode.children[i]], r, tmin, tmax);
+            if (IsChildNode(rNode.children[i])) {
+                nHits = RayCastBranch(hits, nHits, pNodes_[iChild], r, tmin, tmax);
             }
             // 葉
             else {
-                int iLeaves = (rNode.children[i] & 0x7FFFFFFF);
-                Leaf& rLeaf = pLeaves_[iLeaves];
+                Leaf& rLeaf = pLeaves_[iChild];
                 assert((rLeaf.nTriangles + rLeaf.nOtherPrims) > 0);
                 nHits = RayCastLeaf(hits, nHits, rLeaf, r, tmin, tmax);
             }

@@ -12,7 +12,6 @@ draw = false
 drawDepth = 7
 
 [RayTracing]
-useBVH = true
 maxRayBounce = 6
 nSubPixelSqrt = 1
 useTentFilter = false
@@ -32,7 +31,6 @@ coneFilterK = 1.1   # kに比例してWeightが軽くなる
 nTracePhotonsPerThread = 10000
 maxPhotonBounce = 10
 maxRayBounce = 10
-useBVH = true
 #finalGethering = true
 nFinalGetheringRays = 64
 nMaxGlossyBounce = 1
@@ -49,7 +47,6 @@ enableConeFilter = true
 coneFilterK = 1.1   # kに比例してWeightが軽くなる
 nTracePhotonsPerThread = 10000
 maxPhotonBounce = 40
-useBVH = true
 
 [ShadowPhotonMap]
 enable = true

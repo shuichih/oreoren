@@ -3,6 +3,7 @@
 #include <cassert>
 #include "simd.h"
 #include "Ray.h"
+#include "Material.h"
 
 using namespace std;
 
@@ -11,7 +12,8 @@ using namespace std;
 
 template <typename NODE_T>
 QBVHBase<NODE_T>::QBVHBase()
-: pTriangles_(NULL)
+: ShapeBase(NULL)
+, pTriangles_(NULL)
 , ppOtherPrims_(NULL)
 , pNodes_(NULL)
 , pLeaves_(NULL)
@@ -134,6 +136,58 @@ const IShape** QBVHBase<NODE_T>::FlattenLeafShapes(const IShape** ppFlatten, con
         }
     }
     return ppFlatten;
+}
+
+// 子を空にセット
+template <typename NODE_T>
+void QBVHBase<NODE_T>::SetChildEmpty(int& child)
+{
+    child = INT_MIN;
+}
+
+// 子に枝インデックスをセット
+template <typename NODE_T>
+void QBVHBase<NODE_T>::SetChildNode(int& child, int index)
+{
+    assert(index < 0x80000000);
+    
+    // index == 0を扱えるようにbit not
+    child = ~index & 0x7FFFFFFF;
+}
+
+// 子に葉インデックスをセット
+template <typename NODE_T>
+void QBVHBase<NODE_T>::SetChildLeaf(int& child, int index)
+{
+    assert(index < 0x80000000);
+    
+    // index == 0を扱えるようにbit not
+    // 最上位ビットで枝と葉を区別
+    child = 0x80000000 | (~index & 0x7FFFFFFF);
+}
+
+// 子が空ならtrue
+template <typename NODE_T>
+bool QBVHBase<NODE_T>::IsChildEmpty(int child) const
+{
+    return child == INT_MIN;
+}
+
+
+// 子のインデックスを取得
+template <typename NODE_T>
+int QBVHBase<NODE_T>::GetChildIndex(int child) const
+{
+    // index == 0を扱えるようにbit not
+    return ~child & 0x7FFFFFFF;
+}
+
+// 子が枝ならtrue
+template <typename NODE_T>
+bool QBVHBase<NODE_T>::IsChildNode(int child) const
+{
+    // 最上位ビットで枝と葉を区別
+    return (0x80000000 & child) == 0;
 }
 
 // 構築
@@ -314,6 +368,7 @@ bool QBVHBase<NODE_T>::IntersectLeaf(Leaf& leaf, const Ray& r, float tmin, HitRe
 template <typename NODE_T>
 bool QBVHBase<NODE_T>::IntersectTriangle(Triangle& tri, const Ray& r, float tmin, float tmax, HitRecord& rec) const
 {
+    // @toto Scene　Triangleと共通化
     // based PHISICALLY BASED RENDERING 2ND EDITION, 3.6.2
     Vec3 e1 = tri.p[1] - tri.p[0];
     Vec3 e2 = tri.p[2] - tri.p[0];
@@ -356,15 +411,17 @@ bool QBVHBase<NODE_T>::IntersectTriangle(Triangle& tri, const Ray& r, float tmin
     }
     
     if (pMesh->colorUnit_ == CU_Mesh) {
-        rec.color = pMesh->color_;
+        rec.pMaterial = pMesh->GetMaterial();
+        rec.color = pMesh->GetMaterial()->color;
     } else if (pMesh->colorUnit_ == CU_Face) {
-        rec.color = pMt->color_;
+        rec.pMaterial = pMt->pMaterial;
+        rec.color = pMt->pMaterial->color;
     } else {
+        rec.pMaterial = pMt->pMaterial;
         rec.color = ((pMesh->pVertices[pMt->indices[0]].color * b0)
                   +  (pMesh->pVertices[pMt->indices[1]].color * b1)
                   +  (pMesh->pVertices[pMt->indices[2]].color * b2)) / 3;
     }
-    rec.refl = pMesh->material_;
     return true;
 }
 

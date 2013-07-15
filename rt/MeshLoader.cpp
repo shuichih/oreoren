@@ -43,7 +43,7 @@ Mesh* ObjLoader::Load(const char* pFilePath)
     }
     
     // 面と頂点の領域確保
-    pMesh_ = new Mesh(nVertices, nFaces);
+    pMesh_ = new Mesh(nVertices, nFaces, NULL);
     
     // 頂点のコピー
     for (int i = 0; i < pLoader_->vertexCount; i++) {
