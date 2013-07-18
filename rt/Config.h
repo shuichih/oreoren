@@ -140,7 +140,6 @@ struct SceneImportConfig
 struct PhotonMapConfig
 {
     bool enable;
-    u32 nSubPixelsSqrt;
     u32 nPhotons;
     u32 nMaxStorePhotons;
     u32 nEstimatePhotons;
@@ -152,7 +151,6 @@ struct PhotonMapConfig
     
     PhotonMapConfig()
     : enable(true)
-    , nSubPixelsSqrt(1)
     , nPhotons(100000)
     , nEstimatePhotons(200)
     , estimateDist(15.f)
@@ -195,7 +193,7 @@ struct PhotonMapRendererConfig
     bool caustic;
     bool shadowEstimate;
     bool drawShadowEstimate;
-    int nSubPixelSqrt;
+    u32 nSubPixelsSqrt;
     u32 nTracePhotonsPerThread;
     u32 maxRayBounce;
     bool finalGethering;

@@ -1,5 +1,6 @@
 #include "Ray.h"
 #include "stdlib.h"
+#include "Random.h"
 
 Ray::Ray(Vec3 o_, Vec3 d_) : o(o_), d(d_)
 {
@@ -52,10 +53,10 @@ Vec3 Ray::PointAtParameter(float t) const
 }
     
 // generate cos distribution ray
-Vec3 Ray::CosRay(const Vec3& w, unsigned short seed[3])
+Vec3 Ray::CosRay(const Vec3& w, Random& rand)
 {
-    real r1 = 2.f*(real)(M_PI*erand48(seed));
-    real r2 = (real)erand48(seed); // => 1-cos^2θ = 1-sqrt(1-r_2)^2 = r_2
+    real r1 = 2.f*(PI*rand.F32());
+    real r2 = rand.F32(); // => 1-cos^2θ = 1-sqrt(1-r_2)^2 = r_2
     real r2s = sqrtf(r2);    // => sinθ = sqrt(1-cos^2θ) = sqrt(r_2)
     Vec3 u = ((fabs(w.x) > .1f ? Vec3(0.f, 1.f, 0.f) : Vec3(1.f, 0.f, 0.f)) % w).normalize(); // binormal
     Vec3 v = w % u; // tangent

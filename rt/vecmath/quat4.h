@@ -66,11 +66,11 @@ public:
 		z = a.z;
 		T n = sqrt(x*x + y*y + z*z);
 //		T n = 1;
-		T s = sin(0.5f * a.angle * scale) / n;	// 正規化のためにnで割る
+		T s = sinf(0.5f * a.angle * scale) / n;	// 正規化のためにnで割る
 		x *= s;
 		y *= s;
 		z *= s;
-		w = cos(0.5f * a.angle * scale);
+		w = cosf(0.5f * a.angle * scale);
 	}
 
 	// 

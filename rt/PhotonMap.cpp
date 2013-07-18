@@ -68,7 +68,7 @@ Photon_map::Photon_map(const int max_phot)
 	//----------------------------------------
 
 	for (int i=0; i<256; i++) {
-		float angle = i*(1.0f/256.0f)*(float)M_PI;
+		float angle = i*(1.0f/256.0f)*PI;
 		costheta[i] = cosf(angle);
 		sintheta[i] = sinf(angle);
 		cosphi[i]   = cosf(2.0f * angle);
@@ -159,7 +159,7 @@ void Photon_map::irradiance_estimate(
     }
 
     // BRDFの1/π掛けてないけど、それであってるっぽい
-    float tmp = 1.0f / (float)(M_PI * np.dist2[0]);  // estimate of density
+    float tmp = 1.0f / (PI * np.dist2[0]);  // estimate of density
     if (pFilter_)
         tmp *= pFilter_->Normalizer();
     irrad[0] *= tmp;
@@ -349,6 +349,7 @@ void Photon_map::store(
 		return;
     }
     
+    #pragma omp flush(stored_photons)
     #pragma omp atomic
 	stored_photons++;
     
@@ -365,13 +366,13 @@ void Photon_map::store(
 		node->power[i] = power[i];
 	}
 
-	int theta = int(acos(dir[2]) * (256.0/M_PI));
+	int theta = int(acosf(dir[2]) * (256.f/PI));
 	if (theta > 255)
 		node->theta = 255;
 	else
 		node->theta = (unsigned char)theta;
 	
-	int phi = int(atan2(dir[1], dir[0]) * (256.0/(2.0*M_PI)));
+	int phi = int(atan2f(dir[1], dir[0]) * (256.f/(2.f*PI)));
 	if (phi > 255)
 		node->phi = 255;
 	else if (phi < 0)

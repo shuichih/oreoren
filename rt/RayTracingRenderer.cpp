@@ -10,6 +10,7 @@
 #include "Config.h"
 #include "Ray.h"
 #include "Material.h"
+#include "Random.h"
 
 using namespace std;
 
@@ -29,7 +30,7 @@ void RayTracingRenderer::SetConfig(const Config& config)
     pRtConfig_ = &config.rayTracingConf;
 }
 
-Vec3 RayTracingRenderer::Irradiance(const Ray &r, int depth)
+Vec3 RayTracingRenderer::Irradiance(const Ray &r, int depth, Random& rand)
 {
     // max refl
     if (++depth > pRtConfig_->maxRayBounce)
@@ -70,14 +71,14 @@ Vec3 RayTracingRenderer::Irradiance(const Ray &r, int depth)
     }
     else if (refl == SPEC) {
         // Ideal SPECULAR reflection
-        return Irradiance(Ray(x,r.d-n*2.f*n.dot(r.d)), depth);
+        return Irradiance(Ray(x,r.d-n*2.f*n.dot(r.d)), depth, rand);
     }
     else if (refl == PHONGMETAL) {
         Vec3 irrad;
         for (int i = 0; i < 16; i++) {
             // Imperfect SPECULAR reflection
-            real r1 = 2.f*(real)(M_PI*erand48(xi_));
-            real r2 = (real)erand48(xi_);
+            real r1 = 2.f*(PI*rand.F32());
+            real r2 = rand.F32();
             real exponent = 10.0f;
             real cosTheta = powf(1.f-r2, 1.0f/(exponent+1.0f));
             real sinTheta = sqrtf(1.0f - cosTheta*cosTheta);
@@ -91,7 +92,7 @@ Vec3 RayTracingRenderer::Irradiance(const Ray &r, int depth)
             // ucosφsinθ + vsinφsinθ + wcosθ
             Vec3 rd = (u*rx + v*ry + w*rz).normalize();
             Vec3 mx = x + n*1e-4f; // 自己ヒットしないようにちょっと浮かす
-            irrad += Irradiance(Ray(mx, rd), depth);
+            irrad += Irradiance(Ray(mx, rd), depth, rand);
         }
         return irrad / 16;
     }
@@ -107,7 +108,7 @@ Vec3 RayTracingRenderer::Irradiance(const Ray &r, int depth)
     
     // Total internal reflection
     if ((cos2t = 1.f-nnt * nnt * (1.f - ddn * ddn)) < 0.f)
-        return Irradiance(reflRay, depth);
+        return Irradiance(reflRay, depth, rand);
     
     // 屈折方向
     Vec3 tdir = (r.d * nnt - n * ((into ? 1.f : -1.f) * (ddn * nnt + sqrtf(cos2t)))).normalize();
@@ -122,7 +123,8 @@ Vec3 RayTracingRenderer::Irradiance(const Ray &r, int depth)
     real nnt2 = nnt * nnt;
     real Tr = (1.f - Re) * nnt2;
     // 反射屈折両方トレース
-    return Irradiance(reflRay, depth) * Re + Irradiance(Ray(x,tdir), depth).mult(f) * Tr;
+    return Irradiance(reflRay, depth, rand) * Re
+         + Irradiance(Ray(x, tdir), depth, rand).mult(f) * Tr;
 }
 
 void RayTracingRenderer::RayTracing(Vec3* pColorBuf)
@@ -146,20 +148,20 @@ void RayTracingRenderer::RayTracing(Vec3* pColorBuf)
     const Vec3 proj_plane_axis_x = Vec3(w * fovY / h, 0.f, 0.f);
     const Vec3 proj_plane_axis_y = (proj_plane_axis_x % camRay.d).normalize() * fovY;
     
+    Random* pRands = new Random[h];
+    
     // Loop over image rows
     // 355, 225, 187, 167
     #pragma omp parallel for num_threads(4) schedule(dynamic, 1)   // OpenMP
     for (int y=0; y<h; y++) {
-    //int y = h / 2; {
+    //int y = h / 2; {  // a pixel of screen center
         fprintf(stderr, "RayTracing (%d spp) %5.2f%%\n", nSub*nSub, 100.f * y / (h-1));
         
-        xi_[0] = 0;
-        xi_[1] = 0;
-        xi_[2] = y*y*y;
+        Random& rand = pRands[y];
         
         // Loop cols
         for (unsigned short x=0; x<w; x++) {
-        //unsigned short x = w / 2; {
+        //unsigned short x = w / 2; { // a pixel of screen center
     
             int i = (h-y-1) * w + x; // カラーバッファのインデックス
             for (int sy=0; sy<nSub; sy++) {         // subpixel rows
@@ -182,8 +184,8 @@ void RayTracingRenderer::RayTracing(Vec3* pColorBuf)
                     real dx = 0;
                     real dy = 0;
                     if (pRtConfig_->useTentFilter) {
-                        real r1 = (float)(2*erand48(xi_));
-                        real r2 = (float)(2*erand48(xi_));
+                        real r1 = 2*rand.F32();
+                        real r2 = 2*rand.F32();
                         dx = (r1 < 1) ? sqrtf(r1)-1 : 1-sqrtf(2-r1);
                         dy = (r2 < 1) ? sqrtf(r2)-1 : 1-sqrtf(2-r2);
                     } else {
@@ -198,7 +200,8 @@ void RayTracingRenderer::RayTracing(Vec3* pColorBuf)
                          + proj_plane_axis_y * ((y + sy2) / h - .5f)
                          + camRay.d;
                     
-                    Vec3 r = Irradiance(Ray(camRay.o + d * pRtConfig_->distanceToProjPlane, d.normalize()), 0);
+                    Ray ray(camRay.o + d * pRtConfig_->distanceToProjPlane, d.normalize());
+                    Vec3 r = Irradiance(ray, 0, rand);
                     
                     // Camera rays are pushed ^^^^^ forward to start in interior
                     // トーンマップとか特にやってない。クランプしてるだけ。
@@ -209,14 +212,11 @@ void RayTracingRenderer::RayTracing(Vec3* pColorBuf)
          }
     }
     
+    delete[] pRands;
 }
 
 void RayTracingRenderer::Run(Vec3* pColorBuf, const Scene& scene)
 {
-    xi_[0] = 0;
-	xi_[1] = 0;
-	xi_[2] = pConfig_->windowWidth * pConfig_->windowHeight; // テキトウ
-    
     pScene_ = &scene;
     
     RayTracing(pColorBuf);

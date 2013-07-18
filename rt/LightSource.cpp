@@ -6,33 +6,26 @@
 #include "vector3.h"
 #include "Ray.h"
 #include "Material.h"
+#include "Random.h"
 
 //--------------------------------------------------------------------------------
 
 PointLightSource::PointLightSource()
 : position_()
 {
-	xi_[0] = 0;
-	xi_[1] = 0;
-	xi_[2] = (unsigned short)(position_.x + position_.y + position_.z
-                              + flux_.x + flux_.y + flux_.z);
 }
 
 PointLightSource::PointLightSource(const Vec3& position, const Vec3& flux)
 : LightSource(Lit_Point, flux)
 , position_(position)
 {
-	xi_[0] = 0;
-	xi_[1] = 0;
-	xi_[2] = (unsigned short)(position.x + position.y + position.z
-                              + flux.x + flux.y + flux.z);
 }
 
-Ray PointLightSource::GenerateRay() const
+Ray PointLightSource::GenerateRay(Random& rand) const
 {
 	Vec3 dir;
-    real theta = acosf(2 * (real)erand48(xi_) - 1);
-    real phi = 2.0f*(real)M_PI * (real)erand48(xi_);
+    real theta = acosf(2 * rand.F32() - 1);
+    real phi = 2.0f*PI * rand.F32();
     dir.x = sinf(theta) * cosf(phi);
     dir.y = sinf(theta) * sinf(phi);
     dir.z = cosf(theta);
@@ -40,7 +33,7 @@ Ray PointLightSource::GenerateRay() const
 	return Ray(position_, dir);
 }
 
-Vec3 PointLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra) const
+Vec3 PointLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra, Random& rand) const
 {
     // penumbra
     // == 1.0, 完全に光が当たっている領域: サンプリング、シャドウレイなし
@@ -106,10 +99,6 @@ AreaLightSource::AreaLightSource(
     area_ = s0 + s1;
     pdf_ = 1.f / area_;
     irradiance_ = flux_ / area_;
-    
-	xi_[0] = 0;
-	xi_[1] = 0;
-	xi_[2] = (unsigned short)(flux.x + flux.y + flux.z);
 }
 
 float AreaLightSource::CalcTriangleArea(const Vec3& p0, const Vec3& p1, const Vec3& p2)
@@ -127,25 +116,25 @@ float AreaLightSource::CalcTriangleArea(const Vec3& p0, const Vec3& p1, const Ve
 //    float area = (edge2 % edge1).length() * 0.5f; // 三角形の面積だから*0.5f
 }
 
-Ray AreaLightSource::GenerateRay() const
+Ray AreaLightSource::GenerateRay(Random& rand) const
 {
-    real b0 = (real)erand48(xi_);
-    real b1 = (real)erand48(xi_);
-    real b2 = (real)erand48(xi_);
+    real b0 = rand.F32();
+    real b1 = rand.F32();
+    real b2 = rand.F32();
     real isum = 1.f / (b0 + b1 + b2);
     b0 *= isum;
     b1 *= isum;
     b2 *= isum;
-    Vec3 pos = ((real)erand48(xi_) < 0.5f) ?
+    Vec3 pos = (rand.F32() < 0.5f) ?
         (p_[0] * b0 + p_[1] * b1 + p_[2] * b2):
         (p_[0] * b0 + p_[2] * b1 + p_[3] * b2);
     
-	Vec3 dir = Ray::CosRay(normal_, xi_);
+	Vec3 dir = Ray::CosRay(normal_, rand);
     
 	return Ray(pos, dir);
 }
 
-Vec3 AreaLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra) const
+Vec3 AreaLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra, Random& rand) const
 {
     // penumbra
     // == 1.0, 完全に光が当たっている領域: サンプリング、シャドウレイなし
@@ -156,29 +145,32 @@ Vec3 AreaLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const Sce
         return Vec3();
     }
     
-    if (normal.dot(this->normal_) >= 0.0f) {
+    // 光源の裏は計算しない
+    if (this->normal_.dot(this->p_[0] - pos) >= 0) {
         return Vec3();
     }
-
+    
     Vec3 irrad;
     const float nSampleInv = 1.0f / nSamples_;
     HitRecord rec;
     
     for (int i=0; i<nSamples_; i++) {
-        real b0 = (real)erand48(xi_);
-        real b1 = (real)erand48(xi_);
-        real b2 = (real)erand48(xi_);
+        real b0 = rand.F32();
+        real b1 = rand.F32();
+        real b2 = rand.F32();
         real isum = 1.f / (b0 + b1 + b2);
         b0 *= isum;
         b1 *= isum;
         b2 *= isum;
-        Vec3 lpos = ((real)erand48(xi_) < 0.5f) ?
+        Vec3 lpos = (rand.F32() < 0.5f) ?
             (p_[0] * b0 + p_[1] * b1 + p_[2] * b2):
             (p_[0] * b0 + p_[2] * b1 + p_[3] * b2);
         
+        // 交点から光源へのベクトル
         Vec3 ldir = lpos - pos;
+        
+        // 光源方向と交点の法線が90度以上なら光が当たらない
         if (ldir.dot(normal) <= 0) {
-            // 面光源が上ある場合の球の横の縁など
             continue;
         }
         
@@ -187,9 +179,16 @@ Vec3 AreaLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const Sce
         ldir.normalize();
         
         Ray ray(pos, ldir);
-        if (penumbra == 1.f || !scene.Intersect(ray, EPSILON, r, rec)) {
-            float cosX = this->normal_.dot(-1.f * ldir);
+        bool see = false;
+        if (penumbra == 1.f) {
+            see = true;
+        } else if (!scene.Intersect(ray, EPSILON, r, rec)) {
+            see = true;
+        }
+        if (see) {
+            float cosX = -this->normal_.dot(ldir);
             float cosY = normal.dot(ldir);
+            assert(cosX >= 0 && cosY >= 0);
             irrad += (irradiance_ * nSampleInv) * cosX * cosY / (pdf_ * r2);
         }
     }
@@ -229,18 +228,14 @@ SphereLightSource::SphereLightSource(const Vec3& position, float radius, const V
 , radius_(radius)
 , nSamples_(nSamples)
 {
-	xi_[0] = 0;
-	xi_[1] = 0;
-	xi_[2] = (unsigned short)(position.x + position.y + position.z
-                              + flux.x + flux.y + flux.z);
     irradiance_ = flux_ / (4 * PI * radius_ * radius_);
 }
 
-Ray SphereLightSource::GenerateRay() const
+Ray SphereLightSource::GenerateRay(Random& rand) const
 {
 	Vec3 dir;
-    real theta = acosf(2 * (real)erand48(xi_) - 1);
-    real phi = 2.0f*(real)M_PI * (real)erand48(xi_);
+    real theta = acosf(2 * rand.F32() - 1);
+    real phi = 2.0f*PI * rand.F32();
     dir.x = sinf(theta) * cosf(phi);
     dir.y = sinf(theta) * sinf(phi);
     dir.z = cosf(theta);
@@ -248,7 +243,7 @@ Ray SphereLightSource::GenerateRay() const
 	return Ray(position_ + dir*radius_, dir);
 }
 
-Vec3 SphereLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra) const
+Vec3 SphereLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra, Random& rand) const
 {
     // penumbra
     // == 1.0, 完全に光が当たっている領域: サンプリング、シャドウレイなし
@@ -280,8 +275,8 @@ Vec3 SphereLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const S
     for (int i=0; i<nSamples_; i++) {
         
         // 球光源への立体角の範囲内でdensity function qに沿ったランダム方向を決める
-        float xi1 = (float)erand48(xi_);
-        float xi2 = (float)erand48(xi_);
+        float xi1 = rand.F32();
+        float xi2 = rand.F32();
         float cos_a = 1 + xi1 * (cos_a_max - 1);
         float phi = 2 * PI * xi2;
         float sin_a = sqrtf(1 - cos_a*cos_a);

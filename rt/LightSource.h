@@ -5,6 +5,8 @@
 #include "Scene.h"
 #include "BVH.h"
 
+class Random;
+
 //--------------------------------------------------------------------------------
 enum LightSourceType
 {
@@ -28,8 +30,8 @@ public:
     
     LightSourceType GetType() const { return type_; };
     const Vec3& GetFlux() const { return flux_; };
-    virtual Ray GenerateRay() const = 0;
-    virtual Vec3 DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra) const = 0;
+    virtual Ray GenerateRay(Random& rand) const = 0;
+    virtual Vec3 DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra, Random& rand) const = 0;
     
     
 protected:
@@ -56,13 +58,10 @@ public:
     PointLightSource();
     PointLightSource(const Vec3& position, const Vec3& intensity);
     
-    virtual Ray GenerateRay() const;
-    virtual Vec3 DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra) const;
+    virtual Ray GenerateRay(Random& rand) const;
+    virtual Vec3 DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra, Random& rand) const;
     
 	Vec3 position_;
-    
-private:
-	mutable unsigned short xi_[3];
 };
 
 //--------------------------------------------------------------------------------
@@ -82,8 +81,8 @@ public:
         int nSamples
     );
     
-    virtual Ray GenerateRay() const;
-    virtual Vec3 DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra) const;
+    virtual Ray GenerateRay(Random& rand) const;
+    virtual Vec3 DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra, Random& rand) const;
     const Vec3& GetIrradiance() const { return irradiance_; };
     
 	Vec3 p_[4];
@@ -95,8 +94,6 @@ public:
     
 private:
     float CalcTriangleArea(const Vec3& p0, const Vec3& p1, const Vec3& p2);
-    
-	mutable unsigned short xi_[3];
 };
 
 // AreaLightShape
@@ -126,8 +123,8 @@ public:
     SphereLightSource(const Vec3& position, float radius, const Vec3& intensity, int nSamples);
     
     void SetShape(SphereLightShape* pShape) { pShape_ = pShape; }
-    virtual Ray GenerateRay() const;
-    virtual Vec3 DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra) const;
+    virtual Ray GenerateRay(Random& rand) const;
+    virtual Vec3 DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra, Random& rand) const;
     const Vec3& GetIrradiance() const { return irradiance_; };
     
 	Vec3 position_;
@@ -135,9 +132,6 @@ public:
     Vec3 irradiance_;
     SphereLightShape* pShape_;
     int nSamples_;
-    
-private:
-	mutable unsigned short xi_[3];
 };
 
 // SphereLightShape

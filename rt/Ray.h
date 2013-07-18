@@ -4,6 +4,8 @@
 #include "Common.h"
 #include "simd.h"
 
+class Random;
+
 class Ray
 {
 public:
@@ -27,7 +29,7 @@ public:
     void SetDirection(const Vec3& dir);
     Vec3 PointAtParameter(float t) const;
     // generate cos distribution ray
-    static Vec3 CosRay(const Vec3& w, unsigned short seed[3]);
+    static Vec3 CosRay(const Vec3& w, Random& rand);
 };
 
 #endif // Ray

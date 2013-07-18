@@ -107,7 +107,7 @@ PerlinNoise2D::PerlinNoise2D()
     permutation_ = new u8[512];
     for (int i=0; i<256; i++) {
         float to0_255 = 0.9999999f / (0xFFFFFFFF / 0xFF);
-        permutation_[i] = permutation_[256+i] = u8(rand.Generate() * to0_255);
+        permutation_[i] = permutation_[256+i] = u8(rand.U32() * to0_255);
     }
     
     for (int i=0; i < 256 ; i++) {

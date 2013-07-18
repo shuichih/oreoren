@@ -1,6 +1,8 @@
 #ifndef _Random_H_
 #define _Random_H_
 
+#include <cstdio> // @todo tmp
+
 class Random
 {
 public:
@@ -18,14 +20,21 @@ public:
     , w_(88675123 * w + w)
     {}
     
-    float Generate() {
+    void SetSeedW(u32 w)
+    {
+        w_ = 88675123 * w + w;
+    }
+    
+    u32 U32()
+    {
         u32 t = x_ ^ (x_ << 11);
         x_ = y_; y_ = z_; z_ = w_;
         return w_ = (w_ ^ (w_ >> 19)) ^ (t ^ (t >> 8));
     }
     
-    float GenerateF32() {
-        return Generate() * (1.f / 4294967296.f);
+    float F32()
+    {
+        return U32() * (1.f / 4294967296.f);
     }
     
 private:

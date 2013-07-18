@@ -686,7 +686,9 @@ Scene::~Scene()
     MaterialMap::iterator ed = materialMap_.end();
     for ( ; it!=ed; ++it) {
         Material* pMtl = it->second;
-        delete pMtl;
+        if (pMtl != &defaultMaterial_ && pMtl != &lightMaterial_) {
+            delete pMtl;
+        }
     }
     materialMap_.clear();
 }

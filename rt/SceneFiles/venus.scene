@@ -1,8 +1,8 @@
 [General]
-windowWidth=800
-windowHeight=700
-#windowWidth=256
-#windowHeight=256
+#windowWidth=1000
+#windowHeight=700
+windowWidth=256
+windowHeight=256
 drawBBox=false
 rendererType=2
 
@@ -58,7 +58,7 @@ refrIndex = 1.333
 
 [RayTracing]
 maxRayBounce = 6
-nSubPixelSqrt = 1
+nSubPixelsSqrt = 1
 useTentFilter = false
 distanceToProjPlane=140
 
@@ -66,9 +66,9 @@ distanceToProjPlane=140
 directLight = true
 indirectLight = true
 caustic = true
-shadowEstimate = false
+shadowEstimate = true
 drawShadowEstimate = false
-nSubPixelSqrt = 1
+nSubPixelsSqrt = 1
 nTracePhotonsPerThread = 10000
 maxRayBounce = 10
 #finalGethering = true
@@ -131,7 +131,7 @@ p0 = -10 52  10
 p1 = -10 52 -10
 p2 =  10 52 -10
 p3 =  10 52  10
-flux = 20000 20000 20000
+flux = 10000 10000 10000
 nSamples = 64
 
 /#
@@ -177,10 +177,9 @@ nSamples = 64
 
 [Sphere]
 	radius = 20
-	position = +10 -53+20 -25
+	position = 30 -53+20 0
     material = Mirror
 
-/#
 [Cuboid]
     scale = 12 12 12
     rotate = 30 30 0
@@ -190,7 +189,6 @@ nSamples = 64
     interval = 1
     margin = 0 0 0
     randColor = true
-#/
 
 /#
 [Sphere]

@@ -7,8 +7,9 @@
 
 class Photon_map;
 class PhotonFilter;
-struct HitRecord;
 class Scene;
+class Random;
+struct HitRecord;
 
 class PhotonMapRenderer : public IRenderer
 {
@@ -39,18 +40,17 @@ private:
         {}
     };
     void PhotonTracing();
-    void TracePhoton(const Ray& r, const Vec3& power, PathInfo& pathInfo);
+    void TracePhoton(const Ray& r, const Vec3& power, PathInfo& pathInfo, Random& rand);
     bool Intersect(const Ray& r, HitRecord& rec);
     Vec3 CosImportanceSamplingRay(const Vec3& n);
-    Vec3 GlossyRay(const Vec3& w, float exponent);
+    Vec3 GlossyRay(const Vec3& w, float exponent, Random& rand);
     void RayTracing(Vec3* pColorBuf);
-    Vec3 Irradiance(const Ray &r, PathInfo& pathInfo);
+    Vec3 Irradiance(const Ray &r, PathInfo& pathInfo, Random& rand);
     
     const Config* pConf_;
     const PhotonMapRendererConfig* pPmRenConf_;
     const PhotonMapConfig* pPmConf_;
     Photon_map* pPhotonMap_;
-    unsigned short xi_[3];
     PhotonFilter* pFilter_;
     const Scene* pScene_;
 };

@@ -16,6 +16,13 @@ enum Refl_t
 class Material
 {
 public:
+    Material(std::string name, Refl_t refl, RGB color, float refIdx)
+    {
+        this->name = name;
+        this->refl = refl;
+        this->color = color;
+        this->refractiveIndex = refIdx;
+    }
     Material()
     {
         Reset();

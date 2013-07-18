@@ -12,6 +12,7 @@
 #include "LightSource.h"
 #include "PerlinNoise.h"
 #include "Material.h"
+#include "Random.h"
 
 using namespace std;
 
@@ -416,7 +417,7 @@ CuboidParser::CuboidParser(const char* pName, Scene* pScene)
 , scale_(1, 1, 1)
 , rotate_()
 , position_()
-, pMaterial_(NULL)
+, pMaterial_(pScene->GetDefaultMaterial())
 , repeat_(1, 1, 1)
 , interval_(0)
 , randColor_(false)
@@ -466,8 +467,10 @@ bool CuboidParser::OnLeave()
         { 3, 7, 4 }, // back
         { 3, 4, 0 },
     };
-    // @todo Replace to Random
-    unsigned short xi[3] = { 12345, 23456, 34567 };
+    
+    pScene_->AddMaterial(pMaterial_->name, pMaterial_);
+    Random rand;
+    rand.SetSeedW(12345678);
     
     // Repeatされた数だけCuboid Meshを作る
     vector<Mesh*> meshes;
@@ -480,17 +483,17 @@ bool CuboidParser::OnLeave()
             for (int rz=0; rz<nRz; rz++) {
                 if ((rx+ry+rz) % interval != 0) continue;
                 
-                Mesh* pMesh = new Mesh(8, 12, NULL/*@todo*/);
+                Mesh* pMesh = new Mesh(8, 12, pMaterial_);
                 Mesh& rMesh = *pMesh;
                 meshes.push_back(pMesh);
                 
-                RGB color;
+                Material* pMtl;
                 if (randColor_) {
-                    float r = (float)(erand48(xi));
-                    float g = (float)(erand48(xi));
-                    float b = (float)(erand48(xi));
-                    const float r1 = 0.4f;
-                    const float r2 = 0.6f;
+                    float r = rand.F32();
+                    float g = rand.F32();
+                    float b = rand.F32();
+                    const float r1 = 0.3f;
+                    const float r2 = 0.5f;
                     r = (r < r1) ? 0.1f : (r > r2) ? 1.0f : 0.6f;
                     g = (g < r1) ? 0.1f : (g > r2) ? 1.0f : 0.6f;
                     b = (b < r1) ? 0.1f : (b > r2) ? 1.0f : 0.6f;
@@ -498,9 +501,20 @@ bool CuboidParser::OnLeave()
                     //r = r * (1-r3) + r3;
                     //g = g * (1-r3) + r3;
                     //b = b * (1-r3) + r3;
-                    color = Vec3(r, g, b);
+                    RGB color = Vec3(r, g, b);
+                    
+                    // 算出された色のマテリアルがなければ作る
+                    char mtlName[32];
+                    RGB c256 = color * 255.999f;
+                    int nRGB [3] = { int(c256.x), int(c256.y), int(c256.z) };
+                    sprintf(mtlName, "_D%03d_%03d_%03d", nRGB[0], nRGB[1], nRGB[2]);
+                    pMtl = pScene_->GetMaterial(mtlName);
+                    if (pMtl == NULL) {
+                        pMtl = new Material(mtlName, DIFF, color, 1.f);
+                        pScene_->AddMaterial(mtlName, pMtl);
+                    }
                 } else {
-                    color = pMaterial_->color;
+                    pMtl = pMaterial_;
                 }
                 
                 for (int i=0; i<8; i++) {
@@ -511,7 +525,7 @@ bool CuboidParser::OnLeave()
                     for (int j=0; j<3; j++) {
                         rMesh.pFaces[i].indices[j] = indices[i][j];
                     }
-                    rMesh.pFaces[i].pMaterial = pMaterial_;
+                    rMesh.pFaces[i].pMaterial = pMtl;
                 }
                 
                 float mx = margin_.x;
@@ -702,7 +716,7 @@ NoiseSurfaceParser::NoiseSurfaceParser(const char* pName, Scene* pScene)
 : SectionParser(pName, pScene, NULL, 0)
 , scale_(1, 1, 1)
 , division_(10, 10)
-, pMaterial_(NULL) // @todo
+, pMaterial_(pScene->GetDefaultMaterial())
 , noisyHeight_(true)
 , noisyColor_(false)
 {
@@ -737,7 +751,7 @@ bool NoiseSurfaceParser::OnLeave()
     
     int nVertices = (divX + 1) * (divZ + 1);
     int nFaces = divX * divZ * 2;
-    Mesh* pMesh = new Mesh(nVertices, nFaces, NULL/*@todo*/);
+    Mesh* pMesh = new Mesh(nVertices, nFaces, pMaterial_);
     
     // vertices
     float maxColor = 0;
@@ -834,6 +848,7 @@ Config::Config()
         { "caustic", IVT_BOOL, &pmRendererConf.caustic },
         { "shadowEstimate", IVT_BOOL, &pmRendererConf.shadowEstimate },
         { "drawShadowEstimate", IVT_BOOL, &pmRendererConf.drawShadowEstimate },
+        { "nSubPixelsSqrt", IVT_INT, &pmRendererConf.nSubPixelsSqrt },
         { "maxRayBounce", IVT_INT, &pmRendererConf.maxRayBounce },
         { "nTracePhotonsPerThread", IVT_INT, &pmRendererConf.nTracePhotonsPerThread },
         { "useTentFilter", IVT_BOOL, &pmRendererConf.useTentFilter },
@@ -849,7 +864,6 @@ Config::Config()
         { "nEstimatePhotons", IVT_INT, &photonMapConf.nEstimatePhotons },
         { "estimateDist", IVT_FLOAT, &photonMapConf.estimateDist},
         { "estimateEllipseScale", IVT_FLOAT, &photonMapConf.estimateEllipseScale },
-        { "nSubPixelSqrt", IVT_INT, &photonMapConf.nSubPixelsSqrt },
         { "enableConeFilter", IVT_BOOL, &photonMapConf.enableConeFilter },
         { "coneFilterK", IVT_FLOAT, &photonMapConf.coneFilterK },
         { "maxPhotonBounce", IVT_INT, &photonMapConf.maxPhotonBounce },
@@ -874,7 +888,7 @@ Config::Config()
         { "estimateEllipseScale", IVT_FLOAT, &shadowPmConf.estimateEllipseScale }
     };
     ItemDesc rayTracingDesc[] = {
-        { "nSubPixelSqrt", IVT_INT, &rayTracingConf.nSubPixelsSqrt },
+        { "nSubPixelsSqrt", IVT_INT, &rayTracingConf.nSubPixelsSqrt },
         { "maxRayBounce", IVT_INT, &rayTracingConf.maxRayBounce },
         { "useTentFilter", IVT_BOOL, &rayTracingConf.useTentFilter },
         { "distanceToProjPlane", IVT_FLOAT, &rayTracingConf.distanceToProjPlane }

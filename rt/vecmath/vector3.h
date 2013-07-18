@@ -185,7 +185,7 @@ public:
 #ifndef SEVERE3D_HIGHLY_ACCTRATE_ANGLE
 		// 内積 = |a||b|cosθ なので、内積 / |a| / |b| でcosθが出る。
 		// acos(cosθ)して、θを求めている。
-        return (T)acos(dot(v1) / v1.length()); // v2.length());
+        return (T)acosf(dot(v1) / v1.length()); // v2.length());
 #else
         // 前記の方法では０とπ付近でacosの誤差が大きいが、以下の実装では誤差が少ない。
 		// tanθ = sinθ / cosθ なので、atan(sinθ / cosθ) すれば、θが求まる。

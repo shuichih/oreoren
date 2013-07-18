@@ -21,11 +21,10 @@ public:
 private:
     
     void RayTracing(Vec3* pColorBuf);
-    Vec3 Irradiance(const Ray &r, int depth);
+    Vec3 Irradiance(const Ray &r, int depth, Random& rand);
     
     const Config* pConfig_;
     const RayTracingConfig* pRtConfig_;
-    unsigned short xi_[3];
     const Scene* pScene_;
     BVH* pBVH_;
 };

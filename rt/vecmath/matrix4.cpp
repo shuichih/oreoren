@@ -129,8 +129,8 @@ Matrix4<T>& Matrix4<T>::rotY(T angle)
 template<class T>
 Matrix4<T>& Matrix4<T>::rotZ(T angle)
 {
-	T s = static_cast<T>(sin(angle));
-	T c = static_cast<T>(cos(angle));
+	T s = (T)(sinf((float)angle));
+	T c = (T)(cosf((float)angle));
 
 	m00 = c;  m01 = s; m02 = 0; m03 = 0;
 	m10 = -s; m11 = c; m12 = 0; m13 = 0;
