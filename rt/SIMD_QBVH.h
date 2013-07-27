@@ -1,4 +1,4 @@
-#ifndef SIMD_QBVH_h
+﻿#ifndef SIMD_QBVH_h
 #define SIMD_QBVH_h
 
 #include "Common.h"

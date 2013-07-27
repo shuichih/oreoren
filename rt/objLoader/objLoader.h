@@ -1,4 +1,4 @@
-#ifndef OBJ_LOADER_H
+﻿#ifndef OBJ_LOADER_H
 #define OBJ_LOADER_H
 
 #include "obj_parser.h"

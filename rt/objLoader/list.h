@@ -1,4 +1,4 @@
-#ifndef __LIST_H
+﻿#ifndef __LIST_H
 #define __LIST_H
 
 typedef struct

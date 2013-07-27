@@ -1,8 +1,8 @@
-#ifndef SEVERE3D_MATRIX4_H
+﻿#ifndef SEVERE3D_MATRIX4_H
 #define SEVERE3D_MATRIX4_H
 
 #include "tuple3.h"
-#include "vector3.h"
+#include "vecmath/vector3.h"
 #include "point3.h"
 #include "point4.h"
 #include "quat4.h"

@@ -1,4 +1,4 @@
-#ifndef Ray_H
+﻿#ifndef Ray_H
 #define Ray_H
 
 #include "Common.h"

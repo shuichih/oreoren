@@ -1,4 +1,4 @@
-#ifndef SISD_QBVH_h
+﻿#ifndef SISD_QBVH_h
 #define SISD_QBVH_h
 
 #include "Common.h"

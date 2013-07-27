@@ -1,4 +1,4 @@
-#ifndef PostEffect_h
+﻿#ifndef PostEffect_h
 #define PostEffect_h
 
 #include "Common.h"

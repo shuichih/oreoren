@@ -1,4 +1,4 @@
-#ifndef Timer_h
+﻿#ifndef Timer_h
 #define Timer_h
 
 #include <ctime>

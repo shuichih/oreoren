@@ -1,4 +1,4 @@
-#ifndef SEVERE3D_VECTOR3_H
+﻿#ifndef SEVERE3D_VECTOR3_H
 #define SEVERE3D_VECTOR3_H
 
 #include <cmath>

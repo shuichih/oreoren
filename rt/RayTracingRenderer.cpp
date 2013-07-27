@@ -1,4 +1,4 @@
-#include <cmath>
+﻿#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cassert>
@@ -33,7 +33,7 @@ void RayTracingRenderer::SetConfig(const Config& config)
 Vec3 RayTracingRenderer::Irradiance(const Ray &r, int depth, Random& rand)
 {
     // max refl
-    if (++depth > pRtConfig_->maxRayBounce)
+    if (++depth > (int)pRtConfig_->maxRayBounce)
     {
         return Vec3();
     }
@@ -135,8 +135,8 @@ void RayTracingRenderer::RayTracing(Vec3* pColorBuf)
     const real subPixelFactor = 1.0f / (real)(nSub*nSub);
     
     // バッファクリア
-    for (int y=0; y<h; y++) {
-        for (int x=0; x<w; x++) {
+    for (u32 y=0; y<h; y++) {
+        for (u32 x=0; x<w; x++) {
             pColorBuf[w*y + x] = Vec3();
         }
     }
@@ -153,7 +153,7 @@ void RayTracingRenderer::RayTracing(Vec3* pColorBuf)
     // Loop over image rows
     // 355, 225, 187, 167
     #pragma omp parallel for num_threads(4) schedule(dynamic, 1)   // OpenMP
-    for (int y=0; y<h; y++) {
+    for (u32 y=0; y<h; y++) {
     //int y = h / 2; {  // a pixel of screen center
         fprintf(stderr, "RayTracing (%d spp) %5.2f%%\n", nSub*nSub, 100.f * y / (h-1));
         
@@ -164,8 +164,8 @@ void RayTracingRenderer::RayTracing(Vec3* pColorBuf)
         //unsigned short x = w / 2; { // a pixel of screen center
     
             int i = (h-y-1) * w + x; // カラーバッファのインデックス
-            for (int sy=0; sy<nSub; sy++) {         // subpixel rows
-                for (int sx=0; sx<nSub; sx++) {     // subpixel cols
+            for (u32 sy=0; sy<nSub; sy++) {         // subpixel rows
+                for (u32 sx=0; sx<nSub; sx++) {     // subpixel cols
                     
                     // r1, r2 = 0 to 2
                     // dx, dy = -1 to 1  中心に集まったサンプリング --> tent filter

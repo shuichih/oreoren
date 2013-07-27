@@ -1,4 +1,4 @@
-#ifndef LightSource_h
+﻿#ifndef LightSource_h
 #define LightSource_h
 
 #include "Common.h"

@@ -1,4 +1,4 @@
-#ifndef _Scene_H_
+﻿#ifndef _Scene_H_
 #define _Scene_H_
 
 #include "Common.h"

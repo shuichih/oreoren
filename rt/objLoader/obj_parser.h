@@ -1,4 +1,4 @@
-#ifndef OBJ_PARSER_H
+﻿#ifndef OBJ_PARSER_H
 #define OBJ_PARSER_H
 
 #include "list.h"

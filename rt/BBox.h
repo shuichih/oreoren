@@ -1,4 +1,4 @@
-#ifndef BBox_h
+﻿#ifndef BBox_h
 #define BBox_h
 
 #include "Common.h"

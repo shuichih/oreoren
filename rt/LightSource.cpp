@@ -1,9 +1,9 @@
-#include <cmath>
+﻿#include <cmath>
 #include <cstdlib>
 #include <cassert>
 #include "LightSource.h"
 #include "ONB.h"
-#include "vector3.h"
+#include "vecmath/vector3.h"
 #include "Ray.h"
 #include "Material.h"
 #include "Random.h"

@@ -1,4 +1,4 @@
-#include "Ray.h"
+﻿#include "Ray.h"
 #include "stdlib.h"
 #include "Random.h"
 

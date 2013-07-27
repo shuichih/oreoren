@@ -1,4 +1,4 @@
-#include "Config.h"
+﻿#include "Config.h"
 #include "PhotonMapRenderer.h"
 #include <cstdio>
 #include <string>
@@ -62,7 +62,7 @@ bool SectionParser::OnParseLine(const char* pStr)
         return false;
     };
     
-    for (int i=0; i<nItem_; i++) {
+    for (u32 i=0; i<nItem_; i++) {
         ItemDesc& item = paryItemDesc_[i];
         if (key == item.pName) {
             bool result = true;
@@ -243,21 +243,21 @@ void SectionParser::Print()
 string SectionParser::IntToString(void* pVal)
 {
     char str[64];
-    sprintf(str, "%d", *((int*)pVal));
+    sprintf_s(str, "%d", *((int*)pVal));
     return str;
 }
 
 string SectionParser::FloatToString(void* pVal)
 {
     char str[64];
-    sprintf(str, "%f", *((float*)pVal));
+    sprintf_s(str, "%f", *((float*)pVal));
     return str;
 }
 
 string SectionParser::BoolToString(void* pVal)
 {
     char str[64];
-    sprintf(str, "%s", (*((bool*)pVal)) ? "true" : "false");
+    sprintf_s(str, "%s", (*((bool*)pVal)) ? "true" : "false");
     return str;
 }
 
@@ -265,7 +265,7 @@ string SectionParser::Vec2ToString(void* pVal)
 {
     char str[128];
     Vec2& vec2 = *((Vec2*)pVal);
-    sprintf(str, "%f %f", vec2.x, vec2.y);
+    sprintf_s(str, "%f %f", vec2.x, vec2.y);
     return str;
 }
 
@@ -273,7 +273,7 @@ string SectionParser::Vec3ToString(void* pVal)
 {
     char str[128];
     Vec3& vec3 = *((Vec3*)pVal);
-    sprintf(str, "%f %f %f", vec3.x, vec3.y, vec3.z);
+    sprintf_s(str, "%f %f %f", vec3.x, vec3.y, vec3.z);
     return str;
 }
 
@@ -474,10 +474,10 @@ bool CuboidParser::OnLeave()
     
     // Repeatされた数だけCuboid Meshを作る
     vector<Mesh*> meshes;
-    int nRx = repeat_.x + 0.5f; // round
-    int nRy = repeat_.y + 0.5f;
-    int nRz = repeat_.z + 0.5f;
-    int interval = interval_ + 0.5f + 1;
+    int nRx = int(repeat_.x + 0.5f); // round
+    int nRy = int(repeat_.y + 0.5f);
+    int nRz = int(repeat_.z + 0.5f);
+    int interval = int(interval_ + 0.5f) + 1;
     for (int rx=0; rx<nRx; rx++) {
         for (int ry=0; ry<nRy; ry++) {
             for (int rz=0; rz<nRz; rz++) {
@@ -507,7 +507,7 @@ bool CuboidParser::OnLeave()
                     char mtlName[32];
                     RGB c256 = color * 255.999f;
                     int nRGB [3] = { int(c256.x), int(c256.y), int(c256.z) };
-                    sprintf(mtlName, "_D%03d_%03d_%03d", nRGB[0], nRGB[1], nRGB[2]);
+                    sprintf_s(mtlName, "_D%03d_%03d_%03d", nRGB[0], nRGB[1], nRGB[2]);
                     pMtl = pScene_->GetMaterial(mtlName);
                     if (pMtl == NULL) {
                         pMtl = new Material(mtlName, DIFF, color, 1.f);
@@ -548,10 +548,10 @@ bool CuboidParser::OnLeave()
         Mesh& rSrcMesh = *meshes[i];
         int sf = 12*i;
         int sv = 8*i;
-        for (int j=0; j<rSrcMesh.nVertices; j++) {
+        for (u32 j=0; j<rSrcMesh.nVertices; j++) {
             pMesh->pVertices[sv+j] = rSrcMesh.pVertices[j];
         }
-        for (int j=0; j<rSrcMesh.nFaces; j++) {
+        for (u32 j=0; j<rSrcMesh.nFaces; j++) {
             MeshTriangle& rFace = pMesh->pFaces[sf+j];
             rFace = rSrcMesh.pFaces[j];
             rFace.pMesh = pMesh;
@@ -742,8 +742,8 @@ bool NoiseSurfaceParser::OnLeave()
     PerlinNoise2D noise;
     noise.SetInterporatorType(Interp_Hermite5d);
     
-    int divX = division_.e[0];
-    int divZ = division_.e[1];
+    int divX = (int)division_.e[0];
+    int divZ = (int)division_.e[1];
     if (divX <= 0 || divZ <= 0) {
         printf("[Error] Config: divX and divY of a NoiseSurface must be >=1\n");
         return false;
@@ -941,9 +941,11 @@ Config::~Config()
 
 bool Config::Load(const char* pPath)
 {
-    FILE* fp = fopen(pPath, "r");
+    FILE* fp = NULL;
+    fopen_s(&fp, pPath, "r");
     if (fp == NULL) {
-        printf("%s\n", strerror(errno));
+        char errStr[512];
+        printf("%s\n", strerror_s(errStr, 512, errno));
         printf("cannot open the file. %s\n", pPath);
         return false;
     }

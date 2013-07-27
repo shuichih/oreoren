@@ -1,4 +1,4 @@
-// Original code is in
+﻿// Original code is in
 //   Realistic Image Synthesis using Photon Mapping (Japanese Edition)
 //   http://ssl.ohmsha.co.jp/cgi-bin/menu.cgi?ISBN=4-274-07950-3
 

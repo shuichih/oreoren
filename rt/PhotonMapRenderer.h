@@ -1,4 +1,4 @@
-#ifndef _PhotonMapRenderer_
+﻿#ifndef _PhotonMapRenderer_
 #define _PhotonMapRenderer_
 
 #include "Common.h"

@@ -1,4 +1,4 @@
-#include "Scene.h"
+﻿#include "Scene.h"
 #include <cmath>
 #include <cstring>
 #include <cassert>
@@ -501,8 +501,8 @@ Mesh::Mesh(u32 nVertices_, u32 nFaces_, Material* pMtl)
     ppFaces = new const IShape*[nFaces_];
     nVertices = nVertices_;
     nFaces = nFaces_;
-    
-    for (int i=0; i<nFaces; i++) {
+   
+    for (u32 i=0; i<nFaces; i++) {
         pFaces[i].pMesh = this;
         ppFaces[i] = &pFaces[i];
     }
@@ -526,24 +526,24 @@ bool Mesh::GetUseFaceNormal()
 
 void Mesh::CalcFaceNormals()
 {
-    for (int i=0; i<nFaces; i++) {
+    for (u32 i=0; i<nFaces; i++) {
         pFaces[i].CalcFaceNormal();
     }
 }
 
 void Mesh::CalcVertexNormals()
 {
-    for (int i=0; i<nVertices; i++) {
+    for (u32 i=0; i<nVertices; i++) {
         pVertices[i].normal = Vec3();
     }
-    for (int i=0; i<nFaces; i++) {
+    for (u32 i=0; i<nFaces; i++) {
         Vec3& fn = pFaces[i].normal;
         for (int j=0; j<3; j++) {
             Vertex& v = pVertices[pFaces[i].indices[j]];
             v.normal += fn;
         }
     }
-    for (int i=0; i<nVertices; i++) {
+    for (u32 i=0; i<nVertices; i++) {
         if (pVertices[i].normal.lengthSquared() == 0) {
             pVertices[i].normal = Vec3(0, 0, 1);
         } else {
@@ -676,10 +676,10 @@ Scene::Scene()
 
 Scene::~Scene()
 {
-    for (int i=0; i<litSrcs_.size(); i++) {
+    for (size_t i=0; i<litSrcs_.size(); i++) {
         delete litSrcs_[i];
     }
-    for (int i=0; i<shapes_.size(); i++) {
+    for (size_t i=0; i<shapes_.size(); i++) {
         delete shapes_[i];
     }
     MaterialMap::iterator it = materialMap_.begin();

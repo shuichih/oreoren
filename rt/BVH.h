@@ -1,4 +1,4 @@
-#ifndef BVH_h
+﻿#ifndef BVH_h
 #define BVH_h
 
 #include "Common.h"

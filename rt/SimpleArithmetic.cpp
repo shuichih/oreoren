@@ -1,4 +1,4 @@
-#include <string>
+﻿#include <string>
 #include "SimpleArithmetic.h"
 
 using namespace std;

@@ -1,4 +1,4 @@
-#ifndef RT_SIMD_H
+﻿#ifndef RT_SIMD_H
 #define RT_SIMD_H
 
 //

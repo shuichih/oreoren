@@ -1,4 +1,4 @@
-#ifndef Config_H
+﻿#ifndef Config_H
 #define Config_H
 
 #include "Common.h"

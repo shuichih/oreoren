@@ -1,4 +1,4 @@
-#ifndef QBVHBase_h
+﻿#ifndef QBVHBase_h
 #define QBVHBase_h
 
 #include "Common.h"

@@ -1,0 +1,228 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{FFB13EE1-D2D4-4842-B906-C08E3918314D}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>Rayzer</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\rt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN64;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\rt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\rt\App.cpp" />
+    <ClCompile Include="..\rt\BBox.cpp" />
+    <ClCompile Include="..\rt\BVH.cpp" />
+    <ClCompile Include="..\rt\Common.cpp" />
+    <ClCompile Include="..\rt\Config.cpp" />
+    <ClCompile Include="..\rt\LightSource.cpp" />
+    <ClCompile Include="..\rt\main.cpp" />
+    <ClCompile Include="..\rt\MeshLoader.cpp" />
+    <ClCompile Include="..\rt\ONB.cpp" />
+    <ClCompile Include="..\rt\PerlinNoise.cpp" />
+    <ClCompile Include="..\rt\PhotonFilter.cpp" />
+    <ClCompile Include="..\rt\PhotonMap.cpp" />
+    <ClCompile Include="..\rt\PhotonMapRenderer.cpp" />
+    <ClCompile Include="..\rt\PhotonMapRenderer2.cpp" />
+    <ClCompile Include="..\rt\PostEffect.cpp" />
+    <ClCompile Include="..\rt\QBVHBase.cpp" />
+    <ClCompile Include="..\rt\Ray.cpp" />
+    <ClCompile Include="..\rt\RayTracingRenderer.cpp" />
+    <ClCompile Include="..\rt\Scene.cpp" />
+    <ClCompile Include="..\rt\SIMD_QBVH.cpp" />
+    <ClCompile Include="..\rt\SimpleArithmetic.cpp" />
+    <ClCompile Include="..\rt\SISD_QBVH.cpp" />
+    <ClCompile Include="..\rt\smallpt_fmt.cpp" />
+    <ClCompile Include="..\rt\StringUtils.cpp" />
+    <ClCompile Include="..\rt\Timer.cpp" />
+    <ClCompile Include="..\rt\vecmath\matrix4.cpp" />
+    <ClCompile Include="..\rt\vecmath\quat4.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\rt\App.h" />
+    <ClInclude Include="..\rt\BBox.h" />
+    <ClInclude Include="..\rt\BVH.h" />
+    <ClInclude Include="..\rt\BVHType.h" />
+    <ClInclude Include="..\rt\Common.h" />
+    <ClInclude Include="..\rt\Config.h" />
+    <ClInclude Include="..\rt\IRenderer.h" />
+    <ClInclude Include="..\rt\LightSource.h" />
+    <ClInclude Include="..\rt\Material.h" />
+    <ClInclude Include="..\rt\MeshLoader.h" />
+    <ClInclude Include="..\rt\ONB.h" />
+    <ClInclude Include="..\rt\PerlinNoise.h" />
+    <ClInclude Include="..\rt\PhotonFilter.h" />
+    <ClInclude Include="..\rt\PhotonMap.h" />
+    <ClInclude Include="..\rt\PhotonMapRenderer.h" />
+    <ClInclude Include="..\rt\PhotonMapRenderer2.h" />
+    <ClInclude Include="..\rt\PostEffect.h" />
+    <ClInclude Include="..\rt\QBVHBase.h" />
+    <ClInclude Include="..\rt\Random.h" />
+    <ClInclude Include="..\rt\Ray.h" />
+    <ClInclude Include="..\rt\RayTracingRenderer.h" />
+    <ClInclude Include="..\rt\Scene.h" />
+    <ClInclude Include="..\rt\SIMD.h" />
+    <ClInclude Include="..\rt\SIMD_QBVH.h" />
+    <ClInclude Include="..\rt\SimpleArithmetic.h" />
+    <ClInclude Include="..\rt\SISD_QBVH.h" />
+    <ClInclude Include="..\rt\smallpt_fmt.h" />
+    <ClInclude Include="..\rt\StringUtils.h" />
+    <ClInclude Include="..\rt\Timer.h" />
+    <ClInclude Include="..\rt\vecmath\color4.h" />
+    <ClInclude Include="..\rt\vecmath\matrix4.h" />
+    <ClInclude Include="..\rt\vecmath\point2.h" />
+    <ClInclude Include="..\rt\vecmath\point3.h" />
+    <ClInclude Include="..\rt\vecmath\point4.h" />
+    <ClInclude Include="..\rt\vecmath\quat4.h" />
+    <ClInclude Include="..\rt\vecmath\tuple2.h" />
+    <ClInclude Include="..\rt\vecmath\tuple3.h" />
+    <ClInclude Include="..\rt\vecmath\vector3.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\rt\SceneFiles\BBTest.scene" />
+    <None Include="..\rt\SceneFiles\cornell_box.scene" />
+    <None Include="..\rt\SceneFiles\cornell_box_sphere.scene" />
+    <None Include="..\rt\SceneFiles\right_venus_cuboids.scene" />
+    <None Include="..\rt\SceneFiles\simple.scene" />
+    <None Include="..\rt\SceneFiles\venus.scene" />
+    <None Include="..\rt\SceneFiles\venus_cuboids.scene" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

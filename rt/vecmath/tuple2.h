@@ -1,4 +1,4 @@
-#ifndef SEVERE3D_TUPLE2_H
+﻿#ifndef SEVERE3D_TUPLE2_H
 #define SEVERE3D_TUPLE2_H
 
 

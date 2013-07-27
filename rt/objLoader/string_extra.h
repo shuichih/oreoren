@@ -1,4 +1,4 @@
-#ifndef STRING_EXTRA_H
+﻿#ifndef STRING_EXTRA_H
 #define STRING_EXTRA_H
 
 char strequal(const char *s1, const char *s2);

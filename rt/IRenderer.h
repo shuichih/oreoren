@@ -1,4 +1,4 @@
-#ifndef IRenderer_h
+﻿#ifndef IRenderer_h
 #define IRenderer_h
 
 #include "Common.h"

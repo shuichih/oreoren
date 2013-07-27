@@ -1,4 +1,4 @@
-#ifndef SEVERE3D_TUPLE3_H
+﻿#ifndef SEVERE3D_TUPLE3_H
 #define SEVERE3D_TUPLE3_H
 
 #include "../simd.h"

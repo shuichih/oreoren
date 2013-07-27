@@ -1,4 +1,4 @@
-// Original code is in
+﻿// Original code is in
 //   Realistic Image Synthesis using Photon Mapping (Japanese Edition)
 //   http://ssl.ohmsha.co.jp/cgi-bin/menu.cgi?ISBN=4-274-07950-3
 
@@ -55,7 +55,7 @@ Photon_map::Photon_map(const int max_phot)
 
 	photons = (Photon*)malloc(sizeof(Photon) * (max_photons+1)); // 多分[0]はrootなので+1
 	if (photons == NULL) {
-		fprintf(stderr, "Out of memory initializing photon map¥n");
+		fprintf(stderr, "Out of memory initializing photon map\n");
 		exit(-1);
 	}
     memset(photons, 0, sizeof(Photon) * (max_photons+1));

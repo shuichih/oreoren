@@ -1,4 +1,4 @@
-//
+﻿//
 //  App.cpp
 //  rt
 //
@@ -6,8 +6,10 @@
 //  Copyright 2011 __MyCompanyName__. All rights reserved.
 //
 
+#ifndef _WIN32
 #include <OpenGL/OpenGL.h>
 #include <GLUT/glut.h>
+#endif
 #include <algorithm>
 #include <cassert>
 #include "App.h"

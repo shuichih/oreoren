@@ -1,4 +1,4 @@
-#include "Scene.h"
+﻿#include "Scene.h"
 #include "SISD_QBVH.h"
 #include <cassert>
 #include "simd.h"

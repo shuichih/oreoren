@@ -1,4 +1,4 @@
-#include "string_extra.h"
+﻿#include "string_extra.h"
 #include <cstring>
 
 char strequal(const char *s1, const char *s2)

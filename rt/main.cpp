@@ -1,4 +1,4 @@
-//
+﻿//
 //  main.cpp
 //  rt
 //
@@ -7,7 +7,7 @@
 #include <iostream>
 #include "App.h"
 
-#include <GLUT/glut.h>
+//#include <GLUT/glut.h>
 #include "vecmath/tuple3.h"
 #include "vecmath/vector3.h"
 
@@ -40,7 +40,7 @@ void TestVector()
 {
     Vector3f v[21];
     for (int i=0; i<sizeof(v)/sizeof(v[0]); i++) {
-        v[i] = Vector3f(i, i*2+0.1f, i*3+0.2f);
+        v[i] = Vector3f((float)i, i*2+0.1f, i*3+0.2f);
     }
     v[0] = Vector3f(1, 2, 3);
     v[1].set(4, 5, 6);

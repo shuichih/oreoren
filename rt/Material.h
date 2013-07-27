@@ -1,4 +1,4 @@
-#ifndef Material_H
+﻿#ifndef Material_H
 #define Material_H
 
 #include "Common.h"

@@ -1,4 +1,4 @@
-#ifndef SEVERE3D_QUAT4_H
+﻿#ifndef SEVERE3D_QUAT4_H
 #define SEVERE3D_QUAT4_H
 
 // 回転軸と回転角度を持つデータ構造

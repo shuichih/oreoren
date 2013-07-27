@@ -1,5 +1,8 @@
-#include "Common.h"
+﻿#include "Common.h"
 #include "StringUtils.h"
+#include <algorithm>
+#include <string>
+#include <ctype.h>
 
 //
 
@@ -50,7 +53,7 @@ vector<string> StringUtils::Split(const string& str, char delim)
 
 int StringUtils::Stricmp(string lhs, string rhs)
 {
-    std::transform(lhs.begin(), lhs.end(), lhs.begin(), std::tolower);
-    std::transform(rhs.begin(), rhs.end(), rhs.begin(), std::tolower);
+    std::transform(lhs.begin(), lhs.end(), lhs.begin(), tolower);
+    std::transform(rhs.begin(), rhs.end(), rhs.begin(), tolower);
     return lhs.compare(rhs);
 }

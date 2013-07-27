@@ -1,4 +1,4 @@
-#include <cstdio>
+﻿#include <cstdio>
 #include "Timer.h"
 #include <ctime>
 
@@ -53,13 +53,13 @@ long Timer::Elapsed()
 #else
         time_t now;
         time(&now);
-        msec = difftime(now, start_) * 1000;
+        msec = long(difftime(now, start_) * 1000);
 #endif
     } else {
 #ifdef TIMER_USE_CLOCK
         msec = (end_ - start_) / (CLOCKS_PER_SEC / 1000);
 #else
-        msec = difftime(end_, start_) * 1000;
+        msec = long(difftime(end_, start_) * 1000);
 #endif
     }
     
