@@ -14,6 +14,7 @@
 		B263223614E7893A00158AF5 /* PhotonMapRenderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B263223414E7893A00158AF5 /* PhotonMapRenderer.cpp */; };
 		B26B25281616D72E00560892 /* RayTracingRenderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B26B25261616D72E00560892 /* RayTracingRenderer.cpp */; };
 		B274484F15F0DD30000E1C53 /* SimpleArithmetic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B274484D15F0DD30000E1C53 /* SimpleArithmetic.cpp */; };
+		B27656DB17A3ECFE00A3CDA3 /* File.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B27656D917A3ECFE00A3CDA3 /* File.cpp */; };
 		B27B885B15C98580003D010A /* Config.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B27B885915C98580003D010A /* Config.cpp */; };
 		B282457315AE5E64006A3DC1 /* Scene.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B282457215AE5E64006A3DC1 /* Scene.cpp */; };
 		B282457E15AEF472006A3DC1 /* list.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B282457615AEF472006A3DC1 /* list.cpp */; };
@@ -78,6 +79,8 @@
 		B26B252A1616DCC700560892 /* IRenderer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IRenderer.h; sourceTree = "<group>"; };
 		B274484D15F0DD30000E1C53 /* SimpleArithmetic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SimpleArithmetic.cpp; sourceTree = "<group>"; };
 		B274484E15F0DD30000E1C53 /* SimpleArithmetic.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SimpleArithmetic.h; sourceTree = "<group>"; };
+		B27656D917A3ECFE00A3CDA3 /* File.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = File.cpp; sourceTree = "<group>"; };
+		B27656DA17A3ECFE00A3CDA3 /* File.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = File.h; sourceTree = "<group>"; };
 		B27B885915C98580003D010A /* Config.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Config.cpp; sourceTree = "<group>"; };
 		B27B885A15C98580003D010A /* Config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Config.h; sourceTree = "<group>"; };
 		B282457215AE5E64006A3DC1 /* Scene.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Scene.cpp; sourceTree = "<group>"; };
@@ -171,6 +174,8 @@
 		B209617B1483117300863694 /* rt */ = {
 			isa = PBXGroup;
 			children = (
+				B27656D917A3ECFE00A3CDA3 /* File.cpp */,
+				B27656DA17A3ECFE00A3CDA3 /* File.h */,
 				B2246870178E6B1400A901EC /* Material.h */,
 				B2E9208717887AA6005AD7A7 /* Random.h */,
 				B2E9207F17868181005AD7A7 /* PerlinNoise.cpp */,
@@ -357,6 +362,7 @@
 				B2E404C61760C6E10074F3A0 /* SIMD_QBVH.cpp in Sources */,
 				B2D8DDBB1770884200712CE8 /* QBVHBase.cpp in Sources */,
 				B2E9208117868181005AD7A7 /* PerlinNoise.cpp in Sources */,
+				B27656DB17A3ECFE00A3CDA3 /* File.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -430,6 +436,7 @@
 		B20961831483117300863694 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				HEADER_SEARCH_PATHS = ./rt;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -437,6 +444,7 @@
 		B20961841483117300863694 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				HEADER_SEARCH_PATHS = ./rt;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

@@ -11,13 +11,13 @@ string StringUtils::Trim(const string& str)
     size_t start = 0;
     size_t len = str.length();
     for (size_t i=0; i<str.length(); i++) {
-        if (str[i] == ' ' || str[i] == '\t' || str[i] == '\n')
+        if (str[i] == ' ' || str[i] == '\t' || str[i] == '\n' || str[i] == '\r')
             start++;
         else
             break;
     }
     for (size_t i=str.length()-1; i>=0; i--) {
-        if (str[i] == ' ' || str[i] == '\t' || str[i] == '\n')
+        if (str[i] == ' ' || str[i] == '\t' || str[i] == '\n' || str[i] == '\r')
             len--;
         else
             break;
@@ -56,4 +56,15 @@ int StringUtils::Stricmp(string lhs, string rhs)
     std::transform(lhs.begin(), lhs.end(), lhs.begin(), tolower);
     std::transform(rhs.begin(), rhs.end(), rhs.begin(), tolower);
     return lhs.compare(rhs);
+}
+
+int StringUtils::Sprintf(char* pOut, size_t szBuf, const char* pFormat, ...)
+{
+    va_list args;
+    int ret;
+    
+    va_start(args, pFormat);
+    ret = vsnprintf(pOut, szBuf, pFormat, args);
+    va_end(args);
+    return ret;
 }

@@ -45,7 +45,7 @@ void ToneMap::Apply(Vec3* pBuffer, i32 bufferWidth, i32 bufferHeight)
         real lm = pBuffer[i].dot(RGB2Y);
         if (lm <= 0) {
             // @todo debug 負の値入ってる
-            int a = 1;
+            //int a = 1;
         }
         lmSum += logf(delta + lm);
         if (lm > lmMax) {

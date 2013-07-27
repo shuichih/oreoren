@@ -13,6 +13,7 @@
 #include "PerlinNoise.h"
 #include "Material.h"
 #include "Random.h"
+#include "File.h"
 
 using namespace std;
 
@@ -243,21 +244,21 @@ void SectionParser::Print()
 string SectionParser::IntToString(void* pVal)
 {
     char str[64];
-    sprintf_s(str, "%d", *((int*)pVal));
+    StringUtils::Sprintf(str, sizeof(str), "%d", *((int*)pVal));
     return str;
 }
 
 string SectionParser::FloatToString(void* pVal)
 {
     char str[64];
-    sprintf_s(str, "%f", *((float*)pVal));
+    StringUtils::Sprintf(str, sizeof(str), "%f", *((float*)pVal));
     return str;
 }
 
 string SectionParser::BoolToString(void* pVal)
 {
     char str[64];
-    sprintf_s(str, "%s", (*((bool*)pVal)) ? "true" : "false");
+    StringUtils::Sprintf(str, sizeof(str), "%s", (*((bool*)pVal)) ? "true" : "false");
     return str;
 }
 
@@ -265,7 +266,7 @@ string SectionParser::Vec2ToString(void* pVal)
 {
     char str[128];
     Vec2& vec2 = *((Vec2*)pVal);
-    sprintf_s(str, "%f %f", vec2.x, vec2.y);
+    StringUtils::Sprintf(str, sizeof(str), "%f %f", vec2.x, vec2.y);
     return str;
 }
 
@@ -273,7 +274,7 @@ string SectionParser::Vec3ToString(void* pVal)
 {
     char str[128];
     Vec3& vec3 = *((Vec3*)pVal);
-    sprintf_s(str, "%f %f %f", vec3.x, vec3.y, vec3.z);
+    StringUtils::Sprintf(str, sizeof(str), "%f %f %f", vec3.x, vec3.y, vec3.z);
     return str;
 }
 
@@ -507,7 +508,8 @@ bool CuboidParser::OnLeave()
                     char mtlName[32];
                     RGB c256 = color * 255.999f;
                     int nRGB [3] = { int(c256.x), int(c256.y), int(c256.z) };
-                    sprintf_s(mtlName, "_D%03d_%03d_%03d", nRGB[0], nRGB[1], nRGB[2]);
+                    StringUtils::Sprintf(mtlName, sizeof(mtlName),
+                                         "_D%03d_%03d_%03d", nRGB[0], nRGB[1], nRGB[2]);
                     pMtl = pScene_->GetMaterial(mtlName);
                     if (pMtl == NULL) {
                         pMtl = new Material(mtlName, DIFF, color, 1.f);
@@ -941,20 +943,16 @@ Config::~Config()
 
 bool Config::Load(const char* pPath)
 {
-    FILE* fp = NULL;
-    fopen_s(&fp, pPath, "r");
-    if (fp == NULL) {
-        char errStr[512];
-        printf("%s\n", strerror_s(errStr, 512, errno));
+    File f;
+    if (!f.Open(pPath, "r")) {
+        printf("%s\n", f.GetErrorString().c_str());
         printf("cannot open the file. %s\n", pPath);
         return false;
     }
     
-    const int BUF_SZ = 512;
-    char buf[BUF_SZ];
-    while (feof(fp) == 0) {
-        fgets(buf, BUF_SZ, fp);
-        bool stop = !ParseLine(buf);
+    while (!f.IsEof()) {
+        std::string line = f.GetLineS();
+        bool stop = !ParseLine(line);
         if (stop || error_)
             break;
     }
@@ -964,13 +962,15 @@ bool Config::Load(const char* pPath)
         pCurrParser_->OnLeave();
     }
     
-    fclose(fp);
     return true;
 }
 
-bool Config::ParseLine(char* pBuf)
+bool Config::ParseLine(std::string& line)
 {
-    string line = pBuf;
+    const char* pLine = line.c_str();
+    if (pLine[0] == (char)0xEF && pLine[1] == (char)0xBB && pLine[2] == (char)0xBF) {
+        line = &pLine[3];
+    }
     
     string::size_type acs = line.find("/#");
     if (acs != string::npos) {
@@ -1014,7 +1014,7 @@ bool Config::ParseLine(char* pBuf)
         }
     }
     if (pCurrParser_ == NULL) {
-        printf("[Error] Config: out of section. line=%s\n", pBuf);
+        printf("[Error] Config: out of section. line=%s\n", line.c_str());
         return false;
     }
     

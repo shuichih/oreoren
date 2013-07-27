@@ -359,7 +359,7 @@ private:
     typedef bool (Config::*SectionFuncType)(const string& str);
     
 private:
-    bool ParseLine(char* pBuf);
+    bool ParseLine(std::string& line);
     bool ParseSceneSection(const string& line);
     
 private:
