@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <string>
 #include <ctype.h>
+#include <cstdarg>
 
 //
 
@@ -64,7 +65,11 @@ int StringUtils::Sprintf(char* pOut, size_t szBuf, const char* pFormat, ...)
     int ret;
     
     va_start(args, pFormat);
+#ifdef _WIN64
+    ret = vsnprintf_s(pOut, szBuf, _TRUNCATE, pFormat, args);
+#else
     ret = vsnprintf(pOut, szBuf, pFormat, args);
+#endif
     va_end(args);
     return ret;
 }
