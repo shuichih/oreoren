@@ -14,6 +14,12 @@
     <Filter Include="scenefiles">
       <UniqueIdentifier>{1cd0d007-35a2-4f09-9014-e355b50475c0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\objLoader">
+      <UniqueIdentifier>{826082db-bece-418f-8210-d17712b3bc71}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\bmpexporter">
+      <UniqueIdentifier>{c99805c0-ec34-4b67-ab1d-52fac2491ee5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\rt\App.cpp">
@@ -96,6 +102,28 @@
     </ClCompile>
     <ClCompile Include="..\rt\vecmath\quat4.cpp">
       <Filter>src\vecmath</Filter>
+    </ClCompile>
+    <ClCompile Include="..\rt\OpenGLView.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\rt\File.cpp" />
+    <ClCompile Include="..\rt\objLoader\list.cpp">
+      <Filter>src\objLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="..\rt\objLoader\obj_parser.cpp">
+      <Filter>src\objLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="..\rt\objLoader\objLoader.cpp">
+      <Filter>src\objLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="..\rt\objLoader\string_extra.cpp">
+      <Filter>src\objLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="..\rt\BmpFileView.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\rt\bmpexporter\bmpexporter.cpp">
+      <Filter>src\bmpexporter</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -212,6 +240,31 @@
     </ClInclude>
     <ClInclude Include="..\rt\vecmath\vector3.h">
       <Filter>src\vecmath</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rt\IView.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rt\OpenGLView.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rt\File.h" />
+    <ClInclude Include="..\rt\objLoader\list.h">
+      <Filter>src\objLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rt\objLoader\obj_parser.h">
+      <Filter>src\objLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rt\objLoader\objLoader.h">
+      <Filter>src\objLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rt\objLoader\string_extra.h">
+      <Filter>src\objLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rt\BmpFileView.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rt\bmpexporter\bmpexporter.h">
+      <Filter>src\bmpexporter</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

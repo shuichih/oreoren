@@ -1,5 +1,6 @@
 ﻿#include "objLoader.h"
 #include "obj_parser.h"
+#include <memory.h>
 
 
 int objLoader::load(const char *filename)
@@ -38,6 +39,10 @@ int objLoader::load(const char *filename)
 
 		this->camera = data.camera;
 	}
+    else
+    {
+        memset(&data, 0, sizeof(obj_scene_data));
+    }
 
 	return no_error;
 }

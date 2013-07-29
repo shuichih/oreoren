@@ -1,9 +1,7 @@
 ﻿//
 //  App.h
-//  rt
 //
-//  Created by 秀一 林 on 11/29/11.
-//  Copyright 2011 __MyCompanyName__. All rights reserved.
+//  Created by Shuichi Hayashi on 11/29/11.
 //
 
 #ifndef rt_App_h
@@ -15,6 +13,7 @@
 class Photon_map;
 class BVH;
 class IRenderer;
+class IView;
 
 class App
 {
@@ -24,11 +23,10 @@ public:
     ~App();
     void Run(int argc, const char * argv[]);
     void Render();
-    void RenderScene(Vec3* pRealColorBuf);
-    void DrawToBuffer(u8* pRealColorBuf);
+    void RenderScene();
     
 private:
-    void Init(int argc, const char * argv[]);
+    bool Init(int argc, const char * argv[]);
     void BuildBVH();
     void ConvertToUint(u8* pColorBuf, Vec3* pRealColorBuf);
     void DrawDebugStuff();
@@ -42,6 +40,9 @@ private:
     IRenderer* pRenderer_;
     BVH* pBVH_;
     Timer timer_;
+    IView* pView_;
+    Vec3* pRealColorBuf_;
+    u8* pColorBuf_;
 };
 
 #endif

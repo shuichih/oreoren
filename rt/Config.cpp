@@ -953,7 +953,7 @@ bool Config::Load(const char* pPath)
     while (!f.IsEof()) {
         std::string line = f.GetLineS();
         bool stop = !ParseLine(line);
-        if (stop || error_)
+        if (stop)
             break;
     }
     

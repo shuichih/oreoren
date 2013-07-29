@@ -136,6 +136,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\rt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -147,12 +148,19 @@
   <ItemGroup>
     <ClCompile Include="..\rt\App.cpp" />
     <ClCompile Include="..\rt\BBox.cpp" />
+    <ClCompile Include="..\rt\bmpexporter\bmpexporter.cpp" />
+    <ClCompile Include="..\rt\BmpFileView.cpp" />
     <ClCompile Include="..\rt\BVH.cpp" />
     <ClCompile Include="..\rt\Common.cpp" />
     <ClCompile Include="..\rt\Config.cpp" />
+    <ClCompile Include="..\rt\File.cpp" />
     <ClCompile Include="..\rt\LightSource.cpp" />
     <ClCompile Include="..\rt\main.cpp" />
     <ClCompile Include="..\rt\MeshLoader.cpp" />
+    <ClCompile Include="..\rt\objLoader\list.cpp" />
+    <ClCompile Include="..\rt\objLoader\objLoader.cpp" />
+    <ClCompile Include="..\rt\objLoader\obj_parser.cpp" />
+    <ClCompile Include="..\rt\objLoader\string_extra.cpp" />
     <ClCompile Include="..\rt\ONB.cpp" />
     <ClCompile Include="..\rt\PerlinNoise.cpp" />
     <ClCompile Include="..\rt\PhotonFilter.cpp" />
@@ -172,19 +180,28 @@
     <ClCompile Include="..\rt\Timer.cpp" />
     <ClCompile Include="..\rt\vecmath\matrix4.cpp" />
     <ClCompile Include="..\rt\vecmath\quat4.cpp" />
+    <ClCompile Include="..\rt\OpenGLView.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\rt\App.h" />
     <ClInclude Include="..\rt\BBox.h" />
+    <ClInclude Include="..\rt\bmpexporter\bmpexporter.h" />
+    <ClInclude Include="..\rt\BmpFileView.h" />
     <ClInclude Include="..\rt\BVH.h" />
     <ClInclude Include="..\rt\BVHType.h" />
     <ClInclude Include="..\rt\Common.h" />
     <ClInclude Include="..\rt\Config.h" />
+    <ClInclude Include="..\rt\File.h" />
     <ClInclude Include="..\rt\IRenderer.h" />
     <ClInclude Include="..\rt\LightSource.h" />
     <ClInclude Include="..\rt\Material.h" />
     <ClInclude Include="..\rt\MeshLoader.h" />
+    <ClInclude Include="..\rt\objLoader\list.h" />
+    <ClInclude Include="..\rt\objLoader\objLoader.h" />
+    <ClInclude Include="..\rt\objLoader\obj_parser.h" />
+    <ClInclude Include="..\rt\objLoader\string_extra.h" />
     <ClInclude Include="..\rt\ONB.h" />
+    <ClInclude Include="..\rt\OpenGLView.h" />
     <ClInclude Include="..\rt\PerlinNoise.h" />
     <ClInclude Include="..\rt\PhotonFilter.h" />
     <ClInclude Include="..\rt\PhotonMap.h" />
@@ -212,6 +229,7 @@
     <ClInclude Include="..\rt\vecmath\tuple2.h" />
     <ClInclude Include="..\rt\vecmath\tuple3.h" />
     <ClInclude Include="..\rt\vecmath\vector3.h" />
+    <ClInclude Include="..\rt\IView.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\rt\SceneFiles\BBTest.scene" />

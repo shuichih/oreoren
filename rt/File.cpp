@@ -25,15 +25,15 @@ bool File::Close()
         ret = fclose(fp);
         fp = NULL;
     }
-    return ret;
+    return ret == 0;
 }
 
 bool File::Open(const char* pFilePath, const char* pMode)
 {
     Close();
     
-#ifdef _WIN64
-    fopen_s(&fp, pPath, pMode);
+#ifdef _WIN32
+    fopen_s(&fp, pFilePath, pMode);
 #else
     fp = fopen(pFilePath, pMode);
 #endif

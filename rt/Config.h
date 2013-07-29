@@ -107,11 +107,7 @@ struct LightSourceConfig
     , nSamples(64)
     , radius(1)
     {
-        typeStr[0] = 'P';
-        typeStr[1] = 'O';
-        typeStr[2] = 'I';
-        typeStr[3] = 'N';
-        typeStr[4] = 'T';
+        typeStr = "POINT";
     }
 };
 
@@ -365,7 +361,6 @@ private:
 private:
     FILE* fp_;
     char* pBuf_;
-    bool error_;
     //SectionDesc* pSectionDescs_;
     ItemDesc* pItemDesc_[SEC_NUM];
     //SectionFuncType pCurrFunc;

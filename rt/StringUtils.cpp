@@ -11,13 +11,14 @@ string StringUtils::Trim(const string& str)
 {
     size_t start = 0;
     size_t len = str.length();
-    for (size_t i=0; i<str.length(); i++) {
+    const i32 clen = (i32)str.length();
+    for (i32 i=0; i<clen; i++) {
         if (str[i] == ' ' || str[i] == '\t' || str[i] == '\n' || str[i] == '\r')
             start++;
         else
             break;
     }
-    for (size_t i=str.length()-1; i>=0; i--) {
+    for (i32 i=clen-1; i>=0; i--) {
         if (str[i] == ' ' || str[i] == '\t' || str[i] == '\n' || str[i] == '\r')
             len--;
         else
@@ -65,7 +66,7 @@ int StringUtils::Sprintf(char* pOut, size_t szBuf, const char* pFormat, ...)
     int ret;
     
     va_start(args, pFormat);
-#ifdef _WIN64
+#ifdef _WIN32
     ret = vsnprintf_s(pOut, szBuf, _TRUNCATE, pFormat, args);
 #else
     ret = vsnprintf(pOut, szBuf, pFormat, args);
