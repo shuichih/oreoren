@@ -74,7 +74,7 @@ bool App::Init(int argc, const char * argv[])
     
     // View初期化
 #ifdef __APPLE__
-    pView_ = new OpenGLView();
+    pView_ = new OpenGLView(&config, pBVH_);
 #else
     pView_ = new BmpFileView();
 #endif

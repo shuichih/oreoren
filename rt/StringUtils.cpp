@@ -4,8 +4,14 @@
 #include <string>
 #include <ctype.h>
 #include <cstdarg>
+#include <cstdlib>
 
 //
+
+bool StringUtils::IsTrimChar(char ch)
+{
+    return (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r');
+}
 
 string StringUtils::Trim(const string& str)
 {
@@ -13,13 +19,13 @@ string StringUtils::Trim(const string& str)
     size_t len = str.length();
     const i32 clen = (i32)str.length();
     for (i32 i=0; i<clen; i++) {
-        if (str[i] == ' ' || str[i] == '\t' || str[i] == '\n' || str[i] == '\r')
+        if (IsTrimChar(str[i]))
             start++;
         else
             break;
     }
     for (i32 i=clen-1; i>=0; i--) {
-        if (str[i] == ' ' || str[i] == '\t' || str[i] == '\n' || str[i] == '\r')
+        if (IsTrimChar(str[i]))
             len--;
         else
             break;
@@ -27,6 +33,39 @@ string StringUtils::Trim(const string& str)
     len -= start;
     
     return str.substr(start, len);
+}
+
+char* StringUtils::Trim(char* pStr)
+{
+    size_t start = 0;
+    size_t len = strlen(pStr);
+    const i32 clen = (i32)len;
+    for (i32 i=0; i<clen; i++) {
+        if (IsTrimChar(pStr[i]))
+            start++;
+        else
+            break;
+    }
+    for (i32 i=clen-1; i>=0; i--) {
+        if (IsTrimChar(pStr[i]))
+            len--;
+        else
+            break;
+    }
+    len -= start;
+    pStr[len] = NULL;
+    
+    return &pStr[start];
+}
+            
+int StringUtils::Find(const char* pStr, char ch)
+{
+    for (int i=0; *pStr!='\0'; pStr++, i++) {
+        if (*pStr == ch) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 vector<string> StringUtils::Split(const string& str, char delim)
@@ -53,6 +92,16 @@ vector<string> StringUtils::Split(const string& str, char delim)
     return ret;
 }
 
+char* StringUtils::Split(char* pStr, char delim)
+{
+    int index = Find(pStr, delim);
+    if (index == -1) {
+        return pStr; // delimが見つからなかったら渡された文字列をそのまま返す
+    }
+    pStr[index] = NULL;
+    return &pStr[index+1];
+}
+
 int StringUtils::Stricmp(string lhs, string rhs)
 {
     std::transform(lhs.begin(), lhs.end(), lhs.begin(), tolower);
@@ -74,3 +123,24 @@ int StringUtils::Sprintf(char* pOut, size_t szBuf, const char* pFormat, ...)
     va_end(args);
     return ret;
 }
+
+bool StringUtils::ParseFloat(float* pOut, const char* pStr)
+{
+    char* e = NULL;
+    *pOut = (float)strtod(pStr, &e);
+    if (*e != '\0') {
+        return false;
+    }
+    return true;
+}
+
+bool StringUtils::ParseInt(int* pOut, const char* pStr)
+{
+    char* e = NULL;
+    *pOut = (int)strtol(pStr, &e, 10);
+    if (*e != '\0') {
+        return false;
+    }
+    return true;
+}
+

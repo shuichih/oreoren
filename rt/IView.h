@@ -1,4 +1,4 @@
-﻿#ifndef IView_h
+#ifndef IView_h
 #define IView_h
 
 #include "Common.h"

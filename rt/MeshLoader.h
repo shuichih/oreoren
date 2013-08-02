@@ -4,22 +4,22 @@
 #include "Common.h"
 
 class Mesh;
-class objLoader;
-struct obj_face;
+class ObjLoader;
+struct ObjFace;
 
-class ObjLoader
+class MeshLoader
 {
 public:
-    ObjLoader();
-    ~ObjLoader();
+    MeshLoader();
+    ~MeshLoader();
     
     Mesh* Load(const char* pFilePath);
-    void ProcessFace(int iFace, obj_face* pObjFace, Vec3& rObjFaceNorm, int i0, int i1, int i2);
+    void ProcessFace(int iFace, const ObjFace& rObjFace, Vec3& rObjFaceNorm, int i0, int i1, int i2);
     void SetFaceReverse(bool reverse);
     
 private:
     bool faceReverse_;
-    objLoader* pLoader_;
+    ObjLoader* pLoader_;
     
     // work
     Mesh* pMesh_;

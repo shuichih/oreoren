@@ -687,7 +687,7 @@ SceneImportParser::~SceneImportParser()
 
 bool SceneImportParser::OnLeave()
 {
-    ObjLoader loader;
+    MeshLoader loader;
     loader.SetFaceReverse(conf_.faceReverse);
     
     Mesh* pMesh = loader.Load(conf_.path.c_str());

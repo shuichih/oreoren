@@ -1,8 +1,11 @@
 ﻿#ifdef __APPLE__
 
 #include "OpenGLView.h"
+#include "Config.h"
+#include "BVH.h"
 #include <OpenGL/OpenGL.h>
 #include <GLUT/glut.h>
+#include <cstdio>
 
 static OpenGLView* s_pView = 0;
 
@@ -20,18 +23,20 @@ static void Idle()
 
 //
 
-OpenGLView::OpenGLView
-    : initialized_(false)
+OpenGLView::OpenGLView(Config* pConfig, BVH* pBVH)
+: initialized_(false)
+, pConf_(pConfig)
+, pBVH_(pBVH)
 {
 }
 
-OpenGLView::~OpenGLView
+OpenGLView::~OpenGLView()
 {
 }
 
 bool OpenGLView::Init(int w, int h)
 {
-    if (initialized) {
+    if (initialized_) {
         return true;
     }
 
@@ -39,23 +44,29 @@ bool OpenGLView::Init(int w, int h)
 
     width_ = w;
     height_ = h;
-    glutInit(&argc, (char**)argv);
+    int argc = 0;
+    char** argv = NULL;
+    glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
-	glutInitWindowSize(config.windowWidth, config.windowHeight);
+	glutInitWindowSize(w, h);
 	glutCreateWindow("Renderer");
 	glutDisplayFunc(Display);
     //glutIdleFunc(Idle);
 
     initialized_ = true;
+    
+    return true;
 }
 
 bool OpenGLView::Present(u8* pColorBuf)
 {
-    if (!initialized) {
+    if (!initialized_) {
         printf("The view is not initialized.\n");
         return false;
     }
 
+    pColorBuf_ = pColorBuf;
+    
 	glutMainLoop();
 
     return true;
@@ -63,18 +74,19 @@ bool OpenGLView::Present(u8* pColorBuf)
 
 bool OpenGLView::DrawFrame()
 {
-    DrawToBuffer(pColorBuf);
+    DrawToBuffer(pColorBuf_);
     DrawDebugStuff();
 
     glutSwapBuffers();
+    
+    return true;
 }
 
 void OpenGLView::DrawToBuffer(u8* pColorBuf)
 {
-    int w = config.windowWidth;
-    int h = config.windowHeight;
-    
     // Display
+    int w = width_;
+    int h = height_;
     glMatrixMode(GL_PROJECTION);
     glOrtho(0, w, h, 0, -1, 1);
     //gluPerspective(60.0f, 1.0f, 0.1f, 1000.0f);
@@ -114,17 +126,17 @@ void OpenGLView::DrawDebugStuff()
 {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    float aspect = config.windowWidth / (float)config.windowHeight;
+    float aspect = width_ / (float)height_;
     
-    float fov = (float)atan2(0.5135, (double)config.camera.direction.length());
+    float fov = (float)atan2(0.5135, (double)pConf_->camera.direction.length());
     float fov_deg = Rad2Deg(fov);
     //fov_deg = 29;
     gluPerspective(fov_deg, aspect, 140.0, 1000.0);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    Vec3 pos = config.camera.position;
-    Vec3 at = pos + config.camera.direction;
+    Vec3 pos = pConf_->camera.position;
+    Vec3 at = pos + pConf_->camera.direction;
     
     // Vec3 up
     // const Vec3 proj_plane_axis_x = Vec3(fovY, 0.f, 0.f);
@@ -134,10 +146,10 @@ void OpenGLView::DrawDebugStuff()
 
     glDisable(GL_LIGHTING);
     
-    if (config.bvhConf.draw) {
+    if (pConf_->bvhConf.draw) {
         DrawBVH(pBVH_, 0);
     }
-    if (config.drawBBox) {
+    if (pConf_->drawBBox) {
         DrawBBox();
     }
     
@@ -146,7 +158,7 @@ void OpenGLView::DrawDebugStuff()
 
 void OpenGLView::DrawBVH(const IShape* pShape, int depth)
 {
-    if (pShape == NULL || depth >= config.bvhConf.drawDepth) {
+    if (pShape == NULL || depth >= pConf_->bvhConf.drawDepth) {
         return;
     }
     
@@ -177,8 +189,8 @@ void OpenGLView::DrawBVH(const IShape* pShape, int depth)
 
 void OpenGLView::DrawBBox()
 {
-    for (int i=0; i<config.scene.GetShapeNum(); i++) {
-        const IShape* pShape = config.scene.GetShape(i);
+    for (int i=0; i<pConf_->scene.GetShapeNum(); i++) {
+        const IShape* pShape = pConf_->scene.GetShape(i);
         if (!pShape->IsBVH()) {
             const BBox& bbox = pShape->BoundingBox();
             Vec3 center = bbox.Center();

@@ -1,10 +1,8 @@
-﻿#ifndef Rayzer_BmpFileView_H
+#ifndef Rayzer_BmpFileView_H
 #define Rayzer_BmpFileView_H
 
 #include "Common.h"
 #include "IView.h"
-
-#ifdef _WIN32
 
 /**
  * BitMap形式でファイルに書き出すView
@@ -24,7 +22,5 @@ private:
     int width_;
     int height_;
 };
-
-#endif // _WIN32
 
 #endif // Rayzer_BmpFileView_H

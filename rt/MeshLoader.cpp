@@ -1,68 +1,68 @@
-﻿#include "MeshLoader.h"
-#include "objLoader/objLoader.h"
-#include <cstdio>
+#include "MeshLoader.h"
 #include "Common.h"
+#include "ObjLoader.h"
 #include "Scene.h"
+#include <cstdio>
 #include <cassert>
 
+using namespace std;
 
-ObjLoader::ObjLoader()
+MeshLoader::MeshLoader()
 {
-    pLoader_ = new objLoader();
+    pLoader_ = new ObjLoader();
 }
 
-ObjLoader::~ObjLoader()
+MeshLoader::~MeshLoader()
 {
     delete pLoader_;
 }
 
-void ObjLoader::SetFaceReverse(bool reverse)
+void MeshLoader::SetFaceReverse(bool reverse)
 {
     faceReverse_ = reverse;
 }
 
-Mesh* ObjLoader::Load(const char* pFilePath)
+Mesh* MeshLoader::Load(const char* pFilePath)
 {
     // objをロードする
-    if (!pLoader_->load(pFilePath)) {
+    if (!pLoader_->Load(pFilePath)) {
         return NULL;
     }
     
     // 頂点数取得
-    int nVertices = pLoader_->vertexCount;
+    int nObjVertices = pLoader_->NumVertices();
+    int nObjFaces = pLoader_->NumFaces();
+    const vector<Vec3>& rObjVertices = pLoader_->Vertices();
+    const vector<ObjFace>& rObjFaces = pLoader_->Faces();
     
     // 三角形換算の面数を算出
     int nFaces = 0;
-    for (int i = 0; i < pLoader_->faceCount; i++) {
-        obj_face* pObjFace = pLoader_->faceList[i];
-        if (pObjFace->vertex_count > 5) {
-            printf("Face[%d] has %d(>5) vertices\n", i, pObjFace->vertex_count);
+    for (int i = 0; i < nObjFaces; i++) {
+        const ObjFace& rObjFace = rObjFaces[i];
+        if (rObjFace.nVertices > 5) {
+            printf("Face[%d] has %d(>5) vertices\n", i, rObjFace.nVertices);
             assert(false);
         }
-        nFaces += (pObjFace->vertex_count - 2);
+        nFaces += (rObjFace.nVertices - 2);
     }
     
     // 面と頂点の領域確保
-    pMesh_ = new Mesh(nVertices, nFaces, NULL);
+    pMesh_ = new Mesh(nObjVertices, nFaces, NULL);
     
     // 頂点のコピー
-    for (int i = 0; i < pLoader_->vertexCount; i++) {
-        obj_vector* pVert = pLoader_->vertexList[i];
-        pMesh_->pVertices[i].pos = Vec3((real)pVert->e[0], (real)pVert->e[1], (real)pVert->e[2]);
+    for (int i = 0; i < nObjVertices; i++) {
+        pMesh_->pVertices[i].pos = rObjVertices[i];
     }
     
     // 面法線と頂点法線を自前算出
-    pVertNs_ = new Vec3[pLoader_->vertexCount];
-    pFaceNs_ = new Vec3[pLoader_->faceCount];
-    for (int i = 0; i < pLoader_->faceCount; i++)
+    pVertNs_ = new Vec3[nObjVertices];
+    pFaceNs_ = new Vec3[nObjFaces];
+    for (int i = 0; i < nObjFaces; i++)
     {
-        obj_face* pObjFace = pLoader_->faceList[i];
-        obj_vector* pVert0 = pLoader_->vertexList[pObjFace->vertex_index[0]];
-        obj_vector* pVert1 = pLoader_->vertexList[pObjFace->vertex_index[1]];
-        obj_vector* pVert2 = pLoader_->vertexList[pObjFace->vertex_index[2]];
-        Vec3 p0((real)pVert0->e[0], (real)pVert0->e[1], (real)pVert0->e[2]);
-        Vec3 p1((real)pVert1->e[0], (real)pVert1->e[1], (real)pVert1->e[2]);
-        Vec3 p2((real)pVert2->e[0], (real)pVert2->e[1], (real)pVert2->e[2]);
+        const ObjFace& rObjFace = rObjFaces[i];
+        Vec3 p0 = rObjVertices[rObjFace.iVertex[0]];
+        Vec3 p1 = rObjVertices[rObjFace.iVertex[1]];
+        Vec3 p2 = rObjVertices[rObjFace.iVertex[2]];
         Vec3 s0 = p1 - p0;
         Vec3 s1 = p2 - p0;
         pFaceNs_[i] = (s0 % s1).normalize();
@@ -70,23 +70,23 @@ Mesh* ObjLoader::Load(const char* pFilePath)
             pFaceNs_[i] *= -1;
         }
         
-        for (int iVert = 0; iVert < pObjFace->vertex_count; iVert++) {
-            int vidx = pObjFace->vertex_index[iVert];
+        for (int iVert = 0; iVert < rObjFace.nVertices; iVert++) {
+            int vidx = rObjFace.iVertex[iVert];
             pVertNs_[vidx] += pFaceNs_[i];
         }
     }
-    for (int i = 0; i < pLoader_->vertexCount; i++) {
+    for (int i = 0; i < nObjVertices; i++) {
         pVertNs_[i].normalize();
     }
     
     // 面を三角形に分割して格納
     u32 iFace = 0;
-    for (int iObjFace=0; iObjFace<pLoader_->faceCount; iObjFace++) {
-        obj_face* pObjFace = pLoader_->faceList[iObjFace];
+    for (int iObjFace=0; iObjFace<nObjFaces; iObjFace++) {
+        const ObjFace& rObjFace = rObjFaces[iObjFace];
         Vec3& rFaceNorm = pFaceNs_[iObjFace];
         
-        for (int iObjVert=0; iObjVert<pObjFace->vertex_count-2; iObjVert++) {
-            ProcessFace(iFace++, pObjFace, rFaceNorm, 0, 1+iObjVert, 2+iObjVert);
+        for (int iObjVert=0; iObjVert<rObjFace.nVertices-2; iObjVert++) {
+            ProcessFace(iFace++, rObjFace, rFaceNorm, 0, 1+iObjVert, 2+iObjVert);
         }
     }
     
@@ -95,9 +95,9 @@ Mesh* ObjLoader::Load(const char* pFilePath)
     return pMesh_;
 }
 
-void ObjLoader::ProcessFace(
+void MeshLoader::ProcessFace(
     int iFace,
-    obj_face* pObjFace,
+    const ObjFace& rObjFace,
     Vec3& rObjFaceNorm,
     int i0,
     int i1,
@@ -113,16 +113,13 @@ void ObjLoader::ProcessFace(
     
     for (int iVert = 0; iVert < 3; iVert++) {
         int vertLocalIdx = surfLocalIndices[iVert];
-        int vidx = pObjFace->vertex_index[vertLocalIdx];
+        int vidx = rObjFace.iVertex[vertLocalIdx];
         pMesh_->pFaces[iFace].indices[iVert] = vidx;
         Vertex* pV = &pMesh_->pVertices[vidx];
         
-        int nidx = pObjFace->normal_index[vertLocalIdx];
-        if (nidx != -1 && nidx < pLoader_->normalCount) {
-            obj_vector* pNorm = pLoader_->normalList[nidx];
-            pV->normal.x = (float)pNorm->e[0];
-            pV->normal.y = (float)pNorm->e[1];
-            pV->normal.z = (float)pNorm->e[2];
+        int nidx = rObjFace.iNormal[vertLocalIdx];
+        if (nidx != -1 && nidx < pLoader_->NumNormals()) {
+            pV->normal = pLoader_->Normals()[nidx];
             pV->normal.normalize();
             if (faceReverse_) {
                 pV->normal *= -1;

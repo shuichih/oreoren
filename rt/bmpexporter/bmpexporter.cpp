@@ -50,7 +50,7 @@ int exportToBmp(
 	// スキャンライン長計算
 	scanLineLengthInBytes = width*3;
 	// ファイル全体の長さを計算
-	totalFileLength = sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER)+scanLineLengthInBytes*height;
+	totalFileLength = int(sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER)+scanLineLengthInBytes*height);
 	// メモリを確保
 	bmpMemoryStart = (unsigned char*)malloc(totalFileLength);
 	if( !bmpMemoryStart )
@@ -92,7 +92,11 @@ int exportToBmp(
 		bmpMemoryCursor += scanLineLengthInBytes;
 	}
 	// ファイルに書き込む
+#ifdef _WIN32
 	fopen_s(&file,fileName,"wb");
+#else
+    file = fopen(fileName, "wb");
+#endif
 	if(!file)
 	{ goto EXIT; }
 	if(fwrite(bmpMemoryStart,totalFileLength,1,file)!=1)

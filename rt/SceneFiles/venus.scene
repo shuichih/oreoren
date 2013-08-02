@@ -103,7 +103,7 @@ maxPhotonBounce = 40
 [ShadowPhotonMap]
 enable = true
 nPhotons = 30000
-nMaxStorePhotons = 60000
+nMaxStorePhotons = 100000
 nEstimatePhotons = 300
 estimateDist = 9.0
 estimateEllipseScale = 1.0
@@ -202,6 +202,15 @@ nSamples = 64
     scale = 0.025 0.025 0.025
     translate = -40 -52 30
     material = Glass2
+
+/#
+[SceneImport]
+    path = "/Users/shuichih/Dev/rt/objs/triangle.obj"
+    scale = 40 40 40
+    rotate = 0 45 0
+	translate = 0 0 0
+    material = CornellGray
+#/
 
 [NoiseSurface]
     center = 0 -35 0
