@@ -42,7 +42,10 @@ struct HitRecord
     bool hitLit;
     const IShape* pShape;
     HitRecord()
-    : hitLit(false)
+    : t(0)
+    , pMaterial(NULL)
+    , hitLit(false)
+    , pShape(NULL)
     {}
 };
 

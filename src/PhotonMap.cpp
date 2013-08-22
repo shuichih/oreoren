@@ -349,36 +349,35 @@ void Photon_map::store(
 		return;
     }
     
-    //#pragma omp flush(stored_photons)
     #pragma omp atomic
-	stored_photons++;
+    stored_photons++;
     
-	Photon* const node = &photons[stored_photons];
+    Photon* const node = &photons[stored_photons];
 
-	for (int i=0; i<3; i++) {
-		node->pos[i] = pos[i];
+    for (int i=0; i<3; i++) {
+        node->pos[i] = pos[i];
 
-		if (node->pos[i] < bbox_min[i])
-			bbox_min[i] = node->pos[i];
-		if (node->pos[i] > bbox_max[i])
-			bbox_max[i] = node->pos[i];
+        if (node->pos[i] < bbox_min[i])
+            bbox_min[i] = node->pos[i];
+        if (node->pos[i] > bbox_max[i])
+            bbox_max[i] = node->pos[i];
 
-		node->power[i] = power[i];
-	}
+        node->power[i] = power[i];
+    }
 
-	int theta = int(acosf(dir[2]) * (256.f/PI));
-	if (theta > 255)
-		node->theta = 255;
-	else
-		node->theta = (unsigned char)theta;
-	
-	int phi = int(atan2f(dir[1], dir[0]) * (256.f/(2.f*PI)));
-	if (phi > 255)
-		node->phi = 255;
-	else if (phi < 0)
-		node->phi = (unsigned char)(phi + 256);
-	else
-		node->phi = (unsigned char)phi;
+    int theta = int(acosf(dir[2]) * (256.f/PI));
+    if (theta > 255)
+        node->theta = 255;
+    else
+        node->theta = (unsigned char)theta;
+    
+    int phi = int(atan2f(dir[1], dir[0]) * (256.f/(2.f*PI)));
+    if (phi > 255)
+        node->phi = 255;
+    else if (phi < 0)
+        node->phi = (unsigned char)(phi + 256);
+    else
+        node->phi = (unsigned char)phi;
     
     if (directLight)
         node->flag |= Photon::FLAG_DIRECT;

@@ -1,8 +1,8 @@
 ﻿[General]
-#windowWidth=1000
-#windowHeight=700
-windowWidth=512
-windowHeight=512
+#windowWidth=384
+#windowHeight=246
+windowWidth=1280
+windowHeight=720
 drawBBox=false
 rendererType=2
 
@@ -25,6 +25,12 @@ refl = REFR
 refrIndex = 1.5
 
 [Material]
+name = BlueGlass
+color = 0.4 0.7 1
+refl = REFR
+refrIndex = 1.5
+
+[Material]
 name = Glass2
 color = 0.9 0.9 0.9
 refl = REFR
@@ -37,17 +43,22 @@ refl = DIFF
 
 [Material]
 name = CornellRed
-color = .75 .25 .25
+color = .95 .60 .50
 refl = DIFF
 
 [Material]
 name = CornellBlue
-color = .25 .25 .75
+color = .50 .60 .95
 refl = DIFF
 
 [Material]
 name = CornellGray
-color = .75 .75 .75
+color = .85 .85 .85
+refl = DIFF
+
+[Material]
+name = DarkGray
+color = .25 .25 .25
 refl = DIFF
 
 [Material]
@@ -68,7 +79,7 @@ indirectLight = true
 caustic = true
 shadowEstimate = true
 drawShadowEstimate = false
-nSubPixelsSqrt = 1
+nSubPixelsSqrt = 2
 nTracePhotonsPerThread = 10000
 maxRayBounce = 10
 #finalGethering = true
@@ -80,7 +91,7 @@ nGlossyRays = 256
 enable = true
 #nPhotons = 10000
 nPhotons = 100000
-nMaxStorePhotons = 200000
+nMaxStorePhotons = 1000000
 nEstimatePhotons = 1000
 estimateDist = 25.0
 estimateEllipseScale = 0.2
@@ -92,7 +103,7 @@ coneFilterK = 1.1   # kに比例してWeightが軽くなる
 enable = true
 #nPhotons = 40000
 nPhotons = 400000
-nMaxStorePhotons = 400000
+nMaxStorePhotons = 4000000
 nEstimatePhotons = 200
 estimateDist = 4
 estimateEllipseScale = 0.2
@@ -120,60 +131,67 @@ fovY = 0.5135
 /#
 [LightSource]
 type = POINT
-position = 0 50 70
+position = 0 0 0
 #position = 0 0 0
 flux = 25000 25000 25000
 #/
 
-[LightSource]
-type = AREA
-p0 = -10 52  10
-p1 = -10 52 -10
-p2 =  10 52 -10
-p3 =  10 52  10
-flux = 10000 10000 10000
-nSamples = 64
-
 /#
 [LightSource]
+type = AREA
+p0 = -5 75  5
+p1 = -5 75 -5
+p2 =  5 75 -5
+p3 =  5 75  5
+flux = 50000 50000 50000
+nSamples = 16
+#/
+
+[LightSource]
 type = SPHERE
-position = 0 50 65
+position = 0 0 0
 radius = 5
 flux = 50000 50000 50000
 #nSamples = 128
 nSamples = 64
-#/
 
 # 手前がプラス
 # @todo emission -> color
 
 [Rectangle] #Left
-    p0 = -62  53  95
-    p1 = -62 -53  95
-    p2 = -62 -53 -95
-    p3 = -62  53 -95
+    p0 = -100  80  200
+    p1 = -100 -80  200
+    p2 = -100 -80 -200
+    p3 = -100  80 -200
     material = CornellRed
 
 [Rectangle] #Right
-    p0 = 62  53 -95
-    p1 = 62 -53 -95
-    p2 = 62 -53  95
-    p3 = 62  53  95
+    p0 = 100  80 -200
+    p1 = 100 -80 -200
+    p2 = 100 -80  200
+    p3 = 100  80  200
     material = CornellBlue
 
 [Rectangle] #Bottom
-    p0 = -62 -53 -95
-    p1 = -62 -53  95
-    p2 =  62 -53  95
-    p3 =  62 -53 -95
+    p0 = -200 -80 -200
+    p1 = -200 -80  200
+    p2 =  200 -80  200
+    p3 =  200 -80 -200
     material = CornellGray
 
 [Rectangle] #Top
-    p0 = -62  53 -95
-    p1 = -62  53  95
-    p2 =  62  53  95
-    p3 =  62  53 -95
+    p0 = -200  80 -200
+    p1 = -200  80  200
+    p2 =  200  80  200
+    p3 =  200  80 -200
     material = CornellGray
+	
+[Rectangle] #Back
+    p0 = -200  80 -200
+    p1 = -200 -80 -200
+    p2 =  200 -80 -200
+    p3 =  200  80 -200
+    material = DarkGray
 
 [Sphere]
 	radius = 20
@@ -181,7 +199,7 @@ nSamples = 64
     material = Mirror
 
 [Cuboid]
-    scale = 12 12 12
+    scale = 8 8 8
     rotate = 30 30 0
     position = 0 0 -100
     material = Black
@@ -192,15 +210,22 @@ nSamples = 64
 
 /#
 [Sphere]
+	radius = 10
+	position = 0 0 0
+    material = BlueGlass
+#/
+	
+/#
+[Sphere]
 	radius = 20
 	position = 25 -53+20 15
     material = CornellGray
 #/
 
 [SceneImport]
-    path = "objs/venusm.obj"
+    path = "./objs/venusm.obj"
     scale = 0.025 0.025 0.025
-    translate = -40 -52 30
+    translate = -65 -52 0
     material = Glass2
 
 /#

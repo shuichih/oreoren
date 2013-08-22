@@ -15,6 +15,11 @@
 #include "Ray.h"
 #include "Material.h"
 #include "Random.h"
+#include "BmpFileView.h"
+#include "StringUtils.h"
+#ifdef _WIN32
+#include "Windows.h"
+#endif
 
 
 // Direct
@@ -117,10 +122,11 @@ void PhotonMapRenderer2::TracePhoton(const Ray& r, const Vec3& power, PathInfo& 
         pCurrPm_->store(power.e, x.e, r.d.e, true, lightNo_);
         
         // 影フォトンをストア
-        int nHits = pScene_->RayCast(shadyHits_, 0, r, rec.t+EPSILON, REAL_MAX);
+        std::vector<HitRecord> shadyHits(8);
+        int nHits = pScene_->RayCast(shadyHits, 0, r, rec.t+EPSILON, REAL_MAX);
         //printf("%d\n", nHits);
         for (int i=0; i<nHits; i++) {
-            HitRecord& sh_rec = shadyHits_.at(i);
+            HitRecord& sh_rec = shadyHits.at(i);
             if (sh_rec.pMaterial->refl == DIFF && sh_rec.normal.dot(r.d) < 0) {
                 //printf("hit\n");
                 Vec3 sh_x = r.o + r.d * sh_rec.t;
@@ -370,10 +376,16 @@ void PhotonMapRenderer2::PhotonTracing()
         printf("<Indirect Photon Map>\n");
         PhotonTracing_(*pPhotonMap_, *pPmConf_, nLit, sumFlux, Trace_Indirect);
     }
+#ifdef _WIN32
+    Sleep(1000);
+#endif
     if (pCausticPmConf_->enable && pPmRenConf_->caustic) {
         printf("<Caustic Photon Map>\n");
         PhotonTracing_(*pCausticPhotonMap_, *pCausticPmConf_, nLit, sumFlux, Trace_Caustic);
     }
+#ifdef _WIN32
+    Sleep(1000);
+#endif
     if (pShadowPmConf_->enable && pPmRenConf_->shadowEstimate) {
         printf("<Shadow Photon Map>\n");
         PhotonTracing_(*pShadowPhotonMap_, *pShadowPmConf_, nLit, sumFlux, Trace_Shadow);
@@ -395,8 +407,9 @@ void PhotonMapRenderer2::PhotonTracing_(
     traceFlag_ = traceFlag;
     
     // 各ライトからライトの明るさに応じてフォトンをばらまく
-    u32 iPhoton = 0;
     for (int i=0; i<nLit; i++) {
+        u32 iPhoton = 0;
+
         const LightSource* pLit = pScene_->GetLight(i);
         float nPhotonRatio = (float)(pLit->GetFlux().sum() / sumFlux);
         u32 nPhotons = (u32)(c_nPhotons * nPhotonRatio);
@@ -406,7 +419,8 @@ void PhotonMapRenderer2::PhotonTracing_(
         Random* pRands = new Random[nThread];
 
         #pragma omp flush
-        #pragma omp parallel for num_threads(4) schedule(dynamic, 1) shared(iPhoton)
+        #pragma omp parallel for num_threads(8) schedule(dynamic, 1) shared(iPhoton)
+        //#pragma omp parallel for num_threads(4) schedule(dynamic, 1) shared(iPhoton)
         for (int t=0; t<nThread; t++) {
             pRands[i].SetSeedW(i);
             
@@ -445,12 +459,53 @@ void PhotonMapRenderer2::PhotonTracing_(
     photonMap.balance();
 }
 
+// @todo Appのと共通化, ImageBufferクラスとか導入してそこに移すか？
+inline real clamp(real x)
+{
+    return x < 0.f ? 0.f : x > 1.f ? 1.f : x;
+}
+
+// @todo Appのと共通化
+inline int toInt(real x)
+{
+#ifdef USE_FLOAT
+    return int(powf(clamp(x), 1/2.2f) * 255.f + .5f);
+#else
+    return int(pow(clamp(x), 1/2.2) * 255 + .5);
+#endif
+}
+
+// @todo Appのと共通化
+void ConvertToUint(u8* pColorBuf, const Vec3* pRealColorBuf, int w, int h)
+{
+    // Convert to u8 format
+    for (int i = 0, j=0; i < (w*h); ++i, j+=4)
+    {
+        pColorBuf[j+0] = (u8)(toInt(pRealColorBuf[i].x)); // including Gamma Correction
+        pColorBuf[j+1] = (u8)(toInt(pRealColorBuf[i].y));
+        pColorBuf[j+2] = (u8)(toInt(pRealColorBuf[i].z));
+        pColorBuf[j+3] = 255;
+    }
+}
+
+void OutputInterimImage(Vec3* pRealColorBuf, int w, int h, const char* filePath)
+{
+    u8* pColorBuf = new u8[w * h * sizeof(char)*4]; 
+    ConvertToUint(pColorBuf, pRealColorBuf, w, h);
+    BmpFileView bmpFileView;
+    bmpFileView.SetFilePath(filePath);
+    bmpFileView.Init(w, h);
+    bmpFileView.Present(pColorBuf);
+
+    delete pColorBuf;
+}
+
 void PhotonMapRenderer2::RayTracing(Vec3* pColorBuf)
 {
     const u32 w = pConf_->windowWidth;
     const u32 h = pConf_->windowHeight;
     const u32 nSub = pPmRenConf_->nSubPixelsSqrt;
-    const real subPixelFactor = 1.0f / (real)(nSub*nSub);
+    //const real subPixelFactor = 1.0f / (real)(nSub*nSub);
     
     // バッファクリア
     for (u32 y=0; y<h; y++) {
@@ -459,8 +514,8 @@ void PhotonMapRenderer2::RayTracing(Vec3* pColorBuf)
         }
     }
     
-    Ray camRay = Ray(pConf_->camera.position, pConf_->camera.direction);
-    real fovY = pConf_->camera.fovY;
+    const Ray camRay = Ray(pConf_->camera.position, pConf_->camera.direction);
+    const real fovY = pConf_->camera.fovY;
     
     // 投影面のXY軸
     const Vec3 proj_plane_axis_x = Vec3(w * fovY / h, 0.f, 0.f);
@@ -468,24 +523,40 @@ void PhotonMapRenderer2::RayTracing(Vec3* pColorBuf)
     
     Random* pRands = new Random[h];
     
-    // Loop over image rows
-    #pragma omp parallel for num_threads(4) schedule(dynamic, 1)
-    for (int y=0; y<(int)h; y++) {
-        Random& rand = pRands[y];
-        rand.SetSeedW(y);
-        
-        #pragma omp critical
-        {
-            fprintf(stderr, "RayTracing (%d spp) %5.2f%%\n", nSub*nSub, 100.f * y / (h-1));
-        }
-        
-        // Loop cols
-        for (unsigned short x=0; x<w; x++) {
-            
-            int i = (h-y-1) * w + x; // カラーバッファのインデックス
-            for (u32 sy=0; sy<nSub; sy++) {         // subpixel rows
-                for (u32 sx=0; sx<nSub; sx++) {     // subpixel cols
+    Timer timer;
+
+    int nImage = 0;
+    const int nSub2 = nSub*nSub;
+    
+    for (u32 sy=0; sy<nSub; sy++) {         // subpixel rows
+        for (u32 sx=0; sx<nSub; sx++) {     // subpixel cols
+                
+            const int iSpp = (sy*nSub+sx);
+
+            //#pragma omp parallel for num_threads(4) schedule(dynamic, 1)
+            #pragma omp parallel for num_threads(8) schedule(dynamic, 1)
+            for (int y=0; y<(int)h; y++) {
+                Random& rand = pRands[y];
+                rand.SetSeedW(y);
+                
+                #pragma omp critical
+                {
+                    float progress = 100.f * ((iSpp / (float)nSub2) + (float)y / (h-1) / nSub2);
+                    fprintf(stderr, "RayTracing (%d/%d spp) %5.2f%%\n", iSpp+1, nSub2, progress);
+                    if (timer.Elapsed() > 10000) {
+                        timer.Restart();
+                        char pPath[64];
+                        StringUtils::Sprintf(pPath, 64, "./image%d.bmp", nImage);
+                        OutputInterimImage(pColorBuf, w, h, pPath);
+                        nImage++;
+                   }
+                }
+                
+                // Loop cols
+                for (unsigned short x=0; x<w; x++) {
                     
+                    int i = (h-y-1) * w + x; // カラーバッファのインデックス
+
                     // r1, r2 = 0 to 2
                     // dx, dy = -1 to 1  中心に集まったサンプリング --> tent filter
                     // sx = 0 or 1  (...nSub == 2の場合)
@@ -524,12 +595,14 @@ void PhotonMapRenderer2::RayTracing(Vec3* pColorBuf)
 
                     // Camera rays are pushed ^^^^^ forward to start in interior
                     // トーンマップとか特にやってない。クランプしてるだけ。
-                    pColorBuf[i] += r * subPixelFactor;
+                    float sppRatio = 1.f / (iSpp+1);
+                    pColorBuf[i] = r * sppRatio + pColorBuf[i] * (1-sppRatio);
                 }
             }
             //fprintf(stderr, "\r%f %f %f", c[i].x, c[i].y, c[i].z);
         }
     }
+
     delete[] pRands;
 }
 

@@ -70,7 +70,6 @@ private:
     Photon_map* pShadowPhotonMap_;
     PhotonFilter* pFilter_;
     PhotonFilter* pCausticFilter_;
-    std::vector<HitRecord> shadyHits_;
     
     TraceFlag traceFlag_;
     int lightNo_;
