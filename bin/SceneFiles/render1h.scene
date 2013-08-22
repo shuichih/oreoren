@@ -1,0 +1,222 @@
+﻿[General]
+#windowWidth=1000
+#windowHeight=700
+windowWidth=512
+windowHeight=512
+drawBBox=false
+rendererType=2
+
+[BVH]
+build = true
+type = 2  # 0:BBVH 1:QBVH_SISD 2:QBVH_SIMD
+useSIMD = true
+draw = false
+drawDepth = 7
+
+[Material]
+name = Mirror
+color = .999 .999 .999
+refl = SPEC
+
+[Material]
+name = Glass
+color = 1 1 1
+refl = REFR
+refrIndex = 1.5
+
+[Material]
+name = Glass2
+color = 0.9 0.9 0.9
+refl = REFR
+refrIndex = 1.5
+
+[Material]
+name = Black
+color = 0.1 0.1 0.1
+refl = DIFF
+
+[Material]
+name = CornellRed
+color = .75 .25 .25
+refl = DIFF
+
+[Material]
+name = CornellBlue
+color = .25 .25 .75
+refl = DIFF
+
+[Material]
+name = CornellGray
+color = .75 .75 .75
+refl = DIFF
+
+[Material]
+name = Water
+refl = REFR
+color = 0.8 1.0 0.95
+refrIndex = 1.333
+
+[RayTracing]
+maxRayBounce = 6
+nSubPixelsSqrt = 1
+useTentFilter = false
+distanceToProjPlane=140
+
+[PhotonMapRenderer]
+directLight = true
+indirectLight = true
+caustic = true
+shadowEstimate = true
+drawShadowEstimate = false
+nSubPixelsSqrt = 1
+nTracePhotonsPerThread = 10000
+maxRayBounce = 10
+#finalGethering = true
+nFinalGetheringRays = 64
+nMaxGlossyBounce = 1
+nGlossyRays = 256
+
+[PhotonMap] # for Indirect Light
+enable = true
+#nPhotons = 10000
+nPhotons = 100000
+nMaxStorePhotons = 200000
+nEstimatePhotons = 1000
+estimateDist = 25.0
+estimateEllipseScale = 0.2
+maxPhotonBounce = 10
+enableConeFilter = true
+coneFilterK = 1.1   # kに比例してWeightが軽くなる
+
+[CausticPhotonMap]
+enable = true
+#nPhotons = 40000
+nPhotons = 400000
+nMaxStorePhotons = 400000
+nEstimatePhotons = 200
+estimateDist = 4
+estimateEllipseScale = 0.2
+enableConeFilter = true
+coneFilterK = 1.1   # kに比例してWeightが軽くなる
+maxPhotonBounce = 40
+
+[ShadowPhotonMap]
+enable = true
+nPhotons = 30000
+nMaxStorePhotons = 100000
+nEstimatePhotons = 300
+estimateDist = 9.0
+estimateEllipseScale = 1.0
+
+[PostEffect]
+toneMap.enabled = false
+toneMap.keyValue = 0.045
+
+[Camera]
+position = 0 12 285
+direction = 0 -0.04 -1.0
+fovY = 0.5135
+
+/#
+[LightSource]
+type = POINT
+position = 0 50 70
+#position = 0 0 0
+flux = 25000 25000 25000
+#/
+
+[LightSource]
+type = AREA
+p0 = -10 52  10
+p1 = -10 52 -10
+p2 =  10 52 -10
+p3 =  10 52  10
+flux = 10000 10000 10000
+nSamples = 64
+
+/#
+[LightSource]
+type = SPHERE
+position = 0 50 65
+radius = 5
+flux = 50000 50000 50000
+#nSamples = 128
+nSamples = 64
+#/
+
+# 手前がプラス
+# @todo emission -> color
+
+[Rectangle] #Left
+    p0 = -62  53  95
+    p1 = -62 -53  95
+    p2 = -62 -53 -95
+    p3 = -62  53 -95
+    material = CornellRed
+
+[Rectangle] #Right
+    p0 = 62  53 -95
+    p1 = 62 -53 -95
+    p2 = 62 -53  95
+    p3 = 62  53  95
+    material = CornellBlue
+
+[Rectangle] #Bottom
+    p0 = -62 -53 -95
+    p1 = -62 -53  95
+    p2 =  62 -53  95
+    p3 =  62 -53 -95
+    material = CornellGray
+
+[Rectangle] #Top
+    p0 = -62  53 -95
+    p1 = -62  53  95
+    p2 =  62  53  95
+    p3 =  62  53 -95
+    material = CornellGray
+
+[Sphere]
+	radius = 20
+	position = 30 -53+20 0
+    material = Mirror
+
+[Cuboid]
+    scale = 12 12 12
+    rotate = 30 30 0
+    position = 0 0 -100
+    material = Black
+    repeat = 7 7 7
+    interval = 1
+    margin = 0 0 0
+    randColor = true
+
+/#
+[Sphere]
+	radius = 20
+	position = 25 -53+20 15
+    material = CornellGray
+#/
+
+[SceneImport]
+    path = "objs/venusm.obj"
+    scale = 0.025 0.025 0.025
+    translate = -40 -52 30
+    material = Glass2
+
+/#
+[SceneImport]
+    path = "bin/objs/triangle.obj"
+    scale = 40 40 40
+    rotate = 0 45 0
+	translate = 0 0 0
+    material = CornellGray
+#/
+
+[NoiseSurface]
+    center = 0 -35 0
+    scale = 150 3 150
+    rotate = 0 0 0
+    division = 200 200
+    material = Water
+    noisyHeight = true
+    noisyColor = false
