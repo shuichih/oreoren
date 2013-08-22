@@ -23,10 +23,9 @@ static void Idle()
 
 //
 
-OpenGLView::OpenGLView(Config* pConfig, BVH* pBVH)
+OpenGLView::OpenGLView(Config* pConfig)
 : initialized_(false)
 , pConf_(pConfig)
-, pBVH_(pBVH)
 {
 }
 
@@ -147,7 +146,7 @@ void OpenGLView::DrawDebugStuff()
     glDisable(GL_LIGHTING);
     
     if (pConf_->bvhConf.draw) {
-        DrawBVH(pBVH_, 0);
+        DrawBVH(pConf_->scene.GetBVH(), 0);
     }
     if (pConf_->drawBBox) {
         DrawBBox();
@@ -161,10 +160,13 @@ void OpenGLView::DrawBVH(const IShape* pShape, int depth)
     if (pShape == NULL || depth >= pConf_->bvhConf.drawDepth) {
         return;
     }
+    if (pConf_->bvhConf.type != BVH_BINARY) {
+        return;
+    }
     
     GLfloat color[4];
     if (pShape->IsBVH()) {
-        color[0] = 0.f; color[1] = 0.f; color[2] = 1.f; color[3] = 1.f;
+        color[0] = 1.f; color[1] = 0.f; color[2] = 0.f; color[3] = 1.f;
     } else {
         color[0] = 0.f; color[1] = 1.f; color[2] = 0.f; color[3] = 1.f;
     }

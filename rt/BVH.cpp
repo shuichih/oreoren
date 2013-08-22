@@ -1,4 +1,4 @@
-﻿#include "Scene.h"
+#include "Scene.h"
 #include "BVH.h"
 #include <cassert>
 
@@ -56,14 +56,23 @@ BVH::BVH(const IShape** pShapes, int nShapes)
     // 空間的な中心をpivotとする
     Vec3 pivot = (bbox_.Max() + bbox_.Min()) * 0.5f;
     
-    int mid_point = QSplit(pShapes, nShapes, pivot.x, 0); // まずX方向で
+    // 一番長い軸で分割
+    Vec3 bboxSize = bbox_.Max() - bbox_.Min();
+    int axis;
+    if (bboxSize.x > bboxSize.y) {
+        axis = (bboxSize.x > bboxSize.z) ? 0 : 2;
+    } else {
+        axis = (bboxSize.y > bboxSize.z) ? 1 : 2;
+    }
+    
+    int mid_point = QSplit(pShapes, nShapes, pivot.e[axis], axis);
     
     // 子ノードをビルド
-    pLeft_ = BuildBranch(pShapes, mid_point, 1); // Y方向で
-    pRight_ = BuildBranch(&pShapes[mid_point], nShapes - mid_point, 1); // Y方向で
+    pLeft_ = BuildBranch(pShapes, mid_point);
+    pRight_ = BuildBranch(&pShapes[mid_point], nShapes - mid_point);
 }
 
-const IShape* BVH::BuildBranch(const IShape** pShapes, int nShapes, int axis)
+const IShape* BVH::BuildBranch(const IShape** pShapes, int nShapes)
 {
     if (nShapes == 1) {
         int nChild = pShapes[0]->GetChildNum();
@@ -86,12 +95,21 @@ const IShape* BVH::BuildBranch(const IShape** pShapes, int nShapes, int axis)
     // 空間的な中心をpivotとする
     Vec3 pivot = (bbox.Max() + bbox.Min()) * 0.5f;
     
+    // 一番長い軸で分割
+    Vec3 bboxSize = bbox.Max() - bbox.Min();
+    int axis;
+    if (bboxSize.x > bboxSize.y) {
+        axis = (bboxSize.x > bboxSize.z) ? 0 : 2;
+    } else {
+        axis = (bboxSize.y > bboxSize.z) ? 1 : 2;
+    }
+    
     // axis方向で分割
-    int mid_point = QSplit(pShapes, nShapes, pivot.x, 0); // まずX方向で
+    int mid_point = QSplit(pShapes, nShapes, pivot.e[axis], axis);
     
     // 子ノードをビルド
-    const IShape* pLeft = BuildBranch(pShapes, mid_point, (axis+1)%3);
-    const IShape* pRight = BuildBranch(&pShapes[mid_point], nShapes - mid_point, (axis+1)%3);
+    const IShape* pLeft = BuildBranch(pShapes, mid_point);
+    const IShape* pRight = BuildBranch(&pShapes[mid_point], nShapes - mid_point);
     
     return new BVH(pLeft, pRight, bbox);
 }

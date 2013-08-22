@@ -1,4 +1,4 @@
-﻿#include "BBox.h"
+#include "BBox.h"
 #include "simd.h"
 #include "Ray.h"
 #include <cassert>
@@ -100,5 +100,33 @@ bool BBox::RayIntersect(const Ray &r, float tmin, float tmax) const
     return true;
 #endif
 }
-
-
+/*
+bool BBox::RayIntersect(const Ray &r, float tmin, float tmax)
+{
+    // X軸
+    int sign = r.sign[0];
+    float t0 = (bb[sign].x - r.o.x) * r.idir.x;
+    float t1 = (bb[1-sign].x - r.o.x) * r.idir.x;
+    if (t0 > tmin) tmin = t0;
+    if (t1 < tmax) tmax = t1;
+    if (tmin > tmax) return false;
+    
+    // Y軸
+    sign = r.sign[1];
+    t0 = (bb[sign].y - r.o.y) * r.idir.y;
+    t1 = (bb[1-sign].y - r.o.y) * r.idir.y;
+    if (t0 > tmin) tmin = t0;
+    if (t1 < tmax) tmax = t1;
+    if (tmin > tmax) return false;
+    
+    // Z軸
+    sign = r.sign[2];
+    t0 = (bb[sign].z - r.o.z) * r.idir.z;
+    t1 = (bb[1-sign].z - r.o.z) * r.idir.z;
+    if (t0 > tmin) tmin = t0;
+    if (t1 < tmax) tmax = t1;
+    if (tmin > tmax) return false;
+    
+    return true;
+}
+*/

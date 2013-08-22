@@ -179,6 +179,7 @@ public:
     bool Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) const;
     int RayCast(std::vector<HitRecord>& shapes, int nHits, const Ray& r, float tmin, float tmax) const;
     void BuildBVH(BVHType bvhType);
+    inline IShape* GetBVH() { return pBVH_; }
     inline u32 GetShapeNum() const { return (u32)shapes_.size(); }
     inline const IShape* GetShape(u32 index) const { return shapes_[index]; }
     inline u32 GetLightNum() const { return (u32)litSrcs_.size(); }

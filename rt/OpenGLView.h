@@ -17,7 +17,7 @@ class OpenGLView : public IView
 {
 public:
     
-    OpenGLView(Config* pConfig, BVH* pBVH);
+    OpenGLView(Config* pConfig);
     ~OpenGLView();
     virtual bool Init(i32 width, i32 height);
     virtual bool Present(u8* pColorBuf);
@@ -34,7 +34,6 @@ private:
     int height_;
     u8* pColorBuf_;
     Config* pConf_;
-    BVH* pBVH_;
 };
 
 #endif // __APPLE__

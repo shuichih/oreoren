@@ -1,8 +1,8 @@
 ﻿[General]
 #windowWidth=1000
 #windowHeight=700
-windowWidth=256
-windowHeight=256
+windowWidth=512
+windowHeight=512
 drawBBox=false
 rendererType=2
 

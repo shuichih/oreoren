@@ -173,8 +173,7 @@ inline int SIMD_QBVH::IntersectSIMD(
 
     // y coordinate
     tmin = _mm_max_ps(
-        tmin,
-        _mm_mul_ps(_mm_sub_ps(bboxes[sign[1]][1], orig[1]), idir[1])
+        tmin, _mm_mul_ps(_mm_sub_ps(bboxes[sign[1]][1], orig[1]), idir[1])
     );
     tmax = _mm_min_ps(
         tmax,

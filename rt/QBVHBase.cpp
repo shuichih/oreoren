@@ -1,4 +1,4 @@
-﻿#include "Scene.h"
+#include "Scene.h"
 #include "QBVHBase.h"
 #include <cassert>
 #include "simd.h"
@@ -464,13 +464,15 @@ int QBVHBase<NODE_T>::RayCastLeaf(vector<HitRecord>& hits, int nHits, Leaf& leaf
 template <typename NODE_T>
 int QBVHBase<NODE_T>::QSplit(const IShape** pShapes, int nShapes, float pivot, int axis)
 {
-    BBox bbox;
-    double centroid;
     int mid_idx = 0;
     for (int i=0; i<nShapes; i++) {
-        bbox = pShapes[i]->BoundingBox();
-        centroid = ((bbox.Min()).e[axis] + (bbox.Max()).e[axis]) * 0.5f;
-        if (centroid < pivot)
+        BBox bbox = pShapes[i]->BoundingBox();
+        // 1頂点でもpivotより小さければ、小さい方に振り分ける
+        // そうしないとレイの方向符号を使った子ノードの処理順ソートした場合に、
+        //double centroid = ((bbox.Min()).e[axis] + (bbox.Max()).e[axis]) * 0.5f;
+        double centroid = bbox.Min().e[axis];
+        
+        if (centroid <= pivot)
         {
             // pivotを基準にmid_idxの左右に集める
             const IShape* pTemp = pShapes[i];

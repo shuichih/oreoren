@@ -31,7 +31,7 @@ public:
     // virtual bool ShadowHit(const Ray& r, float tmin, float tmax) const;
     
 private:
-    const IShape* BuildBranch(const IShape** pShapes, int nShapes, int axis = 0);
+    const IShape* BuildBranch(const IShape** pShapes, int nShapes);
 
 public:
     const IShape* pLeft_;
