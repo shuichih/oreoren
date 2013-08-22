@@ -101,7 +101,8 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN64;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\rt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -136,7 +137,8 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\rt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -146,99 +148,92 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\rt\App.cpp" />
-    <ClCompile Include="..\rt\BBox.cpp" />
-    <ClCompile Include="..\rt\bmpexporter\bmpexporter.cpp" />
-    <ClCompile Include="..\rt\BmpFileView.cpp" />
-    <ClCompile Include="..\rt\BVH.cpp" />
-    <ClCompile Include="..\rt\Common.cpp" />
-    <ClCompile Include="..\rt\Config.cpp" />
-    <ClCompile Include="..\rt\File.cpp" />
-    <ClCompile Include="..\rt\LightSource.cpp" />
-    <ClCompile Include="..\rt\main.cpp" />
-    <ClCompile Include="..\rt\MeshLoader.cpp" />
-    <ClCompile Include="..\rt\objLoader\list.cpp" />
-    <ClCompile Include="..\rt\objLoader\objLoader.cpp" />
-    <ClCompile Include="..\rt\objLoader\obj_parser.cpp" />
-    <ClCompile Include="..\rt\objLoader\string_extra.cpp" />
-    <ClCompile Include="..\rt\ONB.cpp" />
-    <ClCompile Include="..\rt\PerlinNoise.cpp" />
-    <ClCompile Include="..\rt\PhotonFilter.cpp" />
-    <ClCompile Include="..\rt\PhotonMap.cpp" />
-    <ClCompile Include="..\rt\PhotonMapRenderer.cpp" />
-    <ClCompile Include="..\rt\PhotonMapRenderer2.cpp" />
-    <ClCompile Include="..\rt\PostEffect.cpp" />
-    <ClCompile Include="..\rt\QBVHBase.cpp" />
-    <ClCompile Include="..\rt\Ray.cpp" />
-    <ClCompile Include="..\rt\RayTracingRenderer.cpp" />
-    <ClCompile Include="..\rt\Scene.cpp" />
-    <ClCompile Include="..\rt\SIMD_QBVH.cpp" />
-    <ClCompile Include="..\rt\SimpleArithmetic.cpp" />
-    <ClCompile Include="..\rt\SISD_QBVH.cpp" />
-    <ClCompile Include="..\rt\smallpt_fmt.cpp" />
-    <ClCompile Include="..\rt\StringUtils.cpp" />
-    <ClCompile Include="..\rt\Timer.cpp" />
-    <ClCompile Include="..\rt\vecmath\matrix4.cpp" />
-    <ClCompile Include="..\rt\vecmath\quat4.cpp" />
-    <ClCompile Include="..\rt\OpenGLView.cpp" />
+    <ClCompile Include="..\src\App.cpp" />
+    <ClCompile Include="..\src\BBox.cpp" />
+    <ClCompile Include="..\src\bmpexporter\bmpexporter.cpp" />
+    <ClCompile Include="..\src\BmpFileView.cpp" />
+    <ClCompile Include="..\src\BVH.cpp" />
+    <ClCompile Include="..\src\Common.cpp" />
+    <ClCompile Include="..\src\Config.cpp" />
+    <ClCompile Include="..\src\File.cpp" />
+    <ClCompile Include="..\src\LightSource.cpp" />
+    <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\MeshLoader.cpp" />
+    <ClCompile Include="..\src\ObjLoader.cpp" />
+    <ClCompile Include="..\src\ONB.cpp" />
+    <ClCompile Include="..\src\OpenGLView.cpp" />
+    <ClCompile Include="..\src\PerlinNoise.cpp" />
+    <ClCompile Include="..\src\PhotonFilter.cpp" />
+    <ClCompile Include="..\src\PhotonMap.cpp" />
+    <ClCompile Include="..\src\PhotonMapRenderer.cpp" />
+    <ClCompile Include="..\src\PhotonMapRenderer2.cpp" />
+    <ClCompile Include="..\src\PostEffect.cpp" />
+    <ClCompile Include="..\src\QBVHBase.cpp" />
+    <ClCompile Include="..\src\Ray.cpp" />
+    <ClCompile Include="..\src\RayTracingRenderer.cpp" />
+    <ClCompile Include="..\src\Scene.cpp" />
+    <ClCompile Include="..\src\SIMD_QBVH.cpp" />
+    <ClCompile Include="..\src\SimpleArithmetic.cpp" />
+    <ClCompile Include="..\src\SISD_QBVH.cpp" />
+    <ClCompile Include="..\src\StringUtils.cpp" />
+    <ClCompile Include="..\src\Timer.cpp" />
+    <ClCompile Include="..\src\vecmath\matrix4.cpp" />
+    <ClCompile Include="..\src\vecmath\quat4.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\rt\App.h" />
-    <ClInclude Include="..\rt\BBox.h" />
-    <ClInclude Include="..\rt\bmpexporter\bmpexporter.h" />
-    <ClInclude Include="..\rt\BmpFileView.h" />
-    <ClInclude Include="..\rt\BVH.h" />
-    <ClInclude Include="..\rt\BVHType.h" />
-    <ClInclude Include="..\rt\Common.h" />
-    <ClInclude Include="..\rt\Config.h" />
-    <ClInclude Include="..\rt\File.h" />
-    <ClInclude Include="..\rt\IRenderer.h" />
-    <ClInclude Include="..\rt\LightSource.h" />
-    <ClInclude Include="..\rt\Material.h" />
-    <ClInclude Include="..\rt\MeshLoader.h" />
-    <ClInclude Include="..\rt\objLoader\list.h" />
-    <ClInclude Include="..\rt\objLoader\objLoader.h" />
-    <ClInclude Include="..\rt\objLoader\obj_parser.h" />
-    <ClInclude Include="..\rt\objLoader\string_extra.h" />
-    <ClInclude Include="..\rt\ONB.h" />
-    <ClInclude Include="..\rt\OpenGLView.h" />
-    <ClInclude Include="..\rt\PerlinNoise.h" />
-    <ClInclude Include="..\rt\PhotonFilter.h" />
-    <ClInclude Include="..\rt\PhotonMap.h" />
-    <ClInclude Include="..\rt\PhotonMapRenderer.h" />
-    <ClInclude Include="..\rt\PhotonMapRenderer2.h" />
-    <ClInclude Include="..\rt\PostEffect.h" />
-    <ClInclude Include="..\rt\QBVHBase.h" />
-    <ClInclude Include="..\rt\Random.h" />
-    <ClInclude Include="..\rt\Ray.h" />
-    <ClInclude Include="..\rt\RayTracingRenderer.h" />
-    <ClInclude Include="..\rt\Scene.h" />
-    <ClInclude Include="..\rt\SIMD.h" />
-    <ClInclude Include="..\rt\SIMD_QBVH.h" />
-    <ClInclude Include="..\rt\SimpleArithmetic.h" />
-    <ClInclude Include="..\rt\SISD_QBVH.h" />
-    <ClInclude Include="..\rt\smallpt_fmt.h" />
-    <ClInclude Include="..\rt\StringUtils.h" />
-    <ClInclude Include="..\rt\Timer.h" />
-    <ClInclude Include="..\rt\vecmath\color4.h" />
-    <ClInclude Include="..\rt\vecmath\matrix4.h" />
-    <ClInclude Include="..\rt\vecmath\point2.h" />
-    <ClInclude Include="..\rt\vecmath\point3.h" />
-    <ClInclude Include="..\rt\vecmath\point4.h" />
-    <ClInclude Include="..\rt\vecmath\quat4.h" />
-    <ClInclude Include="..\rt\vecmath\tuple2.h" />
-    <ClInclude Include="..\rt\vecmath\tuple3.h" />
-    <ClInclude Include="..\rt\vecmath\vector3.h" />
-    <ClInclude Include="..\rt\IView.h" />
+    <ClInclude Include="..\src\App.h" />
+    <ClInclude Include="..\src\BBox.h" />
+    <ClInclude Include="..\src\bmpexporter\bmpexporter.h" />
+    <ClInclude Include="..\src\BmpFileView.h" />
+    <ClInclude Include="..\src\BVH.h" />
+    <ClInclude Include="..\src\BVHType.h" />
+    <ClInclude Include="..\src\Common.h" />
+    <ClInclude Include="..\src\Config.h" />
+    <ClInclude Include="..\src\File.h" />
+    <ClInclude Include="..\src\IRenderer.h" />
+    <ClInclude Include="..\src\IView.h" />
+    <ClInclude Include="..\src\LightSource.h" />
+    <ClInclude Include="..\src\Material.h" />
+    <ClInclude Include="..\src\MeshLoader.h" />
+    <ClInclude Include="..\src\ObjLoader.h" />
+    <ClInclude Include="..\src\ONB.h" />
+    <ClInclude Include="..\src\OpenGLView.h" />
+    <ClInclude Include="..\src\PerlinNoise.h" />
+    <ClInclude Include="..\src\PhotonFilter.h" />
+    <ClInclude Include="..\src\PhotonMap.h" />
+    <ClInclude Include="..\src\PhotonMapRenderer.h" />
+    <ClInclude Include="..\src\PhotonMapRenderer2.h" />
+    <ClInclude Include="..\src\PostEffect.h" />
+    <ClInclude Include="..\src\QBVHBase.h" />
+    <ClInclude Include="..\src\Random.h" />
+    <ClInclude Include="..\src\Ray.h" />
+    <ClInclude Include="..\src\RayTracingRenderer.h" />
+    <ClInclude Include="..\src\Scene.h" />
+    <ClInclude Include="..\src\SIMD.h" />
+    <ClInclude Include="..\src\SIMD_QBVH.h" />
+    <ClInclude Include="..\src\SimpleArithmetic.h" />
+    <ClInclude Include="..\src\SISD_QBVH.h" />
+    <ClInclude Include="..\src\StringUtils.h" />
+    <ClInclude Include="..\src\Timer.h" />
+    <ClInclude Include="..\src\vecmath\color4.h" />
+    <ClInclude Include="..\src\vecmath\matrix4.h" />
+    <ClInclude Include="..\src\vecmath\point2.h" />
+    <ClInclude Include="..\src\vecmath\point3.h" />
+    <ClInclude Include="..\src\vecmath\point4.h" />
+    <ClInclude Include="..\src\vecmath\quat4.h" />
+    <ClInclude Include="..\src\vecmath\tuple2.h" />
+    <ClInclude Include="..\src\vecmath\tuple3.h" />
+    <ClInclude Include="..\src\vecmath\vector3.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\rt\SceneFiles\BBTest.scene" />
-    <None Include="..\rt\SceneFiles\cornell_box.scene" />
-    <None Include="..\rt\SceneFiles\cornell_box_sphere.scene" />
-    <None Include="..\rt\SceneFiles\right_venus_cuboids.scene" />
-    <None Include="..\rt\SceneFiles\simple.scene" />
-    <None Include="..\rt\SceneFiles\venus.scene" />
-    <None Include="..\rt\SceneFiles\venus_cuboids.scene" />
+    <None Include="..\bin\SceneFiles\BBTest.scene" />
+    <None Include="..\bin\SceneFiles\cornell_box.scene" />
+    <None Include="..\bin\SceneFiles\cornell_box_sphere.scene" />
+    <None Include="..\bin\SceneFiles\render1h.scene" />
+    <None Include="..\bin\SceneFiles\right_venus_cuboids.scene" />
+    <None Include="..\bin\SceneFiles\simple.scene" />
+    <None Include="..\bin\SceneFiles\venus.scene" />
+    <None Include="..\bin\SceneFiles\venus_cuboids.scene" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
