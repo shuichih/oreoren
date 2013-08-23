@@ -31,8 +31,8 @@ refl = REFR
 refrIndex = 1.5
 
 [Material]
-name = Glass2
-color = 0.9 0.9 0.9
+name = YellowGlass
+color = 0.8 0.8 0.4
 refl = REFR
 refrIndex = 1.5
 
@@ -57,6 +57,16 @@ color = .85 .85 .85
 refl = DIFF
 
 [Material]
+name = White
+color = 1 1 1
+refl = DIFF
+
+[Material]
+name = WhiteSpec
+color = .85 .85 .85
+refl = SPEC
+
+[Material]
 name = DarkGray
 color = .25 .25 .25
 refl = DIFF
@@ -67,9 +77,15 @@ refl = REFR
 color = 0.8 1.0 0.95
 refrIndex = 1.333
 
+[Material]
+name = Glossy
+refl = PHONGMETAL
+#refl = DIFF
+color = 0.75 0.75 0.75
+
 [RayTracing]
 maxRayBounce = 6
-nSubPixelsSqrt = 1
+#nSubPixelsSqrt = 4
 useTentFilter = false
 distanceToProjPlane=140
 
@@ -79,13 +95,13 @@ indirectLight = true
 caustic = true
 shadowEstimate = true
 drawShadowEstimate = false
-nSubPixelsSqrt = 2
+nSubPixelsSqrt = 4
 nTracePhotonsPerThread = 10000
 maxRayBounce = 10
 #finalGethering = true
 nFinalGetheringRays = 64
 nMaxGlossyBounce = 1
-nGlossyRays = 256
+nGlossyRays = 32
 
 [PhotonMap] # for Indirect Light
 enable = true
@@ -124,7 +140,7 @@ toneMap.enabled = false
 toneMap.keyValue = 0.045
 
 [Camera]
-position = 0 12 285
+position = 0 10 285
 direction = 0 -0.04 -1.0
 fovY = 0.5135
 
@@ -149,7 +165,7 @@ nSamples = 16
 
 [LightSource]
 type = SPHERE
-position = 0 0 0
+position = 0 20 15
 radius = 5
 flux = 50000 50000 50000
 #nSamples = 128
@@ -177,7 +193,7 @@ nSamples = 64
     p1 = -200 -80  200
     p2 =  200 -80  200
     p3 =  200 -80 -200
-    material = CornellGray
+    material = Glossy
 
 [Rectangle] #Top
     p0 = -200  80 -200
@@ -195,13 +211,13 @@ nSamples = 64
 
 [Sphere]
 	radius = 20
-	position = 30 -53+20 0
+	position = 55 -40.5 -25
     material = Mirror
 
 [Cuboid]
-    scale = 8 8 8
-    rotate = 30 30 0
-    position = 0 0 -100
+    scale = 12 12 12
+    rotate = 0 30 0
+    position = 0 -38 -140
     material = Black
     repeat = 7 7 7
     interval = 1
@@ -209,34 +225,83 @@ nSamples = 64
     randColor = true
 
 /#
-[Sphere]
-	radius = 10
-	position = 0 0 0
-    material = BlueGlass
+[SceneImport]
+    path = "./objs/venusm.obj"
+    scale = 0.029 0.029 0.029
+    translate = -65 -57 -70
+    material = YellowGlass
 #/
-	
+
 /#
-[Sphere]
-	radius = 20
-	position = 25 -53+20 15
+[SceneImport]
+    path = "./objs/cube.obj"
+    scale = 40 20 40
+    translate = 60 -70 -30
     material = CornellGray
 #/
+
+# box under sphere
+[Cuboid]
+    scale = 50/5 20/5 50/5
+    rotate = 0 -30 0
+    position = 55 -70 -25
+    material = White
+    repeat = 5 5 5
+    interval = 1
+    margin = 0 0 0
+    randColor = false
+
+# box under venus
+[Cuboid]
+    scale = 45 20 45
+    rotate = 0 -30 0
+    position = -65 -77 -60
+    material = White
+    repeat = 1 1 1
+    interval = 1
+    margin = 0 0 0
+    randColor = false
 
 [SceneImport]
     path = "./objs/venusm.obj"
-    scale = 0.025 0.025 0.025
-    translate = -65 -52 0
-    material = Glass2
+    scale = 0.029 0.029 0.029
+    translate = -65 -42 -50
+    material = YellowGlass
 
 /#
 [SceneImport]
-    path = "bin/objs/triangle.obj"
-    scale = 40 40 40
-    rotate = 0 45 0
-	translate = 0 0 0
+    path = "./objs/cube.obj"
+    scale = 40 20 40
+    translate = 60 -70 -30
     material = CornellGray
 #/
 
+/#
+[Cuboid]
+    scale = 50/5 20/5 50/5
+    rotate = 0 -30 0
+    position = 60 -70 -30
+    material = White
+    repeat = 5 5 5
+    interval = 1
+    margin = 0 0 0
+    randColor = false
+#/
+
+# ステンドグラス
+[Cuboid]
+    scale = 5 100/5 100/5
+    rotate = 25 40 0
+    position = 55 10 -40
+    material = Glass
+    repeat = 1 5 5
+    interval = 1
+    margin = 0 0 0
+    randColor = true
+
+
+
+/#
 [NoiseSurface]
     center = 0 -35 0
     scale = 150 3 150
@@ -245,3 +310,5 @@ nSamples = 64
     material = Water
     noisyHeight = true
     noisyColor = false
+#/
+

@@ -94,7 +94,7 @@ Vec3 PhotonMapRenderer2::GlossyRay(const Vec3& w, float exponent, Random& rand)
     return (u*rx + v*ry + w*rz).normalize();
 }
 
-void PhotonMapRenderer2::TracePhoton(const Ray& r, const Vec3& power, PathInfo& pathInfo, Random& rand)
+void PhotonMapRenderer2::TracePhoton(const Ray& r, const Vec3& power, PathInfo pathInfo, Random& rand)
 {
     if (++pathInfo.depth > pPmConf_->maxPhotonBounce)
     {
@@ -183,9 +183,10 @@ void PhotonMapRenderer2::TracePhoton(const Ray& r, const Vec3& power, PathInfo& 
         pathInfo.glossyDepth++;
         
         Vec3 rdir = r.d - n * 2.f * n.dot(r.d); // reflected ray
-        Vec3 d = GlossyRay(rdir, 10, rand);
+        Vec3 d = GlossyRay(rdir, 100, rand);
         Vec3 mx = x + n*1e-4f;
-        TracePhoton(Ray(mx, d), power, pathInfo, rand);
+        Vec3 refPower = power.mult(color);
+        TracePhoton(Ray(mx, d), refPower, pathInfo, rand);
         return;
     }
     
@@ -224,7 +225,7 @@ void PhotonMapRenderer2::TracePhoton(const Ray& r, const Vec3& power, PathInfo& 
     return;
 }
 
-Vec3 PhotonMapRenderer2::Irradiance(const Ray &r, PathInfo& pathInfo, Random& rand)
+Vec3 PhotonMapRenderer2::Irradiance(const Ray &r, PathInfo pathInfo, Random& rand)
 {
     // max refl
     if (++pathInfo.depth > pPmRenConf_->maxRayBounce)
@@ -276,6 +277,7 @@ Vec3 PhotonMapRenderer2::Irradiance(const Ray &r, PathInfo& pathInfo, Random& ra
         if (pPmRenConf_->directLight) {
             for (u32 i=0; i<pScene_->GetLightNum(); i++) {
                 irrad += BRDF * pScene_->GetLight(i)->DirectLight(x, nl, *pScene_, peRatio, rand);
+                assert(irrad.e[0] < 0);
             }
         }
         
@@ -297,6 +299,7 @@ Vec3 PhotonMapRenderer2::Irradiance(const Ray &r, PathInfo& pathInfo, Random& ra
     }
     else if (refl == SPEC) {
         // Ideal SPECULAR reflection
+
         return Irradiance(Ray(x,r.d-n*2.f*n.dot(r.d)), pathInfo, rand);
     }
     else if (refl == PHONGMETAL) {
@@ -305,7 +308,7 @@ Vec3 PhotonMapRenderer2::Irradiance(const Ray &r, PathInfo& pathInfo, Random& ra
         // 指数的に追跡回数が増えるのを防ぐ
         if (pathInfo.glossyDepth >= pPmRenConf_->nMaxGlossyBounce) {
             // Ideal SPECULAR reflectionで近似
-            return Irradiance(Ray(x,r.d-n*2.f*n.dot(r.d)), pathInfo, rand);
+            return Irradiance(Ray(x,r.d-n*2.f*n.dot(r.d)), pathInfo, rand).mult(color);
         }
         pathInfo.glossyDepth++;
         
@@ -314,11 +317,12 @@ Vec3 PhotonMapRenderer2::Irradiance(const Ray &r, PathInfo& pathInfo, Random& ra
         for (u32 i = 0; i < nSamples; i++) {
             
             Vec3 rdir = r.d - n * 2.f * n.dot(r.d); // reflected ray
-            rdir = GlossyRay(rdir, 10, rand);
+            rdir = GlossyRay(rdir, 100, rand); // @todo exponentをMaterialに
             Vec3 mx = x + n*1e-4f; // 自己ヒットしないようにちょっと浮かす
-            irrad += Irradiance(Ray(mx, rdir), pathInfo, rand);
+            Vec3 tmp = Irradiance(Ray(mx, rdir), pathInfo, rand);
+            irrad += tmp;
         }
-        return irrad / (float)nSamples;
+        return irrad.mult(color) / (float)nSamples;
     }
     else if (refl == REFR) {
     
@@ -540,10 +544,11 @@ void PhotonMapRenderer2::RayTracing(Vec3* pColorBuf)
                 rand.SetSeedW(y);
                 
                 #pragma omp critical
+                if (y % nSub*nSub == 0)
                 {
                     float progress = 100.f * ((iSpp / (float)nSub2) + (float)y / (h-1) / nSub2);
                     fprintf(stderr, "RayTracing (%d/%d spp) %5.2f%%\n", iSpp+1, nSub2, progress);
-                    if (timer.Elapsed() > 10000) {
+                    if (timer.Elapsed() > 60000) {
                         timer.Restart();
                         char pPath[64];
                         StringUtils::Sprintf(pPath, 64, "./image%d.bmp", nImage);

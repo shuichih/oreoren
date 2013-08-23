@@ -469,6 +469,9 @@ bool CuboidParser::OnLeave()
         { 3, 4, 0 },
     };
     
+    if (pMaterial_->refl == REFR) {
+        int a = 0;
+    }
     pScene_->AddMaterial(pMaterial_->name, pMaterial_);
     Random rand;
     rand.SetSeedW(12345678);
@@ -505,14 +508,14 @@ bool CuboidParser::OnLeave()
                     RGB color = Vec3(r, g, b);
                     
                     // 算出された色のマテリアルがなければ作る
-                    char mtlName[32];
+                    char mtlName[64];
                     RGB c256 = color * 255.999f;
                     int nRGB [3] = { int(c256.x), int(c256.y), int(c256.z) };
                     StringUtils::Sprintf(mtlName, sizeof(mtlName),
-                                         "_D%03d_%03d_%03d", nRGB[0], nRGB[1], nRGB[2]);
+                                         "_D%03d_%03d_%03d_REFL%d_RI%f", nRGB[0], nRGB[1], nRGB[2], pMaterial_->refl, pMaterial_->refractiveIndex);
                     pMtl = pScene_->GetMaterial(mtlName);
                     if (pMtl == NULL) {
-                        pMtl = new Material(mtlName, DIFF, color, 1.f);
+                        pMtl = new Material(mtlName, pMaterial_->refl, color, pMaterial_->refractiveIndex);
                         pScene_->AddMaterial(mtlName, pMtl);
                     }
                 } else {
@@ -677,6 +680,7 @@ SceneImportParser::SceneImportParser(const char* pName, Scene* pScene)
         { "material", IVT_MTL, &conf_.pMaterial },
         { "faceReverse", IVT_BOOL, &conf_.faceReverse },
     };
+    conf_.pMaterial = pScene_->GetDefaultMaterial();
     paryItemDesc_ = CreateItemDesc(itemDesc, ARRAY_SZ(itemDesc));
     nItem_ = ARRAY_SZ(itemDesc);
 }

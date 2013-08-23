@@ -5,6 +5,7 @@
 #include <ctype.h>
 #include <cstdarg>
 #include <cstdlib>
+#include <cassert>
 
 //
 
@@ -52,9 +53,10 @@ char* StringUtils::Trim(char* pStr)
         else
             break;
     }
-    len -= start;
+    //len -= start;
     pStr[len] = NULL;
     
+    assert(start >= 0 && start < 1024);
     return &pStr[start];
 }
             

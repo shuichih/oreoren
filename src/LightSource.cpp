@@ -294,7 +294,16 @@ Vec3 SphereLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const S
         }
         Vec3 lx = pos + a * rec.t;
         Vec3 ln = (lx - position_).normalize();
-        
+
+        // @todo 少し最適化できる気が
+        // 交点から光源へのベクトル
+        Vec3 ldir = lx - pos;
+
+        // 光源方向と交点の法線が90度以上なら光が当たらない
+        if (ldir.dot(normal) <= 0) {
+            continue;
+        }
+
         // 領域でのdensity function
         float xlx2 = (pos-lx).lengthSquared();
         float pdf = q * (-1.f*w).dot(ln) / xlx2;

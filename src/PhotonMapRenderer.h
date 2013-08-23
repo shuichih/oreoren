@@ -26,11 +26,11 @@ private:
     
     struct PathInfo
     {
-        u32 depth;
-        u32 diffuseDepth;
-        u32 glossyDepth;
-        u32 specularDepth;
-        u32 lightNo;
+        u8 depth;
+        u8 diffuseDepth;
+        u8 glossyDepth;
+        u8 specularDepth;
+        u8 lightNo;
         PathInfo()
         : depth(0)
         , diffuseDepth(0)
@@ -40,12 +40,12 @@ private:
         {}
     };
     void PhotonTracing();
-    void TracePhoton(const Ray& r, const Vec3& power, PathInfo& pathInfo, Random& rand);
+    void TracePhoton(const Ray& r, const Vec3& power, PathInfo pathInfo, Random& rand);
     bool Intersect(const Ray& r, HitRecord& rec);
     Vec3 CosImportanceSamplingRay(const Vec3& n);
     Vec3 GlossyRay(const Vec3& w, float exponent, Random& rand);
     void RayTracing(Vec3* pColorBuf);
-    Vec3 Irradiance(const Ray &r, PathInfo& pathInfo, Random& rand);
+    Vec3 Irradiance(const Ray &r, PathInfo pathInfo, Random& rand);
     
     const Config* pConf_;
     const PhotonMapRendererConfig* pPmRenConf_;

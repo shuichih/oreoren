@@ -42,29 +42,33 @@ bool ObjLoader::Load(const char* pFilePath)
     if (!f.Open(pFilePath, "r")) {
         return false;
     }
-    char line[1024];
+    static char line[1024];
     int nLine = 0;
-    while (!f.IsEof()) {
+    for ( ;!f.IsEof(); nLine++) {
+        line[0] = '\0';
         f.GetLine(line, 1024);
         //printf(line);
+        if (nLine == 85367) {
+            int a = 0;
+        }
         char* pLine = StringUtils::Trim(line);
+        //char* pLine = line;
         if (pLine == NULL) {
             continue;
         }
-        int iSplit = StringUtils::Find(pLine, ' ');
-        if (iSplit == -1) {
+        char* pKey = pLine;
+        char* pValue = StringUtils::Split(pLine, ' ');
+        if (pValue == pLine) {
             continue;
         }
-        pLine[iSplit] = NULL;
-        char* pValue = StringUtils::Trim(&pLine[iSplit+1]);
-        int key = GetKey(pLine);
+        pValue = StringUtils::Trim(pValue);
+        int key = GetKey(pKey);
         if (key == Key_Invalid) {
             continue;
         }
         if (!(this->*s_pParseFuncs[key])(pValue)) {
-            printf("Obj file parse erroro! line=%d\n", nLine);
+            printf("Obj file parse ! line=%d\n", nLine);
         }
-        nLine++;
     }
     nVertices = (int)vertices_.size();
     nNormals = (int)normals_.size();
@@ -92,8 +96,8 @@ int ObjLoader::GetKey(char* pKeyword)
 bool ObjLoader::ParseVector(Vec3& v, char* pValue)
 {
     char* pX = pValue;
-    char* pY = StringUtils::Split(pX, ' ');
-    char* pZ = StringUtils::Split(pY, ' ');
+    char* pY = StringUtils::Trim(StringUtils::Split(pX, ' '));
+    char* pZ = StringUtils::Trim(StringUtils::Split(pY, ' '));
     if (pX == pY || pY == pZ) return false;
     
     if (!StringUtils::ParseFloat(&v.x, pX)) return false;
@@ -125,7 +129,9 @@ bool ObjLoader::ParseVTN(int& v, int& t, int& n, char* pValue)
 bool ObjLoader::ParseV(char* pValue)
 {
     Vec3 v;
-    if (!ParseVector(v, pValue)) return false;
+    if (!ParseVector(v, pValue)) {
+        return false;
+    }
     vertices_.push_back(v);
     return true;
 }
@@ -141,9 +147,9 @@ bool ObjLoader::ParseVN(char* pValue)
 bool ObjLoader::ParseF(char* pValue)
 {
     char* pV0 = pValue;
-    char* pV1 = StringUtils::Split(pV0, ' ');
-    char* pV2 = StringUtils::Split(pV1, ' ');
-    char* pV3 = StringUtils::Split(pV2, ' ');
+    char* pV1 = StringUtils::Trim(StringUtils::Split(pV0, ' '));
+    char* pV2 = StringUtils::Trim(StringUtils::Split(pV1, ' '));
+    char* pV3 = StringUtils::Trim(StringUtils::Split(pV2, ' '));
     if (pV0 == pV1 || pV1 == pV2) return false;
     
     ObjFace f;

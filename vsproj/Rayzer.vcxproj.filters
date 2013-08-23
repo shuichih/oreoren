@@ -8,285 +8,265 @@
     <Filter Include="src">
       <UniqueIdentifier>{4de044b7-055b-45d0-855c-0ef5f3fd227d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\vecmath">
-      <UniqueIdentifier>{8a16f49e-542a-46d2-a5c5-51d734e76375}</UniqueIdentifier>
-    </Filter>
     <Filter Include="scenefiles">
       <UniqueIdentifier>{1cd0d007-35a2-4f09-9014-e355b50475c0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\objLoader">
-      <UniqueIdentifier>{826082db-bece-418f-8210-d17712b3bc71}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\bmpexporter">
-      <UniqueIdentifier>{c99805c0-ec34-4b67-ab1d-52fac2491ee5}</UniqueIdentifier>
+      <UniqueIdentifier>{879b5088-3424-4af4-8914-c6dc000c942a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\vecmath">
+      <UniqueIdentifier>{caa7bb5f-6570-42c8-9e7e-86fa7432d64f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\rt\App.cpp">
+    <ClCompile Include="..\src\App.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\BBox.cpp">
+    <ClCompile Include="..\src\BBox.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\BVH.cpp">
+    <ClCompile Include="..\src\BmpFileView.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\Common.cpp">
+    <ClCompile Include="..\src\BVH.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\Config.cpp">
+    <ClCompile Include="..\src\Common.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\LightSource.cpp">
+    <ClCompile Include="..\src\Config.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\main.cpp">
+    <ClCompile Include="..\src\File.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\MeshLoader.cpp">
+    <ClCompile Include="..\src\LightSource.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\ONB.cpp">
+    <ClCompile Include="..\src\main.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\PerlinNoise.cpp">
+    <ClCompile Include="..\src\MeshLoader.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\PhotonFilter.cpp">
+    <ClCompile Include="..\src\ObjLoader.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\PhotonMap.cpp">
+    <ClCompile Include="..\src\ONB.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\PhotonMapRenderer.cpp">
+    <ClCompile Include="..\src\OpenGLView.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\PhotonMapRenderer2.cpp">
+    <ClCompile Include="..\src\PerlinNoise.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\PostEffect.cpp">
+    <ClCompile Include="..\src\PhotonFilter.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\QBVHBase.cpp">
+    <ClCompile Include="..\src\PhotonMap.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\Ray.cpp">
+    <ClCompile Include="..\src\PhotonMapRenderer.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\RayTracingRenderer.cpp">
+    <ClCompile Include="..\src\PhotonMapRenderer2.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\Scene.cpp">
+    <ClCompile Include="..\src\PostEffect.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\SIMD_QBVH.cpp">
+    <ClCompile Include="..\src\QBVHBase.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\SimpleArithmetic.cpp">
+    <ClCompile Include="..\src\Ray.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\SISD_QBVH.cpp">
+    <ClCompile Include="..\src\RayTracingRenderer.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\smallpt_fmt.cpp">
+    <ClCompile Include="..\src\Scene.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\StringUtils.cpp">
+    <ClCompile Include="..\src\SIMD_QBVH.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\Timer.cpp">
+    <ClCompile Include="..\src\SimpleArithmetic.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\vecmath\matrix4.cpp">
-      <Filter>src\vecmath</Filter>
-    </ClCompile>
-    <ClCompile Include="..\rt\vecmath\quat4.cpp">
-      <Filter>src\vecmath</Filter>
-    </ClCompile>
-    <ClCompile Include="..\rt\OpenGLView.cpp">
+    <ClCompile Include="..\src\SISD_QBVH.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\File.cpp" />
-    <ClCompile Include="..\rt\objLoader\list.cpp">
-      <Filter>src\objLoader</Filter>
-    </ClCompile>
-    <ClCompile Include="..\rt\objLoader\obj_parser.cpp">
-      <Filter>src\objLoader</Filter>
-    </ClCompile>
-    <ClCompile Include="..\rt\objLoader\objLoader.cpp">
-      <Filter>src\objLoader</Filter>
-    </ClCompile>
-    <ClCompile Include="..\rt\objLoader\string_extra.cpp">
-      <Filter>src\objLoader</Filter>
-    </ClCompile>
-    <ClCompile Include="..\rt\BmpFileView.cpp">
+    <ClCompile Include="..\src\StringUtils.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\rt\bmpexporter\bmpexporter.cpp">
+    <ClCompile Include="..\src\Timer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bmpexporter\bmpexporter.cpp">
       <Filter>src\bmpexporter</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\vecmath\matrix4.cpp">
+      <Filter>src\vecmath</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\vecmath\quat4.cpp">
+      <Filter>src\vecmath</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\rt\App.h">
+    <ClInclude Include="..\src\App.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\BBox.h">
+    <ClInclude Include="..\src\BBox.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\BVH.h">
+    <ClInclude Include="..\src\BmpFileView.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\BVHType.h">
+    <ClInclude Include="..\src\BVH.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\Common.h">
+    <ClInclude Include="..\src\BVHType.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\Config.h">
+    <ClInclude Include="..\src\Common.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\IRenderer.h">
+    <ClInclude Include="..\src\Config.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\LightSource.h">
+    <ClInclude Include="..\src\File.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\Material.h">
+    <ClInclude Include="..\src\IRenderer.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\MeshLoader.h">
+    <ClInclude Include="..\src\IView.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\ONB.h">
+    <ClInclude Include="..\src\LightSource.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\PerlinNoise.h">
+    <ClInclude Include="..\src\Material.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\PhotonFilter.h">
+    <ClInclude Include="..\src\MeshLoader.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\PhotonMap.h">
+    <ClInclude Include="..\src\ObjLoader.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\PhotonMapRenderer.h">
+    <ClInclude Include="..\src\ONB.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\PhotonMapRenderer2.h">
+    <ClInclude Include="..\src\OpenGLView.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\PostEffect.h">
+    <ClInclude Include="..\src\PerlinNoise.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\QBVHBase.h">
+    <ClInclude Include="..\src\PhotonFilter.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\Random.h">
+    <ClInclude Include="..\src\PhotonMap.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\Ray.h">
+    <ClInclude Include="..\src\PhotonMapRenderer.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\RayTracingRenderer.h">
+    <ClInclude Include="..\src\PhotonMapRenderer2.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\Scene.h">
+    <ClInclude Include="..\src\PostEffect.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\SIMD.h">
+    <ClInclude Include="..\src\QBVHBase.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\SIMD_QBVH.h">
+    <ClInclude Include="..\src\Random.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\SimpleArithmetic.h">
+    <ClInclude Include="..\src\Ray.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\SISD_QBVH.h">
+    <ClInclude Include="..\src\RayTracingRenderer.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\smallpt_fmt.h">
+    <ClInclude Include="..\src\Scene.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\StringUtils.h">
+    <ClInclude Include="..\src\SIMD.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\Timer.h">
+    <ClInclude Include="..\src\SIMD_QBVH.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\vecmath\color4.h">
-      <Filter>src\vecmath</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rt\vecmath\matrix4.h">
-      <Filter>src\vecmath</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rt\vecmath\point2.h">
-      <Filter>src\vecmath</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rt\vecmath\point3.h">
-      <Filter>src\vecmath</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rt\vecmath\point4.h">
-      <Filter>src\vecmath</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rt\vecmath\quat4.h">
-      <Filter>src\vecmath</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rt\vecmath\tuple2.h">
-      <Filter>src\vecmath</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rt\vecmath\tuple3.h">
-      <Filter>src\vecmath</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rt\vecmath\vector3.h">
-      <Filter>src\vecmath</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rt\IView.h">
+    <ClInclude Include="..\src\SimpleArithmetic.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\OpenGLView.h">
+    <ClInclude Include="..\src\SISD_QBVH.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\File.h" />
-    <ClInclude Include="..\rt\objLoader\list.h">
-      <Filter>src\objLoader</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rt\objLoader\obj_parser.h">
-      <Filter>src\objLoader</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rt\objLoader\objLoader.h">
-      <Filter>src\objLoader</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rt\objLoader\string_extra.h">
-      <Filter>src\objLoader</Filter>
-    </ClInclude>
-    <ClInclude Include="..\rt\BmpFileView.h">
+    <ClInclude Include="..\src\StringUtils.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\rt\bmpexporter\bmpexporter.h">
+    <ClInclude Include="..\src\Timer.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\bmpexporter\bmpexporter.h">
       <Filter>src\bmpexporter</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vecmath\color4.h">
+      <Filter>src\vecmath</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vecmath\matrix4.h">
+      <Filter>src\vecmath</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vecmath\point2.h">
+      <Filter>src\vecmath</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vecmath\point3.h">
+      <Filter>src\vecmath</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vecmath\point4.h">
+      <Filter>src\vecmath</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vecmath\quat4.h">
+      <Filter>src\vecmath</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vecmath\tuple2.h">
+      <Filter>src\vecmath</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vecmath\tuple3.h">
+      <Filter>src\vecmath</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\vecmath\vector3.h">
+      <Filter>src\vecmath</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\rt\SceneFiles\BBTest.scene">
+    <None Include="..\bin\SceneFiles\BBTest.scene">
       <Filter>scenefiles</Filter>
     </None>
-    <None Include="..\rt\SceneFiles\cornell_box.scene">
+    <None Include="..\bin\SceneFiles\cornell_box.scene">
       <Filter>scenefiles</Filter>
     </None>
-    <None Include="..\rt\SceneFiles\cornell_box_sphere.scene">
+    <None Include="..\bin\SceneFiles\cornell_box_sphere.scene">
       <Filter>scenefiles</Filter>
     </None>
-    <None Include="..\rt\SceneFiles\right_venus_cuboids.scene">
+    <None Include="..\bin\SceneFiles\right_venus_cuboids.scene">
       <Filter>scenefiles</Filter>
     </None>
-    <None Include="..\rt\SceneFiles\simple.scene">
+    <None Include="..\bin\SceneFiles\simple.scene">
       <Filter>scenefiles</Filter>
     </None>
-    <None Include="..\rt\SceneFiles\venus.scene">
+    <None Include="..\bin\SceneFiles\venus.scene">
       <Filter>scenefiles</Filter>
     </None>
-    <None Include="..\rt\SceneFiles\venus_cuboids.scene">
+    <None Include="..\bin\SceneFiles\venus_cuboids.scene">
+      <Filter>scenefiles</Filter>
+    </None>
+    <None Include="..\bin\SceneFiles\render1h.scene">
       <Filter>scenefiles</Filter>
     </None>
   </ItemGroup>

@@ -72,7 +72,7 @@ Vec3 PhotonMapRenderer::GlossyRay(const Vec3& w, float exponent, Random& rand)
 }
         
 
-void PhotonMapRenderer::TracePhoton(const Ray& r, const Vec3& power, PathInfo& pathInfo, Random& rand)
+void PhotonMapRenderer::TracePhoton(const Ray& r, const Vec3& power, PathInfo pathInfo, Random& rand)
 {
     // max refl
     if (++pathInfo.depth > pPmConf_->maxPhotonBounce)
@@ -165,7 +165,7 @@ void PhotonMapRenderer::TracePhoton(const Ray& r, const Vec3& power, PathInfo& p
 }
 
 
-Vec3 PhotonMapRenderer::Irradiance(const Ray &r, PathInfo& pathInfo, Random& rand)
+Vec3 PhotonMapRenderer::Irradiance(const Ray &r, PathInfo pathInfo, Random& rand)
 {
     // max refl
     if (++pathInfo.depth > pPmRenConf_->maxRayBounce)
@@ -267,9 +267,8 @@ Vec3 PhotonMapRenderer::Irradiance(const Ray &r, PathInfo& pathInfo, Random& ran
         real nnt2 = nnt * nnt;
         real Tr = (1.f - Re) * nnt2;
         // 反射屈折両方トレース
-        PathInfo pathInfo2(pathInfo);
         return Irradiance(reflRay, pathInfo, rand) * Re
-             + Irradiance(Ray(x,tdir), pathInfo2, rand).mult(color) * Tr;
+             + Irradiance(Ray(x,tdir), pathInfo, rand).mult(color) * Tr;
     }
     
     // refl == LIGHT
