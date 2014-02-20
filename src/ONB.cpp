@@ -1,4 +1,4 @@
-﻿#include "ONB.h"
+#include "ONB.h"
 
 #define ONB_EPSILON 0.01f
 
@@ -6,25 +6,26 @@ ONB::ONB()
 {
 }
 
-ONB::ONB(const Vec3& u, const Vec3& v, const Vec3& w)
+ONB::ONB(const Vec3& u__, const Vec3& v__, const Vec3& w__)
 {
-    u_ = u;
-    v_ = v;
-    w_ = w;
+    u = u__;
+    v = v__;
+    w = w__;
 }
 
-void ONB::InitFromW(const Vec3& w)
+ONB ONB::InitFromW(const Vec3& w__)
 {
     Vec3 n(1.0f, 0.0f, 0.0f);
     Vec3 m(0.0f, 1.0f, 0.0f);
     
-    w_ = w;
-    w_.normalize();
-    u_ = w_ % n;
-    if (u_.length() < ONB_EPSILON) {
-        u_ = w_ % m;
+    Vec3 w = w__;
+    w.normalize();
+    Vec3 u = w ^ n;
+    if (u.length() < ONB_EPSILON) {
+        u = w ^ m;
     }
-    v_ = w_ % u_;
+    Vec3 v = w ^ u;
     
+    return ONB(u, v, w);
 }
 

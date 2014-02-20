@@ -1,4 +1,4 @@
-﻿#ifndef Rayzer_MeshLoader_h
+#ifndef Rayzer_MeshLoader_h
 #define Rayzer_MeshLoader_h
 
 #include "Common.h"
@@ -14,7 +14,6 @@ struct ObjFace
 	int iNormal[MAX_VERTEX_COUNT];
 	int iTexture[MAX_VERTEX_COUNT];
 	int nVertices;
-	int iMaterial;
 };
 
 class ObjLoader

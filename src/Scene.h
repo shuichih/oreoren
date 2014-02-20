@@ -1,4 +1,4 @@
-﻿#ifndef _Scene_H_
+#ifndef _Scene_H_
 #define _Scene_H_
 
 #include "Common.h"
@@ -7,7 +7,7 @@
 #include <string>
 #include <map>
 #include "BVHType.h"
-#include "Material.h"
+#include "OldMaterial.h"
 
 
 class IShape;
@@ -38,12 +38,12 @@ struct HitRecord
     real t;
     Vec3 normal;
     RGB color;
-    Material* pMaterial;
+    OldMaterial* pOldMaterial;
     bool hitLit;
     const IShape* pShape;
     HitRecord()
     : t(0)
-    , pMaterial(NULL)
+    , pOldMaterial(NULL)
     , hitLit(false)
     , pShape(NULL)
     {}
@@ -61,8 +61,8 @@ public:
     virtual int GetChildNum() const { return 0; }
     virtual const IShape** GetChildren() const { return NULL; }
     virtual ShapeType GetType() const = 0;
-    virtual void SetMaterial(Material* pMtl) = 0;
-    virtual Material* GetMaterial() const = 0;
+    virtual void SetOldMaterial(OldMaterial* pMtl) {}
+    virtual OldMaterial* GetOldMaterial() const { return NULL; }
 };
 
 class ShapeBase : public IShape
@@ -70,17 +70,17 @@ class ShapeBase : public IShape
 public:
     virtual ~ShapeBase();
     
-    ShapeBase(Material* pMtl);
-    virtual void SetMaterial(Material* pMtl);
-    virtual Material* GetMaterial() const;
+    ShapeBase(OldMaterial* pMtl);
+    virtual void SetOldMaterial(OldMaterial* pMtl);
+    virtual OldMaterial* GetOldMaterial() const;
     
-    Material* pMaterial;
+    OldMaterial* pOldMaterial;
 };
 
 class Sphere : public ShapeBase
 {
 public:
-    Sphere(real radius, Vec3 position, Material* pMtl);
+    Sphere(real radius, Vec3 position, OldMaterial* pMtl);
     virtual ~Sphere();
     
     virtual ShapeType GetType() const;
@@ -95,7 +95,7 @@ class Triangle : public ShapeBase
 {
 public:
     Triangle();
-    Triangle(const Vec3& _p0, const Vec3& _p1, const Vec3& _p2, Material* pMaterial);
+    Triangle(const Vec3& _p0, const Vec3& _p1, const Vec3& _p2, OldMaterial* pOldMaterial);
     virtual ~Triangle();
     
     virtual ShapeType GetType() const;
@@ -138,7 +138,7 @@ public:
 class Mesh : public ShapeBase
 {
 public:
-    Mesh(u32 nVertices, u32 nFaces, Material* pMtl);
+    Mesh(u32 nVertices, u32 nFaces, OldMaterial* pMtl);
     virtual ~Mesh();
 
     void SetUseFaceNormal(bool useFaceNormal);
@@ -172,7 +172,7 @@ public:
 class Scene
 {
 public:
-    typedef std::map<std::string, Material*> MaterialMap;
+    typedef std::map<std::string, OldMaterial*> OldMaterialMap;
     
     Scene();
     ~Scene();
@@ -187,15 +187,15 @@ public:
     inline const IShape* GetShape(u32 index) const { return shapes_[index]; }
     inline u32 GetLightNum() const { return (u32)litSrcs_.size(); }
     inline const LightSource* GetLight(u32 index) const { return litSrcs_[index]; }
-    Material* GetMaterial(std::string name);
-    Material* GetDefaultMaterial();
-    Material* GetLightMaterial();
-    bool AddMaterial(std::string name, Material* pMtl);
+    OldMaterial* GetOldMaterial(std::string name);
+    OldMaterial* GetDefaultOldMaterial();
+    OldMaterial* GetLightOldMaterial();
+    bool AddOldMaterial(std::string name, OldMaterial* pMtl);
     
 private:
-    Material defaultMaterial_;
-    Material lightMaterial_;
-    MaterialMap materialMap_;
+    OldMaterial defaultOldMaterial_;
+    OldMaterial lightOldMaterial_;
+    OldMaterialMap materialMap_;
     std::vector<const LightSource*> litSrcs_;
     std::vector<const IShape*> shapes_;
     IShape* pBVH_;

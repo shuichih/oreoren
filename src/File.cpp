@@ -1,4 +1,4 @@
-﻿#include "File.h"
+#include "File.h"
 #include <cstdio>
 #include <cstring>
 #include <cerrno>

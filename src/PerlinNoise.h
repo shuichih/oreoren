@@ -1,4 +1,4 @@
-﻿#ifndef _PerlinNoise_H_
+#ifndef _PerlinNoise_H_
 #define _PerlinNoise_H_
 
 #include "Common.h"

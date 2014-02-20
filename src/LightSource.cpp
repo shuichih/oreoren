@@ -1,11 +1,11 @@
-﻿#include <cmath>
+#include <cmath>
 #include <cstdlib>
 #include <cassert>
 #include "LightSource.h"
 #include "ONB.h"
 #include "vecmath/vector3.h"
 #include "Ray.h"
-#include "Material.h"
+#include "OldMaterial.h"
 #include "Random.h"
 
 //--------------------------------------------------------------------------------
@@ -84,9 +84,9 @@ AreaLightSource::AreaLightSource(
     p_[1] = p1;
     p_[2] = p2;
     p_[3] = p3;
-    normal_ = ((p1 - p0) % (p2 - p0));
+    normal_ = ((p1 - p0) ^ (p2 - p0));
     if (normal_.length() == 0) {
-        normal_ = ((p0 - p2) % (p0 - p3));
+        normal_ = ((p0 - p2) ^ (p0 - p3));
         if (normal_.length() == 0) {
             assert(false);
             normal_ = Vec3(0, -1, 0);
@@ -198,7 +198,7 @@ Vec3 AreaLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const Sce
 
 //--------------------------------------------------------------------------------
 
-AreaLightShape::AreaLightShape(AreaLightSource* pLitSrc, const Vec3 ps[3], const RGB& color, Material* pMtl)
+AreaLightShape::AreaLightShape(AreaLightSource* pLitSrc, const Vec3 ps[3], const RGB& color, OldMaterial* pMtl)
 : Triangle(ps[0], ps[1], ps[2], pMtl)
 {
     pLightSource_ = pLitSrc;
@@ -280,11 +280,10 @@ Vec3 SphereLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const S
         float cos_a = 1 + xi1 * (cos_a_max - 1);
         float phi = 2 * PI * xi2;
         float sin_a = sqrtf(1 - cos_a*cos_a);
-        ONB uvw;
-        uvw.InitFromW(w);
-        Vec3 a = uvw.u_ * cosf(phi) * sin_a
-               + uvw.v_ * sinf(phi) * sin_a
-               + uvw.w_ * cos_a;
+        ONB uvw = ONB::InitFromW(w);
+        Vec3 a = uvw.u * cosf(phi) * sin_a
+               + uvw.v * sinf(phi) * sin_a
+               + uvw.w * cos_a;
         
         // ランダム方向と球光源の交点と、交点の法線
         HitRecord rec;
@@ -325,7 +324,7 @@ Vec3 SphereLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const S
 
 //--------------------------------------------------------------------------------
 
-SphereLightShape::SphereLightShape(SphereLightSource* pLitSrc, float radius, const Vec3& pos, const RGB& color, Material* pMtl)
+SphereLightShape::SphereLightShape(SphereLightSource* pLitSrc, float radius, const Vec3& pos, const RGB& color, OldMaterial* pMtl)
 : Sphere(radius, pos, pMtl)
 {
     pLightSource_ = pLitSrc;

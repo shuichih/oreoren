@@ -1,4 +1,4 @@
-﻿#ifndef SimpleArithmetic_H
+#ifndef SimpleArithmetic_H
 #define SimpleArithmetic_H
 
 #include <string>

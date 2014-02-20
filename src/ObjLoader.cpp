@@ -1,4 +1,4 @@
-﻿#include "ObjLoader.h"
+#include "ObjLoader.h"
 #include "File.h"
 #include "StringUtils.h"
 #include <cstdio>
@@ -48,9 +48,6 @@ bool ObjLoader::Load(const char* pFilePath)
         line[0] = '\0';
         f.GetLine(line, 1024);
         //printf(line);
-        if (nLine == 85367) {
-            int a = 0;
-        }
         char* pLine = StringUtils::Trim(line);
         //char* pLine = line;
         if (pLine == NULL) {
@@ -67,7 +64,7 @@ bool ObjLoader::Load(const char* pFilePath)
             continue;
         }
         if (!(this->*s_pParseFuncs[key])(pValue)) {
-            printf("Obj file parse ! line=%d\n", nLine);
+            printf("Obj file parse error! line=%d\n", nLine);
         }
     }
     nVertices = (int)vertices_.size();
@@ -112,11 +109,16 @@ bool ObjLoader::ParseVTN(int& v, int& t, int& n, char* pValue)
     char* pV = pValue;
     char* pT = StringUtils::Split(pV, '/');
     char* pN = StringUtils::Split(pT, '/');
-    if (pV == pT || pT == pN) return false;
     
     if (!StringUtils::ParseInt(&v, pV)) return false;
-    if (!StringUtils::ParseInt(&t, pT)) return false;
-    if (!StringUtils::ParseInt(&n, pN)) return false;
+    
+    t = 0;
+    n = 0;
+    if (pV != pT) {
+        if (!StringUtils::ParseInt(&t, pT)) return false;
+    } else if (pT != pN) {
+        if (!StringUtils::ParseInt(&n, pN)) return false;
+    }
     
     // indexが1始まりなので
     v--;

@@ -1,7 +1,5 @@
-﻿#ifndef _Random_H_
+#ifndef _Random_H_
 #define _Random_H_
-
-#include <cstdio> // @todo tmp
 
 class Random
 {

@@ -1,4 +1,4 @@
-﻿#include <cmath>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cassert>
@@ -11,7 +11,7 @@
 #include "Config.h"
 #include "Timer.h"
 #include "Ray.h"
-#include "Material.h"
+#include "OldMaterial.h"
 #include "Random.h"
 
 // Direct
@@ -64,13 +64,13 @@ Vec3 PhotonMapRenderer::GlossyRay(const Vec3& w, float exponent, Random& rand)
     real rx = cosf(r1) * sinTheta;
     real ry = sinf(r1) * sinTheta;
     real rz = cosTheta;
-    Vec3 u = ((fabs(w.x) > .1f ? Vec3(0.f, 1.f, 0.f) : Vec3(1.f, 0.f, 0.f)) % w).normalize(); // binormal
-    Vec3 v = w % u; // tangent
+    Vec3 u = ((fabs(w.x) > .1f ? Vec3(0.f, 1.f, 0.f) : Vec3(1.f, 0.f, 0.f)) ^ w).normalize(); // binormal
+    Vec3 v = w ^ u; // tangent
     
     // ucosφsinθ + vsinφsinθ + wcosθ
     return (u*rx + v*ry + w*rz).normalize();
 }
-        
+
 
 void PhotonMapRenderer::TracePhoton(const Ray& r, const Vec3& power, PathInfo pathInfo, Random& rand)
 {
@@ -89,7 +89,7 @@ void PhotonMapRenderer::TracePhoton(const Ray& r, const Vec3& power, PathInfo pa
     Vec3 n = rec.normal;
     Vec3 nl = n.dot(r.d) < 0.f ? n : n*-1.f; // 交点の法線, 裏面ヒット考慮
     Vec3 color = rec.color;
-    Refl_t refl = rec.pMaterial->refl;
+    Refl_t refl = rec.pOldMaterial->refl;
     
     // Ideal DIFFUSE reflection
     if (refl == DIFF || refl == LIGHT) { // 光源表面はLambert面という事にしておく
@@ -137,7 +137,7 @@ void PhotonMapRenderer::TracePhoton(const Ray& r, const Vec3& power, PathInfo pa
     Ray reflRay(x, r.d - n * 2.f * n.dot(r.d));
     bool into = n.dot(nl) > 0.f;  // Ray from outside going in?
     real airRefrIdx = 1.f;
-    real refrIdx = rec.pMaterial->refractiveIndex;
+    real refrIdx = rec.pOldMaterial->refractiveIndex;
     real nnt = into ? airRefrIdx/refrIdx : refrIdx/airRefrIdx;
     real ddn = r.d.dot(nl);   // レイと法線のcos
     real cos2t;
@@ -181,7 +181,7 @@ Vec3 PhotonMapRenderer::Irradiance(const Ray &r, PathInfo pathInfo, Random& rand
     Vec3 n = rec.normal;
     Vec3 nl = n.dot(r.d) < 0.f ? n : n * -1.f;   // 交点の法線
     Vec3 color = rec.color;
-    Refl_t refl = rec.pMaterial->refl;
+    Refl_t refl = rec.pOldMaterial->refl;
     
     // 0.5にしたらカラーが反射率になってるから暗くなるだけ。IDEALでない反射は扱えない。カラーと混ぜるとかもない。
     // Ideal DIFFUSE reflection
@@ -195,8 +195,8 @@ Vec3 PhotonMapRenderer::Irradiance(const Ray &r, PathInfo pathInfo, Random& rand
                 real r2 = rand.F32(); // => 1-cos^2θ = 1-sqrt(1-r_2)^2 = r_2
                 real r2s = sqrtf(r2);    // => sinθ = sqrt(1-cos^2θ) = sqrt(r_2)
                 Vec3 w = nl; // normal
-                Vec3 u = ((fabs(w.x) > .1f ? Vec3(0.f, 1.f, 0.f) : Vec3(1.f, 0.f, 0.f)) % w).normalize(); // binormal
-                Vec3 v = w % u; // tangent
+                Vec3 u = ((fabs(w.x) > .1f ? Vec3(0.f, 1.f, 0.f) : Vec3(1.f, 0.f, 0.f)) ^ w).normalize(); // binormal
+                Vec3 v = w ^ u; // tangent
                 
                 // ucosφsinθ + vsinφsinθ + wcosθ
                 Vec3 d = (u*cosf(r1)*r2s + v*sinf(r1)*r2s + w*sqrtf(1-r2)).normalize();
@@ -244,7 +244,7 @@ Vec3 PhotonMapRenderer::Irradiance(const Ray &r, PathInfo pathInfo, Random& rand
         Ray reflRay(x, rdir);
         bool into = n.dot(nl) > 0.f; // Ray from outside going in?
         real airRefrIdx = 1.f;
-        real refrIdx = rec.pMaterial->refractiveIndex;
+        real refrIdx = rec.pOldMaterial->refractiveIndex;
         real nnt = into ? airRefrIdx/refrIdx : refrIdx/airRefrIdx;
         real ddn = r.d.dot(nl); // レイと法線のcos
         real cos2t;
@@ -350,7 +350,7 @@ void PhotonMapRenderer::RayTracing(Vec3* pColorBuf)
     
     // 投影面のXY軸
     const Vec3 proj_plane_axis_x = Vec3(w * fovY / h, 0.f, 0.f);
-    const Vec3 proj_plane_axis_y = (proj_plane_axis_x % camRay.d).normalize() * fovY;
+    const Vec3 proj_plane_axis_y = (proj_plane_axis_x ^ camRay.d).normalize() * fovY;
     
     Random* pRands = new Random[h];
     

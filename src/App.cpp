@@ -1,4 +1,4 @@
-﻿//
+//
 //  App.cpp
 //
 //  Created by Shuichi Hayashi on 11/29/11.

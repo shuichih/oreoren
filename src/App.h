@@ -1,4 +1,4 @@
-﻿//
+//
 //  App.h
 //
 //  Created by Shuichi Hayashi on 11/29/11.

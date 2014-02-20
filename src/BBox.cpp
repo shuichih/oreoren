@@ -1,4 +1,4 @@
-﻿#include "BBox.h"
+#include "BBox.h"
 #include "simd.h"
 #include "Ray.h"
 #include <cassert>

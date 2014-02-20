@@ -1,4 +1,4 @@
-﻿#include "Common.h"
+#include "Common.h"
 #include "StringUtils.h"
 #include <algorithm>
 #include <string>

@@ -1,4 +1,4 @@
-﻿#ifndef RayTracingRenderer_h
+#ifndef RayTracingRenderer_h
 #define RayTracingRenderer_h
 
 #include "Common.h"

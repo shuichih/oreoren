@@ -1,4 +1,4 @@
-﻿#include "Config.h"
+#include "Config.h"
 #include "PhotonMapRenderer.h"
 #include <cstdio>
 #include <string>
@@ -11,7 +11,7 @@
 #include "SimpleArithmetic.h"
 #include "LightSource.h"
 #include "PerlinNoise.h"
-#include "Material.h"
+#include "OldMaterial.h"
 #include "Random.h"
 #include "File.h"
 
@@ -75,7 +75,7 @@ bool SectionParser::OnParseLine(const char* pStr)
             case IVT_VEC3:  result = ParseVec3    (item.pValAddr, val); break;
             case IVT_STR:   result = ParseString  (item.pValAddr, val); break;
             case IVT_REFL:  result = ParseRefl    (item.pValAddr, val); break;
-            case IVT_MTL:   result = ParseMaterial(item.pValAddr, val); break;
+            case IVT_MTL:   result = ParseOldMaterial(item.pValAddr, val); break;
                 default:
                 result = false;
                 break;
@@ -205,13 +205,13 @@ bool SectionParser::ParseRefl(void* pVal, const string& str)
     return true;
 }
 
-bool SectionParser::ParseMaterial(void* pVal, const string& str)
+bool SectionParser::ParseOldMaterial(void* pVal, const string& str)
 {
-    Material* pMtl = pScene_->GetMaterial(str);
+    OldMaterial* pMtl = pScene_->GetOldMaterial(str);
     if (pMtl) {
-        *((Material**)pVal) = pMtl;
+        *((OldMaterial**)pVal) = pMtl;
     } else {
-        *((Material**)pVal) = pScene_->GetDefaultMaterial();
+        *((OldMaterial**)pVal) = pScene_->GetDefaultOldMaterial();
         printf("WARN!! A material %s is not found.\n", str.c_str());
     }
     return true;
@@ -232,7 +232,7 @@ void SectionParser::Print()
             case IVT_VEC3:  valStr = Vec3ToString(item.pValAddr);     break;
             case IVT_STR:   valStr = *((string*)item.pValAddr);       break;
             case IVT_REFL:  valStr = ReflToString(item.pValAddr);     break;
-            case IVT_MTL:   valStr = MaterialToString(item.pValAddr); break;
+            case IVT_MTL:   valStr = OldMaterialToString(item.pValAddr); break;
             default:
                 break;
         }
@@ -288,14 +288,14 @@ string SectionParser::ReflToString(void* pVal)
     return "";
 }
 
-string SectionParser::MaterialToString(void* pVal)
+string SectionParser::OldMaterialToString(void* pVal)
 {
-    Material* pMtl = *((Material**)pVal);
+    OldMaterial* pMtl = *((OldMaterial**)pVal);
     return pMtl->name;
 }
 
 //--------------------------------------------------------------------------------
-MaterialParser::MaterialParser(const char* pName, Scene* pScene)
+OldMaterialParser::OldMaterialParser(const char* pName, Scene* pScene)
 : SectionParser(pName, pScene, NULL, 0)
 {
     ItemDesc desc[] = {
@@ -308,18 +308,18 @@ MaterialParser::MaterialParser(const char* pName, Scene* pScene)
     nItem_ = ARRAY_SZ(desc);
 }
 
-MaterialParser::~MaterialParser()
+OldMaterialParser::~OldMaterialParser()
 {
 }
 
-bool MaterialParser::OnLeave()
+bool OldMaterialParser::OnLeave()
 {
-    if (pScene_->GetMaterial(material_.name)) {
+    if (pScene_->GetOldMaterial(material_.name)) {
         printf("WARN!! The material %s is already exist.\n", material_.name.c_str());
         return false;
     }
-    Material* pMtl = new Material(material_);
-    pScene_->AddMaterial(pMtl->name, pMtl);
+    OldMaterial* pMtl = new OldMaterial(material_);
+    pScene_->AddOldMaterial(pMtl->name, pMtl);
     material_.Reset();
     return true;
 }
@@ -332,7 +332,7 @@ SphereParser::SphereParser(const char* pName, Scene* pScene)
     ItemDesc sphereDesc[] = {
         { "radius", IVT_FLOAT, &sphere_.radius },
         { "position", IVT_VEC3, &sphere_.position },
-        { "material", IVT_MTL, &sphere_.pMaterial },
+        { "material", IVT_MTL, &sphere_.pOldMaterial },
     };
     paryItemDesc_ = CreateItemDesc(sphereDesc, ARRAY_SZ(sphereDesc));
     nItem_ = ARRAY_SZ(sphereDesc);
@@ -358,7 +358,7 @@ TriangleParser::TriangleParser(const char* pName, Scene* pScene)
         { "p0", IVT_VEC3, &triangle_.p0 },
         { "p1", IVT_VEC3, &triangle_.p1 },
         { "p2", IVT_VEC3, &triangle_.p2 },
-        { "material", IVT_MTL, &triangle_.pMaterial },
+        { "material", IVT_MTL, &triangle_.pOldMaterial },
     };
     paryItemDesc_ = CreateItemDesc(itemDescs, ARRAY_SZ(itemDescs));
     nItem_ = ARRAY_SZ(itemDescs);
@@ -387,7 +387,7 @@ RectangleParser::RectangleParser(const char* pName, Scene* pScene)
         { "p1", IVT_VEC3, &triangles_[0].p1 },
         { "p2", IVT_VEC3, &triangles_[0].p2 },
         { "p3", IVT_VEC3, &triangles_[1].p2 },
-        { "material", IVT_MTL, &triangles_[0].pMaterial },
+        { "material", IVT_MTL, &triangles_[0].pOldMaterial },
     };
     paryItemDesc_ = CreateItemDesc(itemDescs, ARRAY_SZ(itemDescs));
     nItem_ = ARRAY_SZ(itemDescs);
@@ -401,7 +401,7 @@ bool RectangleParser::OnLeave()
 {
     triangles_[1].p0 = triangles_[0].p0;
     triangles_[1].p1 = triangles_[0].p2;
-    triangles_[1].pMaterial = triangles_[0].pMaterial;
+    triangles_[1].pOldMaterial = triangles_[0].pOldMaterial;
     triangles_[0].CalcNormal();
     triangles_[1].CalcNormal();
     pScene_->AddShape(new Triangle(triangles_[0]));
@@ -418,7 +418,7 @@ CuboidParser::CuboidParser(const char* pName, Scene* pScene)
 , scale_(1, 1, 1)
 , rotate_()
 , position_()
-, pMaterial_(pScene->GetDefaultMaterial())
+, pOldMaterial_(pScene->GetDefaultOldMaterial())
 , repeat_(1, 1, 1)
 , interval_(0)
 , randColor_(false)
@@ -427,7 +427,7 @@ CuboidParser::CuboidParser(const char* pName, Scene* pScene)
         { "scale", IVT_VEC3, &scale_ },
         { "rotate", IVT_VEC3, &rotate_ },
         { "position", IVT_VEC3, &position_ },
-        { "material", IVT_MTL, &pMaterial_ },
+        { "material", IVT_MTL, &pOldMaterial_ },
         { "repeat", IVT_VEC3, &repeat_ },
         { "interval", IVT_INT, &interval_ },
         { "margin", IVT_VEC3, &margin_ },
@@ -469,10 +469,7 @@ bool CuboidParser::OnLeave()
         { 3, 4, 0 },
     };
     
-    if (pMaterial_->refl == REFR) {
-        int a = 0;
-    }
-    pScene_->AddMaterial(pMaterial_->name, pMaterial_);
+    pScene_->AddOldMaterial(pOldMaterial_->name, pOldMaterial_);
     Random rand;
     rand.SetSeedW(12345678);
     
@@ -487,11 +484,11 @@ bool CuboidParser::OnLeave()
             for (int rz=0; rz<nRz; rz++) {
                 if ((rx+ry+rz) % interval != 0) continue;
                 
-                Mesh* pMesh = new Mesh(8, 12, pMaterial_);
+                Mesh* pMesh = new Mesh(8, 12, pOldMaterial_);
                 Mesh& rMesh = *pMesh;
                 meshes.push_back(pMesh);
                 
-                Material* pMtl;
+                OldMaterial* pMtl;
                 if (randColor_) {
                     float r = rand.F32();
                     float g = rand.F32();
@@ -512,14 +509,14 @@ bool CuboidParser::OnLeave()
                     RGB c256 = color * 255.999f;
                     int nRGB [3] = { int(c256.x), int(c256.y), int(c256.z) };
                     StringUtils::Sprintf(mtlName, sizeof(mtlName),
-                                         "_D%03d_%03d_%03d_REFL%d_RI%f", nRGB[0], nRGB[1], nRGB[2], pMaterial_->refl, pMaterial_->refractiveIndex);
-                    pMtl = pScene_->GetMaterial(mtlName);
+                                         "_D%03d_%03d_%03d_REFL%d_RI%f", nRGB[0], nRGB[1], nRGB[2], pOldMaterial_->refl, pOldMaterial_->refractiveIndex);
+                    pMtl = pScene_->GetOldMaterial(mtlName);
                     if (pMtl == NULL) {
-                        pMtl = new Material(mtlName, pMaterial_->refl, color, pMaterial_->refractiveIndex);
-                        pScene_->AddMaterial(mtlName, pMtl);
+                        pMtl = new OldMaterial(mtlName, pOldMaterial_->refl, color, pOldMaterial_->refractiveIndex);
+                        pScene_->AddOldMaterial(mtlName, pMtl);
                     }
                 } else {
-                    pMtl = pMaterial_;
+                    pMtl = pOldMaterial_;
                 }
                 
                 for (int i=0; i<8; i++) {
@@ -530,7 +527,7 @@ bool CuboidParser::OnLeave()
                     for (int j=0; j<3; j++) {
                         rMesh.pFaces[i].indices[j] = indices[i][j];
                     }
-                    rMesh.pFaces[i].pMaterial = pMtl;
+                    rMesh.pFaces[i].pOldMaterial = pMtl;
                 }
                 
                 float mx = margin_.x;
@@ -561,7 +558,7 @@ bool CuboidParser::OnLeave()
             rFace = rSrcMesh.pFaces[j];
             rFace.pMesh = pMesh;
             // @todo material
-            // rFace.pMaterial = pMesh;
+            // rFace.pOldMaterial = pMesh;
             for (int k=0; k<3; k++) {
                 pMesh->pFaces[sf+j].indices[k] += sv;
                 //printf("%d\n", pMesh->pFaces[s+j].indices[k]);
@@ -578,7 +575,7 @@ bool CuboidParser::OnLeave()
     pMesh->scale(scale);
     pMesh->rotateXYZ(rotate_);
     pMesh->translate(position_);
-    pMesh->SetMaterial(pMaterial_);
+    pMesh->SetOldMaterial(pOldMaterial_);
     pMesh->CalcBoundingBox();
     pMesh->CalcFaceNormals();
     pMesh->CalcVertexNormals();
@@ -640,7 +637,7 @@ bool LightSourceParser::OnLeave()
             conf_.nSamples
         );
         
-        Material* pMtl = pScene_->GetLightMaterial();
+        OldMaterial* pMtl = pScene_->GetLightOldMaterial();
         Vec3 p2[3] = { p[0], p[2], p[3] };
         IShape* pLitShape0 = new AreaLightShape((AreaLightSource*)pLitSrc, p, conf_.flux, pMtl);
         IShape* pLitShape1 = new AreaLightShape((AreaLightSource*)pLitSrc, p2, conf_.flux, pMtl);
@@ -649,7 +646,7 @@ bool LightSourceParser::OnLeave()
     }
     else if (StringUtils::Stricmp(conf_.typeStr, "SPHERE") == 0) {
         pLitSrc = new SphereLightSource(conf_.position, conf_.radius, conf_.flux, conf_.nSamples);
-        Material* pMtl = pScene_->GetLightMaterial();
+        OldMaterial* pMtl = pScene_->GetLightOldMaterial();
         IShape* pLitShape = new SphereLightShape(
             (SphereLightSource*)pLitSrc,
             conf_.radius,
@@ -677,10 +674,10 @@ SceneImportParser::SceneImportParser(const char* pName, Scene* pScene)
         { "scale", IVT_VEC3, &conf_.scale },
         { "translate", IVT_VEC3, &conf_.translate },
         { "rotate", IVT_VEC3, &conf_.rotate },
-        { "material", IVT_MTL, &conf_.pMaterial },
+        { "material", IVT_MTL, &conf_.pOldMaterial },
         { "faceReverse", IVT_BOOL, &conf_.faceReverse },
     };
-    conf_.pMaterial = pScene_->GetDefaultMaterial();
+    conf_.pOldMaterial = pScene_->GetDefaultOldMaterial();
     paryItemDesc_ = CreateItemDesc(itemDesc, ARRAY_SZ(itemDesc));
     nItem_ = ARRAY_SZ(itemDesc);
 }
@@ -707,7 +704,7 @@ bool SceneImportParser::OnLeave()
     pMesh->translate(conf_.translate);
     pScene_->AddShape(pMesh);
     pMesh->CalcBoundingBox();
-    pMesh->SetMaterial(conf_.pMaterial);
+    pMesh->SetOldMaterial(conf_.pOldMaterial);
     
     // Bounding BoxとNormal計算
     pMesh->CalcBoundingBox();
@@ -722,7 +719,7 @@ NoiseSurfaceParser::NoiseSurfaceParser(const char* pName, Scene* pScene)
 : SectionParser(pName, pScene, NULL, 0)
 , scale_(1, 1, 1)
 , division_(10, 10)
-, pMaterial_(pScene->GetDefaultMaterial())
+, pOldMaterial_(pScene->GetDefaultOldMaterial())
 , noisyHeight_(true)
 , noisyColor_(false)
 {
@@ -731,7 +728,7 @@ NoiseSurfaceParser::NoiseSurfaceParser(const char* pName, Scene* pScene)
         { "scale", IVT_VEC3, &scale_ },
         { "rotate", IVT_VEC3, &rotate_ },
         { "division", IVT_VEC2, &division_ },
-        { "material", IVT_MTL, &pMaterial_ },
+        { "material", IVT_MTL, &pOldMaterial_ },
         { "noisyHeight", IVT_BOOL, &noisyHeight_ },
         { "noisyColor", IVT_BOOL, &noisyColor_ },
     };
@@ -757,7 +754,7 @@ bool NoiseSurfaceParser::OnLeave()
     
     int nVertices = (divX + 1) * (divZ + 1);
     int nFaces = divX * divZ * 2;
-    Mesh* pMesh = new Mesh(nVertices, nFaces, pMaterial_);
+    Mesh* pMesh = new Mesh(nVertices, nFaces, pOldMaterial_);
     
     // vertices
     float maxColor = 0;
@@ -777,7 +774,7 @@ bool NoiseSurfaceParser::OnLeave()
             );
             pMesh->pVertices[iVert].pos = pos;
             if (noisyColor_) {
-                Vec3 c = pMaterial_->color * noise.Noise(x*invDivX, z*invDivZ) * amp;
+                Vec3 c = pOldMaterial_->color * noise.Noise(x*invDivX, z*invDivZ) * amp;
                 pMesh->pVertices[iVert].color = c;
                 maxColor = std::max(maxColor, c.x);
                 maxColor = std::max(maxColor, c.y);
@@ -813,13 +810,13 @@ bool NoiseSurfaceParser::OnLeave()
     pMesh->scale(scale_);
     pMesh->rotateXYZ(rotate_);
     pMesh->translate(center_);
-    pMesh->SetMaterial(pMaterial_);
+    pMesh->SetOldMaterial(pOldMaterial_);
     pMesh->CalcBoundingBox();
     pMesh->CalcFaceNormals();
     pMesh->CalcVertexNormals();
     pMesh->SetUseFaceNormal(false);
     pMesh->colorUnit_ = noisyColor_ ? CU_Vertex : CU_Mesh;
-    pMesh->SetMaterial(pMaterial_);
+    pMesh->SetOldMaterial(pOldMaterial_);
     pScene_->AddShape(pMesh);
     
     return true;
@@ -926,7 +923,7 @@ Config::Config()
     parsers_[SEC_PHOTONMAP]   = new SectionParser("[PhotonMap]", &scene, pPhotonMapItemDesc, ARRAY_SZ(photonMapDesc));
     parsers_[SEC_COARSTICPM]  = new SectionParser("[CausticPhotonMap]", &scene, pCausticPmItemDesc, ARRAY_SZ(causticPmDesc));
     parsers_[SEC_SHADOWPM]    = new SectionParser("[ShadowPhotonMap]", &scene, pShadowPmItemDesc, ARRAY_SZ(shadowPmDesc));
-    parsers_[SEC_MATERIAL]    = new MaterialParser("[Material]", &scene );
+    parsers_[SEC_MATERIAL]    = new OldMaterialParser("[OldMaterial]", &scene );
     parsers_[SEC_CAMERA]      = new SectionParser("[Camera]", &scene, pCameraItemDesc, ARRAY_SZ(cameraDesc));
     parsers_[SEC_LIGHTSOURCE] = new LightSourceParser("[LightSource]", &scene);
     parsers_[SEC_SPHERE]      = new SphereParser("[Sphere]", &scene);

@@ -1,4 +1,4 @@
-﻿#include "BmpFileView.h"
+#include "BmpFileView.h"
 #include "bmpexporter/bmpexporter.h"
 #include <cstdio>
 #include <string>

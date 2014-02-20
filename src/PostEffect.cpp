@@ -1,4 +1,4 @@
-﻿#include "PostEffect.h"
+#include "PostEffect.h"
 
 ToneMap::ToneMap()
 : keyValue_(0.18f)

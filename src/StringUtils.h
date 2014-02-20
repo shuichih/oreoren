@@ -1,4 +1,4 @@
-﻿#ifndef StringUtils_H
+#ifndef StringUtils_H
 #define StringUtils_H
 
 #include <vector>

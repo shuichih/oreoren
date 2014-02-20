@@ -1,9 +1,9 @@
-﻿#include "Scene.h"
+#include "Scene.h"
 #include "QBVHBase.h"
 #include <cassert>
 #include "simd.h"
 #include "Ray.h"
-#include "Material.h"
+#include "OldMaterial.h"
 
 using namespace std;
 
@@ -372,7 +372,7 @@ bool QBVHBase<NODE_T>::IntersectTriangle(Triangle& tri, const Ray& r, float tmin
     // based PHISICALLY BASED RENDERING 2ND EDITION, 3.6.2
     Vec3 e1 = tri.p[1] - tri.p[0];
     Vec3 e2 = tri.p[2] - tri.p[0];
-    Vec3 s1 = r.d % e2;
+    Vec3 s1 = r.d ^ e2;
     real divisor = s1.dot(e1);
     
     if (divisor == 0.0f)
@@ -386,7 +386,7 @@ bool QBVHBase<NODE_T>::IntersectTriangle(Triangle& tri, const Ray& r, float tmin
     if (b1 < 0.0f || b1 > 1.0f)
         return false;
     
-    Vec3 s2 = d % e1;
+    Vec3 s2 = d ^ e1;
     real b2 = r.d.dot(s2) * invDivisor;
     if (b2 < 0.0f || b1 + b2 > 1.0f)
         return false;
@@ -411,13 +411,13 @@ bool QBVHBase<NODE_T>::IntersectTriangle(Triangle& tri, const Ray& r, float tmin
     }
     
     if (pMesh->colorUnit_ == CU_Mesh) {
-        rec.pMaterial = pMesh->GetMaterial();
-        rec.color = pMesh->GetMaterial()->color;
+        rec.pOldMaterial = pMesh->GetOldMaterial();
+        rec.color = pMesh->GetOldMaterial()->color;
     } else if (pMesh->colorUnit_ == CU_Face) {
-        rec.pMaterial = pMt->pMaterial;
-        rec.color = pMt->pMaterial->color;
+        rec.pOldMaterial = pMt->pOldMaterial;
+        rec.color = pMt->pOldMaterial->color;
     } else {
-        rec.pMaterial = pMt->pMaterial;
+        rec.pOldMaterial = pMt->pOldMaterial;
         rec.color = ((pMesh->pVertices[pMt->indices[0]].color * b0)
                   +  (pMesh->pVertices[pMt->indices[1]].color * b1)
                   +  (pMesh->pVertices[pMt->indices[2]].color * b2)) / 3;

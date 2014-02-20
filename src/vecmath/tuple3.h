@@ -1,4 +1,4 @@
-﻿#ifndef SEVERE3D_TUPLE3_H
+#ifndef SEVERE3D_TUPLE3_H
 #define SEVERE3D_TUPLE3_H
 
 #include "../simd.h"
@@ -58,7 +58,19 @@ public:
      */
     Tuple3(__m128 _m) : m(_m) {}
 #endif
-	
+    
+    Tuple3(const Tuple3& rhs)
+    {
+#ifdef VECMATH_DATA_FOR_SIMD
+        // __xm128の場合代入演算子を書いておかないと正しく代入されない
+        m = rhs.m;
+#else
+        x = rhs.x;
+        y = rhs.y;
+        z = rhs.z;
+#endif
+    }
+    
 	/**
 	 * x, y, zをメンバに設定します。
 	 * 
@@ -169,6 +181,17 @@ public:
         *this = t1 + alpha * (t2 - t1);
 #endif
 	}
+    
+    void pow(float exp)
+    {
+        // immintrin.hがなくて使えず
+        //__m128 xm0 = _mm_set1_ps(exp);
+        //m = _mm_pow_ps(m, xm0);
+        
+        x = powf(x, exp);
+        y = powf(y, exp);
+        z = powf(z, exp);
+    }
 
     Tuple3& operator+=(const Tuple3& t1)
     {
@@ -206,9 +229,6 @@ public:
     {
         return (Tuple3(*this)).operator/=(s);
     }
-
-	// NOTE:コピーコンストラクタおよび = 演算子はコンパイラによって生成されます。
-
 };
 
 typedef Tuple3<float> Tuple3f;

@@ -1,9 +1,10 @@
-﻿#ifndef LightSource_h
+#ifndef LightSource_h
 #define LightSource_h
 
 #include "Common.h"
 #include "Scene.h"
 #include "BVH.h"
+#include "Sampler.h"
 
 class Random;
 
@@ -91,6 +92,7 @@ public:
     float pdf_;
     Vec3 irradiance_;
     int nSamples_;
+    Sampler sampler_;
     
 private:
     float CalcTriangleArea(const Vec3& p0, const Vec3& p1, const Vec3& p2);
@@ -100,7 +102,7 @@ private:
 class AreaLightShape : public Triangle
 {
 public:
-    AreaLightShape(AreaLightSource* pLitSrc, const Vec3 points[3], const RGB& color, Material* pMtl);
+    AreaLightShape(AreaLightSource* pLitSrc, const Vec3 points[3], const RGB& color, OldMaterial* pMtl);
     virtual ~AreaLightShape() {};
     
     virtual Vec3 SelfIrradiance() const;
@@ -138,7 +140,7 @@ public:
 class SphereLightShape : public Sphere
 {
 public:
-    SphereLightShape(SphereLightSource* pLitSrc, float radius, const Vec3& pos, const RGB& color, Material* pMtl);
+    SphereLightShape(SphereLightSource* pLitSrc, float radius, const Vec3& pos, const RGB& color, OldMaterial* pMtl);
     virtual ~SphereLightShape() {};
     
     virtual Vec3 SelfIrradiance();

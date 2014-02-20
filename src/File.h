@@ -1,4 +1,4 @@
-﻿#ifndef Rayzer_File_h
+#ifndef Rayzer_File_h
 #define Rayzer_File_h
 
 #include "Common.h"

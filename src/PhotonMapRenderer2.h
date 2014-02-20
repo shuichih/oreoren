@@ -1,4 +1,4 @@
-﻿#ifndef _PhotonMapRenderer2_
+#ifndef _PhotonMapRenderer2_
 #define _PhotonMapRenderer2_
 
 #include "Common.h"
@@ -10,6 +10,7 @@ class PhotonFilter;
 struct HitRecord;
 class Scene;
 class Random;
+class Sampler;
 
 class PhotonMapRenderer2 : public IRenderer
 {
@@ -54,7 +55,7 @@ private:
     void TracePhoton(const Ray& r, const Vec3& power, PathInfo pathInfo, Random& rand);
     bool Intersect(const Ray& r, HitRecord& rec);
     Vec3 CosImportanceSamplingRay(const Vec3& n);
-    Vec3 GlossyRay(const Vec3& w, float exponent, Random& rand);
+    Vec3 GlossyRay(const Vec3& w, float exponent);
     void RayTracing(Vec3* pColorBuf);
     Vec3 Irradiance(const Ray &r, PathInfo pathInfo, Random& rand);
     
@@ -73,6 +74,7 @@ private:
     
     TraceFlag traceFlag_;
     int lightNo_;
+    Sampler* pSampler_;
 };
 
 #endif

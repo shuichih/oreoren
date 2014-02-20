@@ -1,4 +1,4 @@
-﻿#ifndef Common_H
+#ifndef Common_H
 #define Common_H
 
 #include <cmath>

@@ -1,4 +1,4 @@
-﻿#include "PerlinNoise.h"
+#include "PerlinNoise.h"
 #include "Common.h"
 #include "Random.h"
 #include "stdio.h"

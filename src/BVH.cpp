@@ -1,4 +1,4 @@
-﻿#include "Scene.h"
+#include "Scene.h"
 #include "BVH.h"
 #include <cassert>
 
@@ -202,11 +202,3 @@ int BVH::QSplit(const IShape** pShapes, int nShapes, float pivot, int axis)
     return mid_idx;
 }
 
-void BVH::SetMaterial(Material* pMtl)
-{
-}
-
-Material* BVH::GetMaterial() const
-{
-    return NULL;
-}

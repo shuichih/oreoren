@@ -1,4 +1,4 @@
-﻿#include <cmath>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cassert>
@@ -9,7 +9,7 @@
 #include "BVH.h"
 #include "Config.h"
 #include "Ray.h"
-#include "Material.h"
+#include "OldMaterial.h"
 #include "Random.h"
 
 using namespace std;
@@ -45,7 +45,7 @@ Vec3 RayTracingRenderer::Irradiance(const Ray &r, int depth, Random& rand)
     Vec3 n = rec.normal;
     Vec3 nl = n.dot(r.d) < 0.f ? n : n * -1.f;   // 交点の法線
     Vec3 f = rec.color;
-    Refl_t refl = rec.pMaterial->refl;
+    Refl_t refl = rec.pOldMaterial->refl;
     
     
     // 0.5にしたらカラーが反射率になってるから暗くなるだけ。IDEALでない反射は扱えない。カラーと混ぜるとかもない。
@@ -86,8 +86,8 @@ Vec3 RayTracingRenderer::Irradiance(const Ray &r, int depth, Random& rand)
             real ry = sinf(r1) * sinTheta;
             real rz = cosTheta;
             Vec3 w = r.d - n * 2.f * n.dot(r.d); // reflected ray
-            Vec3 u = ((fabs(w.x) > .1f ? Vec3(0.f, 1.f, 0.f) : Vec3(1.f, 0.f, 0.f)) % w).normalize(); // binormal
-            Vec3 v = w % u; // tangent
+            Vec3 u = ((fabs(w.x) > .1f ? Vec3(0.f, 1.f, 0.f) : Vec3(1.f, 0.f, 0.f)) ^ w).normalize(); // binormal
+            Vec3 v = w ^ u; // tangent
             
             // ucosφsinθ + vsinφsinθ + wcosθ
             Vec3 rd = (u*rx + v*ry + w*rz).normalize();
@@ -101,7 +101,7 @@ Vec3 RayTracingRenderer::Irradiance(const Ray &r, int depth, Random& rand)
     Ray reflRay(x, r.d - n * 2.f * n.dot(r.d));
     bool into = n.dot(nl) > 0.f; // Ray from outside going in?
     real airRefrIdx = 1.f;
-    real refrIdx = rec.pMaterial->refractiveIndex;
+    real refrIdx = rec.pOldMaterial->refractiveIndex;
     real nnt = into ? airRefrIdx/refrIdx : refrIdx/airRefrIdx;
     real ddn = r.d.dot(nl); // レイと法線のcos
     real cos2t;
@@ -146,7 +146,7 @@ void RayTracingRenderer::RayTracing(Vec3* pColorBuf)
     
     // 投影面のXY軸
     const Vec3 proj_plane_axis_x = Vec3(w * fovY / h, 0.f, 0.f);
-    const Vec3 proj_plane_axis_y = (proj_plane_axis_x % camRay.d).normalize() * fovY;
+    const Vec3 proj_plane_axis_y = (proj_plane_axis_x ^ camRay.d).normalize() * fovY;
     
     Random* pRands = new Random[h];
     

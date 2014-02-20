@@ -1,4 +1,4 @@
-﻿#ifndef Rayzer_BmpFileView_H
+#ifndef Rayzer_BmpFileView_H
 #define Rayzer_BmpFileView_H
 
 #include "Common.h"

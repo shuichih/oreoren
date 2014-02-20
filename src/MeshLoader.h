@@ -1,4 +1,4 @@
-﻿#ifndef MeshLoader_h
+#ifndef MeshLoader_h
 #define MeshLoader_h
 
 #include "Common.h"

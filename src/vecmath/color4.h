@@ -1,4 +1,4 @@
-﻿#ifndef SEVERE3D_COLOR4_H
+#ifndef SEVERE3D_COLOR4_H
 #define SEVERE3D_COLOR4_H
 
 //#include "severe3d/base.h"

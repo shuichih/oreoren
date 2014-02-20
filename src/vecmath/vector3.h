@@ -1,4 +1,4 @@
-﻿#ifndef SEVERE3D_VECTOR3_H
+#ifndef SEVERE3D_VECTOR3_H
 #define SEVERE3D_VECTOR3_H
 
 #include <cmath>
@@ -14,7 +14,23 @@ template <class T>
 class Vector3 : public Tuple3<T>
 {
 public:
-
+    
+    static inline const Vector3& xAxis()
+    {
+        static const Vector3 xAxis = Vector3(1, 0, 0);
+        return xAxis;
+    }
+    static inline const Vector3& yAxis()
+    {
+        static const Vector3 yAxis = Vector3(0, 1, 0);
+        return yAxis;
+    }
+    static inline const Vector3& zAxis()
+    {
+        static const Vector3 zAxis = Vector3(0, 0, 1);
+        return zAxis;
+    }
+    
 	/**
 	 * デフォルトコンストラクタです。
 	 */
@@ -250,7 +266,7 @@ public:
         return (Vector3(*this)).operator*=(-1);
     }
     
-    Vector3 operator%(const Vector3& v1) const {
+    Vector3 operator^(const Vector3& v1) const {
         return Vector3(*this).cross(v1);
     }
 

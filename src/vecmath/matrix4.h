@@ -1,4 +1,4 @@
-﻿#ifndef SEVERE3D_MATRIX4_H
+#ifndef SEVERE3D_MATRIX4_H
 #define SEVERE3D_MATRIX4_H
 
 #include "tuple3.h"

@@ -1,4 +1,4 @@
-﻿#ifndef Config_H
+#ifndef Config_H
 #define Config_H
 
 #include "Common.h"
@@ -9,7 +9,7 @@
 
 using namespace std;
 
-class Material;
+class OldMaterial;
 
 //--------------------------------------------------------------------------------
 // レンダラ種類
@@ -115,7 +115,7 @@ struct SphereConfig
 {
     real radius;
     Vec3 position;
-    Material* pMaterial;
+    OldMaterial* pOldMaterial;
 };
 
 struct SceneImportConfig
@@ -124,7 +124,7 @@ struct SceneImportConfig
     Vec3 scale;
     Vec3 translate;
     Vec3 rotate;
-    Material* pMaterial;
+    OldMaterial* pOldMaterial;
     bool faceReverse;
     
     SceneImportConfig()
@@ -236,14 +236,14 @@ public:
     bool ParseVec3(void* pVal, const string& str);
     bool ParseString(void* pVal, string& str);
     bool ParseRefl(void* pVal, const string& str);
-    bool ParseMaterial(void* pVal, const string& str);
+    bool ParseOldMaterial(void* pVal, const string& str);
     string IntToString(void* pVal);
     string FloatToString(void* pVal);
     string BoolToString(void* pVal);
     string Vec2ToString(void* pVal);
     string Vec3ToString(void* pVal);
     string ReflToString(void* pVal);
-    string MaterialToString(void* pVal);
+    string OldMaterialToString(void* pVal);
     
 protected:
     const char* pName_;
@@ -266,8 +266,8 @@ private:
 };
     
 //--------------------------------------------------------------------------------
-SECTION_PARSER_BEGIN(MaterialParser)
-    Material material_;
+SECTION_PARSER_BEGIN(OldMaterialParser)
+    OldMaterial material_;
 SECTION_PARSER_END
 
 //--------------------------------------------------------------------------------
@@ -294,7 +294,7 @@ SECTION_PARSER_BEGIN(CuboidParser)
     int interval_;
     Vec3 margin_;
     bool randColor_;
-    Material* pMaterial_;
+    OldMaterial* pOldMaterial_;
 SECTION_PARSER_END
 
 //--------------------------------------------------------------------------------
@@ -315,7 +315,7 @@ SECTION_PARSER_BEGIN(NoiseSurfaceParser)
     Vec3 scale_;
     Vec3 rotate_;
     Vec2 division_;
-    Material* pMaterial_;
+    OldMaterial* pOldMaterial_;
     bool noisyHeight_;
     bool noisyColor_;
     ItemDesc* pItemDesc_;

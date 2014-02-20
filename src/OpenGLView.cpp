@@ -1,4 +1,4 @@
-﻿#ifdef __APPLE__
+#ifdef __APPLE__
 
 #include "OpenGLView.h"
 #include "Config.h"

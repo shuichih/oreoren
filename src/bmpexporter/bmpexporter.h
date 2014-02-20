@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #ifndef _BMP_EXPORTER_H_
 #define _BMP_EXPORTER_H_
 

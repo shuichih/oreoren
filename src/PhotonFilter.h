@@ -1,4 +1,4 @@
-﻿#ifndef _PhotonFilter_H_
+#ifndef _PhotonFilter_H_
 #define _PhotonFilter_H_
 
 // 放射輝度推定する位置とフォトンの距離に応じてフォトンの寄与を調節するフィルタのインターフェース

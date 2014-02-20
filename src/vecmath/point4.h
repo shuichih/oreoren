@@ -1,4 +1,4 @@
-﻿#ifndef SEVERE3D_POINT4_H
+#ifndef SEVERE3D_POINT4_H
 #define SEVERE3D_POINT4_H
 
 #include <cmath>

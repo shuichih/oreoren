@@ -13,44 +13,44 @@ useSIMD = true
 draw = false
 drawDepth = 7
 
-[Material]
+[OldMaterial]
 name = Mirror
 color = .999 .999 .999
 refl = SPEC
 
-[Material]
+[OldMaterial]
 name = Glass
 color = 1 1 1
 refl = REFR
 refrIndex = 1.5
 
-[Material]
+[OldMaterial]
 name = Glass2
 color = 0.9 0.9 0.9
 refl = REFR
 refrIndex = 1.5
 
-[Material]
+[OldMaterial]
 name = Black
 color = 0.1 0.1 0.1
 refl = DIFF
 
-[Material]
+[OldMaterial]
 name = CornellRed
 color = .75 .25 .25
 refl = DIFF
 
-[Material]
+[OldMaterial]
 name = CornellBlue
 color = .25 .25 .75
 refl = DIFF
 
-[Material]
+[OldMaterial]
 name = CornellGray
 color = .75 .75 .75
 refl = DIFF
 
-[Material]
+[OldMaterial]
 name = Water
 refl = REFR
 color = 0.8 1.0 0.95
@@ -145,7 +145,6 @@ nSamples = 64
 #/
 
 # 手前がプラス
-# @todo emission -> color
 
 [Rectangle] #Left
     p0 = -62  53  95

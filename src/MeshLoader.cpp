@@ -1,4 +1,4 @@
-﻿#include "MeshLoader.h"
+#include "MeshLoader.h"
 #include "Common.h"
 #include "ObjLoader.h"
 #include "Scene.h"
@@ -65,7 +65,7 @@ Mesh* MeshLoader::Load(const char* pFilePath)
         Vec3 p2 = rObjVertices[rObjFace.iVertex[2]];
         Vec3 s0 = p1 - p0;
         Vec3 s1 = p2 - p0;
-        pFaceNs_[i] = (s0 % s1).normalize();
+        pFaceNs_[i] = (s0 ^ s1).normalize();
         if (faceReverse_) {
             pFaceNs_[i] *= -1;
         }
