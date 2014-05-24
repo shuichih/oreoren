@@ -9,6 +9,7 @@
 class IShape;
 class Config;
 class BVH;
+class Image;
 
 /**
  * OpenGL Windowに表示するView
@@ -20,11 +21,11 @@ public:
     OpenGLView(Config* pConfig);
     ~OpenGLView();
     virtual bool Init(i32 width, i32 height);
-    virtual bool Present(u8* pColorBuf);
+    virtual bool Present(const Image& image);
     bool DrawFrame();
     
 private:
-    void DrawToBuffer(u8* pColorBuf);
+    void DrawToBuffer(const u8* pColorBuf);
     void DrawDebugStuff();
     void DrawBVH(const IShape* pShape, int depth);
     void DrawBBox();
@@ -32,7 +33,7 @@ private:
     bool initialized_;
     int width_;
     int height_;
-    u8* pColorBuf_;
+    const u8* pColorBuf_;
     Config* pConf_;
 };
 

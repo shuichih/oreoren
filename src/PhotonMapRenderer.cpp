@@ -5,7 +5,7 @@
 #include "Common.h"
 #include "Scene.h"
 #include "PhotonMap.h"
-#include "LightSource.h"
+#include "Light.h"
 #include "PhotonMapRenderer.h"
 #include "PhotonFilter.h"
 #include "Config.h"
@@ -13,6 +13,7 @@
 #include "Ray.h"
 #include "OldMaterial.h"
 #include "Random.h"
+#include "Image.h"
 
 // Direct
 // Caustic  LSD+E
@@ -175,7 +176,7 @@ Vec3 PhotonMapRenderer::Irradiance(const Ray &r, PathInfo pathInfo, Random& rand
 
     HitRecord rec;
     rec.hitLit = true;
-    if (!pScene_->Intersect(r, EPSILON, REAL_MAX, rec)) return Vec3();
+    if (!pScene_->Intersect(r, EPSILON, REAL_MAX, rec)) return pConf_->bgColor;
     //const Shape& obj = *g_shapes[id];       // the hit object
     Vec3 x = r.o + r.d * rec.t;
     Vec3 n = rec.normal;
@@ -288,7 +289,7 @@ void PhotonMapRenderer::PhotonTracing()
     // 各ライトからライトの明るさに応じてフォトンをばらまく
     u32 iPhoton = 0;
     for (u32 i=0; i<nLit; i++) {
-        const LightSource* pLit = pScene_->GetLight(i);
+        const Light* pLit = pScene_->GetLight(i);
         float nPhotonRatio = (float)(pLit->GetFlux().sum() / sumFlux);
         u32 nPhotons = (u32)(pPmConf_->nPhotons * nPhotonRatio);
         
@@ -331,10 +332,15 @@ void PhotonMapRenderer::PhotonTracing()
     
 }
 
-void PhotonMapRenderer::RayTracing(Vec3* pColorBuf)
+void PhotonMapRenderer::RayTracing(Image& image)
 {
-    const u32 w = pConf_->windowWidth;
-    const u32 h = pConf_->windowHeight;
+    if (image.format() != Image::RGB_F32) {
+        assert(false);
+        return;
+    }
+    Vec3* pColorBuf = (Vec3*)image.buffer();
+    const u32 w = image.width();
+    const u32 h = image.height();
     const u32 nSub = pPmRenConf_->nSubPixelsSqrt;
     const real subPixelFactor = 1.0f / (real)(nSub*nSub);
     
@@ -421,7 +427,7 @@ void PhotonMapRenderer::RayTracing(Vec3* pColorBuf)
     
 }
 
-void PhotonMapRenderer::Run(Vec3* pColorBuf, const Scene& scene)
+void PhotonMapRenderer::Run(Image& image, const Scene& scene)
 {
     pScene_ = &scene;
     
@@ -432,7 +438,7 @@ void PhotonMapRenderer::Run(Vec3* pColorBuf, const Scene& scene)
     }
     {
         Timer timer;
-        RayTracing(pColorBuf);
+        RayTracing(image);
         timer.PrintElapsed("RayTracing time: ");
     }
 }

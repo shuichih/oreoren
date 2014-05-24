@@ -1,4 +1,6 @@
 #include "PostEffect.h"
+#include "Image.h"
+#include <cassert>
 
 ToneMap::ToneMap()
 : keyValue_(0.18f)
@@ -27,8 +29,14 @@ void ToneMap::SetSmallestWhiteLuminance(real l)
     smallestWhiteLum_ = l;
 }
 
-void ToneMap::Apply(Vec3* pBuffer, i32 bufferWidth, i32 bufferHeight)
+void ToneMap::Apply(Image& image, i32 bufferWidth, i32 bufferHeight)
 {
+    if (image.format() != Image::RGB_F32) {
+        assert(false);
+        return;
+    }
+    Vec3* pBuffer = (Vec3*)image.buffer();
+    
     const Vec3 RGB2Y  (+0.29900f, +0.58700f, +0.11400f);
     const Vec3 RGB2Cb (-0.16874f, -0.33126f, +0.50000f);
     const Vec3 RGB2Cr (+0.50000f, -0.41869f, -0.08131f);

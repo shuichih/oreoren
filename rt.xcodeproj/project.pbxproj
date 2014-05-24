@@ -7,7 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B21B6FF019307F4800A1F9B2 /* Image.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B21B6FEE19307F4700A1F9B2 /* Image.cpp */; };
 		B2382CEF18320BCD00785336 /* BRDF.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2382CED18320BCD00785336 /* BRDF.cpp */; };
+		B265B7E418B9153C002F038F /* Material.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B265B7E318B9153C002F038F /* Material.cpp */; };
 		B2B34C6917E43A880035D0A5 /* App.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2B34C1D17E43A880035D0A5 /* App.cpp */; };
 		B2B34C6A17E43A880035D0A5 /* BBox.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2B34C1F17E43A880035D0A5 /* BBox.cpp */; };
 		B2B34C6B17E43A880035D0A5 /* bmpexporter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2B34C2217E43A880035D0A5 /* bmpexporter.cpp */; };
@@ -16,7 +18,7 @@
 		B2B34C6E17E43A880035D0A5 /* Common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2B34C2917E43A880035D0A5 /* Common.cpp */; };
 		B2B34C6F17E43A880035D0A5 /* Config.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2B34C2B17E43A880035D0A5 /* Config.cpp */; };
 		B2B34C7017E43A880035D0A5 /* File.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2B34C2D17E43A880035D0A5 /* File.cpp */; };
-		B2B34C7117E43A880035D0A5 /* LightSource.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2B34C3117E43A880035D0A5 /* LightSource.cpp */; };
+		B2B34C7117E43A880035D0A5 /* Light.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2B34C3117E43A880035D0A5 /* Light.cpp */; };
 		B2B34C7217E43A880035D0A5 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2B34C3317E43A880035D0A5 /* main.cpp */; };
 		B2B34C7317E43A880035D0A5 /* MeshLoader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2B34C3517E43A880035D0A5 /* MeshLoader.cpp */; };
 		B2B34C7417E43A880035D0A5 /* ObjLoader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2B34C3717E43A880035D0A5 /* ObjLoader.cpp */; };
@@ -58,8 +60,11 @@
 
 /* Begin PBXFileReference section */
 		B20961781483117300863694 /* rt */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = rt; sourceTree = BUILT_PRODUCTS_DIR; };
+		B21B6FEE19307F4700A1F9B2 /* Image.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Image.cpp; sourceTree = "<group>"; };
+		B21B6FEF19307F4700A1F9B2 /* Image.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Image.h; sourceTree = "<group>"; };
 		B2382CED18320BCD00785336 /* BRDF.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BRDF.cpp; sourceTree = "<group>"; };
 		B2382CEE18320BCD00785336 /* BRDF.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BRDF.h; sourceTree = "<group>"; };
+		B265B7E318B9153C002F038F /* Material.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Material.cpp; sourceTree = "<group>"; };
 		B2752F43181151C80036F1FF /* transparent.scene */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = transparent.scene; sourceTree = "<group>"; };
 		B292189318B656F500A47534 /* Material.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Material.h; sourceTree = "<group>"; };
 		B2B34C1D17E43A880035D0A5 /* App.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = App.cpp; sourceTree = "<group>"; };
@@ -81,8 +86,8 @@
 		B2B34C2E17E43A880035D0A5 /* File.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = File.h; sourceTree = "<group>"; };
 		B2B34C2F17E43A880035D0A5 /* IRenderer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IRenderer.h; sourceTree = "<group>"; };
 		B2B34C3017E43A880035D0A5 /* IView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IView.h; sourceTree = "<group>"; };
-		B2B34C3117E43A880035D0A5 /* LightSource.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LightSource.cpp; sourceTree = "<group>"; };
-		B2B34C3217E43A880035D0A5 /* LightSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LightSource.h; sourceTree = "<group>"; };
+		B2B34C3117E43A880035D0A5 /* Light.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Light.cpp; sourceTree = "<group>"; };
+		B2B34C3217E43A880035D0A5 /* Light.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Light.h; sourceTree = "<group>"; };
 		B2B34C3317E43A880035D0A5 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		B2B34C3417E43A880035D0A5 /* OldMaterial.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OldMaterial.h; sourceTree = "<group>"; };
 		B2B34C3517E43A880035D0A5 /* MeshLoader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MeshLoader.cpp; sourceTree = "<group>"; };
@@ -198,6 +203,9 @@
 		B2B34C1C17E43A880035D0A5 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				B21B6FEE19307F4700A1F9B2 /* Image.cpp */,
+				B21B6FEF19307F4700A1F9B2 /* Image.h */,
+				B265B7E318B9153C002F038F /* Material.cpp */,
 				B292189318B656F500A47534 /* Material.h */,
 				B2DD0CAC1834E6FE00EBB18F /* Sampler.cpp */,
 				B2DD0CAD1834E6FE00EBB18F /* Sampler.h */,
@@ -221,8 +229,8 @@
 				B2B34C2E17E43A880035D0A5 /* File.h */,
 				B2B34C2F17E43A880035D0A5 /* IRenderer.h */,
 				B2B34C3017E43A880035D0A5 /* IView.h */,
-				B2B34C3117E43A880035D0A5 /* LightSource.cpp */,
-				B2B34C3217E43A880035D0A5 /* LightSource.h */,
+				B2B34C3117E43A880035D0A5 /* Light.cpp */,
+				B2B34C3217E43A880035D0A5 /* Light.h */,
 				B2B34C3317E43A880035D0A5 /* main.cpp */,
 				B2B34C3417E43A880035D0A5 /* OldMaterial.h */,
 				B2B34C3517E43A880035D0A5 /* MeshLoader.cpp */,
@@ -367,7 +375,7 @@
 				B2B34C6E17E43A880035D0A5 /* Common.cpp in Sources */,
 				B2B34C6F17E43A880035D0A5 /* Config.cpp in Sources */,
 				B2B34C7017E43A880035D0A5 /* File.cpp in Sources */,
-				B2B34C7117E43A880035D0A5 /* LightSource.cpp in Sources */,
+				B2B34C7117E43A880035D0A5 /* Light.cpp in Sources */,
 				B2B34C7217E43A880035D0A5 /* main.cpp in Sources */,
 				B2B34C7317E43A880035D0A5 /* MeshLoader.cpp in Sources */,
 				B2B34C7417E43A880035D0A5 /* ObjLoader.cpp in Sources */,
@@ -392,6 +400,8 @@
 				B2B34C8717E43A880035D0A5 /* quat4.cpp in Sources */,
 				B2382CEF18320BCD00785336 /* BRDF.cpp in Sources */,
 				B2DD0CAE1834E6FE00EBB18F /* Sampler.cpp in Sources */,
+				B265B7E418B9153C002F038F /* Material.cpp in Sources */,
+				B21B6FF019307F4800A1F9B2 /* Image.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

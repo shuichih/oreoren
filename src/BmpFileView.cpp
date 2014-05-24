@@ -1,5 +1,6 @@
 #include "BmpFileView.h"
 #include "bmpexporter/bmpexporter.h"
+#include "Image.h"
 #include <cstdio>
 #include <string>
 #ifdef _WIN32
@@ -34,8 +35,12 @@ bool BmpFileView::Init(int w, int h)
     return true;
 }
 
-bool BmpFileView::Present(u8* pColorBuf)
+bool BmpFileView::Present(const Image& image)
 {
+    if (image.format() != Image::RGBA_8)
+        return false;
+    
+    u8* pColorBuf = (u8*)image.buffer();
     if (!initialized_) {
         printf("The view is not initialized.\n");
         return false;

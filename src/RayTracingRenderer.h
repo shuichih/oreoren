@@ -16,11 +16,11 @@ public:
     RayTracingRenderer();
     ~RayTracingRenderer();
     virtual void SetConfig(const Config& config);
-    virtual void Run(Vec3* pColorBuf, const Scene& scene);
+    virtual void Run(Image& image, const Scene& scene);
     
 private:
     
-    void RayTracing(Vec3* pColorBuf);
+    void RayTracing(Image& image);
     Vec3 Irradiance(const Ray &r, int depth, Random& rand);
     
     const Config* pConfig_;

@@ -1,7 +1,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <cassert>
-#include "LightSource.h"
+#include "Light.h"
 #include "ONB.h"
 #include "vecmath/vector3.h"
 #include "Ray.h"
@@ -9,19 +9,29 @@
 #include "Random.h"
 
 //--------------------------------------------------------------------------------
-
-PointLightSource::PointLightSource()
-: position_()
+AmbientLight::AmbientLight(const Vec3& flux)
+: Light(Lit_Ambient, flux)
 {
 }
 
-PointLightSource::PointLightSource(const Vec3& position, const Vec3& flux)
-: LightSource(Lit_Point, flux)
+Ray AmbientLight::GenerateRay(Random& rand) const
+{
+    return Ray(Vec3(), Vec3());
+}
+
+Vec3 AmbientLight::DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra, Random& rand) const
+{
+    return flux_;
+}
+
+//--------------------------------------------------------------------------------
+PointLight::PointLight(const Vec3& position, const Vec3& flux)
+: Light(Lit_Point, flux)
 , position_(position)
 {
 }
 
-Ray PointLightSource::GenerateRay(Random& rand) const
+Ray PointLight::GenerateRay(Random& rand) const
 {
 	Vec3 dir;
     real theta = acosf(2 * rand.F32() - 1);
@@ -33,7 +43,7 @@ Ray PointLightSource::GenerateRay(Random& rand) const
 	return Ray(position_, dir);
 }
 
-Vec3 PointLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra, Random& rand) const
+Vec3 PointLight::DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra, Random& rand) const
 {
     // penumbra
     // == 1.0, 完全に光が当たっている領域: サンプリング、シャドウレイなし
@@ -69,7 +79,7 @@ Vec3 PointLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const Sc
 
 //--------------------------------------------------------------------------------
 
-AreaLightSource::AreaLightSource(
+AreaLight::AreaLight(
     const Vec3& p0,
     const Vec3& p1,
     const Vec3& p2,
@@ -77,7 +87,7 @@ AreaLightSource::AreaLightSource(
     const Vec3& flux,
     int nSamples
 )
-: LightSource(Lit_Area, flux)
+: Light(Lit_Area, flux)
 , nSamples_(nSamples)
 {
     p_[0] = p0;
@@ -101,7 +111,7 @@ AreaLightSource::AreaLightSource(
     irradiance_ = flux_ / area_;
 }
 
-float AreaLightSource::CalcTriangleArea(const Vec3& p0, const Vec3& p1, const Vec3& p2)
+float AreaLight::CalcTriangleArea(const Vec3& p0, const Vec3& p1, const Vec3& p2)
 {
     // Heron's formula
     float e0 = (p1 - p0).length();
@@ -116,7 +126,7 @@ float AreaLightSource::CalcTriangleArea(const Vec3& p0, const Vec3& p1, const Ve
 //    float area = (edge2 % edge1).length() * 0.5f; // 三角形の面積だから*0.5f
 }
 
-Ray AreaLightSource::GenerateRay(Random& rand) const
+Ray AreaLight::GenerateRay(Random& rand) const
 {
     real b0 = rand.F32();
     real b1 = rand.F32();
@@ -134,7 +144,7 @@ Ray AreaLightSource::GenerateRay(Random& rand) const
 	return Ray(pos, dir);
 }
 
-Vec3 AreaLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra, Random& rand) const
+Vec3 AreaLight::DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra, Random& rand) const
 {
     // penumbra
     // == 1.0, 完全に光が当たっている領域: サンプリング、シャドウレイなし
@@ -198,15 +208,15 @@ Vec3 AreaLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const Sce
 
 //--------------------------------------------------------------------------------
 
-AreaLightShape::AreaLightShape(AreaLightSource* pLitSrc, const Vec3 ps[3], const RGB& color, OldMaterial* pMtl)
+AreaLightShape::AreaLightShape(AreaLight* pLitSrc, const Vec3 ps[3], const RGB& color, OldMaterial* pMtl)
 : Triangle(ps[0], ps[1], ps[2], pMtl)
 {
-    pLightSource_ = pLitSrc;
+    pLight_ = pLitSrc;
 }
 
 Vec3 AreaLightShape::SelfIrradiance() const
 {
-    return pLightSource_->GetIrradiance();
+    return pLight_->GetIrradiance();
 }
 
 bool AreaLightShape::Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) const
@@ -222,8 +232,8 @@ bool AreaLightShape::Intersect(const Ray& r, float tmin, float tmax, HitRecord& 
 
 //--------------------------------------------------------------------------------
 
-SphereLightSource::SphereLightSource(const Vec3& position, float radius, const Vec3& flux, int nSamples)
-: LightSource(Lit_Sphere, flux)
+SphereLight::SphereLight(const Vec3& position, float radius, const Vec3& flux, int nSamples)
+: Light(Lit_Sphere, flux)
 , position_(position)
 , radius_(radius)
 , nSamples_(nSamples)
@@ -231,7 +241,7 @@ SphereLightSource::SphereLightSource(const Vec3& position, float radius, const V
     irradiance_ = flux_ / (4 * PI * radius_ * radius_);
 }
 
-Ray SphereLightSource::GenerateRay(Random& rand) const
+Ray SphereLight::GenerateRay(Random& rand) const
 {
 	Vec3 dir;
     real theta = acosf(2 * rand.F32() - 1);
@@ -243,7 +253,7 @@ Ray SphereLightSource::GenerateRay(Random& rand) const
 	return Ray(position_ + dir*radius_, dir);
 }
 
-Vec3 SphereLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra, Random& rand) const
+Vec3 SphereLight::DirectLight(const Vec3& pos, const Vec3& normal, const Scene& scene, float penumbra, Random& rand) const
 {
     // penumbra
     // == 1.0, 完全に光が当たっている領域: サンプリング、シャドウレイなし
@@ -324,16 +334,16 @@ Vec3 SphereLightSource::DirectLight(const Vec3& pos, const Vec3& normal, const S
 
 //--------------------------------------------------------------------------------
 
-SphereLightShape::SphereLightShape(SphereLightSource* pLitSrc, float radius, const Vec3& pos, const RGB& color, OldMaterial* pMtl)
+SphereLightShape::SphereLightShape(SphereLight* pLitSrc, float radius, const Vec3& pos, const RGB& color, OldMaterial* pMtl)
 : Sphere(radius, pos, pMtl)
 {
-    pLightSource_ = pLitSrc;
-    pLightSource_->SetShape(this);
+    pLight_ = pLitSrc;
+    pLight_->SetShape(this);
 }
 
 Vec3 SphereLightShape::SelfIrradiance()
 {
-    return pLightSource_->GetIrradiance();
+    return pLight_->GetIrradiance();
 }
 
 bool SphereLightShape::Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) const

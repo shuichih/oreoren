@@ -3,6 +3,7 @@
 #include "OpenGLView.h"
 #include "Config.h"
 #include "BVH.h"
+#include "Image.h"
 #include <OpenGL/OpenGL.h>
 #include <GLUT/glut.h>
 #include <cstdio>
@@ -57,14 +58,17 @@ bool OpenGLView::Init(int w, int h)
     return true;
 }
 
-bool OpenGLView::Present(u8* pColorBuf)
+bool OpenGLView::Present(const Image& image)
 {
     if (!initialized_) {
         printf("The view is not initialized.\n");
         return false;
     }
-
-    pColorBuf_ = pColorBuf;
+    
+    if (image.format() != Image::RGBA_8)
+        return false;
+    
+    pColorBuf_ = (u8*)image.buffer();
     
 	glutMainLoop();
 
@@ -81,7 +85,7 @@ bool OpenGLView::DrawFrame()
     return true;
 }
 
-void OpenGLView::DrawToBuffer(u8* pColorBuf)
+void OpenGLView::DrawToBuffer(const u8* pColorBuf)
 {
     // Display
     int w = width_;

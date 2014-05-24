@@ -10,6 +10,13 @@ IBRDF::~IBRDF()
 
 //--------------------------------------------------------------------------------
 
+Lambertian::Lambertian()
+: kd_(0)
+, cd_()
+, pSampler_(new Sampler())
+{
+}
+
 Lambertian::Lambertian(float kd, const RGB& cd)
 : kd_(kd)
 , cd_(cd)
@@ -45,6 +52,12 @@ RGB Lambertian::Rho(const HitRecord& hr, const Vec3& wo) const
 
 //--------------------------------------------------------------------------------
 
+PerfectSpecular::PerfectSpecular()
+: kr_(0)
+, cr_()
+{
+}
+
 PerfectSpecular::PerfectSpecular(float kr, const RGB& cr)
 : kr_(kr)
 , cr_(cr)
@@ -74,6 +87,12 @@ RGB PerfectSpecular::Rho(const HitRecord& hr, const Vec3& wo) const
 }
 
 //--------------------------------------------------------------------------------
+GlossySpecular::GlossySpecular()
+: ks_(0)
+, cs_()
+, exp_(0)
+{}
+
 GlossySpecular::GlossySpecular(float ks, const RGB& cs, float exp)
 : ks_(ks)
 , cs_(cs)

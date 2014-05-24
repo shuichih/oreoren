@@ -1,10 +1,11 @@
 ﻿[General]
 #windowWidth=1000
 #windowHeight=700
-windowWidth=512
-windowHeight=512
+windowWidth=256
+windowHeight=256
 drawBBox=false
 rendererType=2
+bgColor = 0 0 0
 
 [BVH]
 build = true
@@ -26,7 +27,7 @@ refrIndex = 1.5
 
 [OldMaterial]
 name = Glass2
-color = 0.9 0.9 0.9
+color = 0.95 0.95 0.6
 refl = REFR
 refrIndex = 1.5
 
@@ -118,14 +119,14 @@ direction = 0 -0.04 -1.0
 fovY = 0.5135
 
 /#
-[LightSource]
+[Light]
 type = POINT
 position = 0 50 70
 #position = 0 0 0
 flux = 25000 25000 25000
 #/
 
-[LightSource]
+[Light]
 type = AREA
 p0 = -10 52  10
 p1 = -10 52 -10
@@ -135,7 +136,7 @@ flux = 10000 10000 10000
 nSamples = 64
 
 /#
-[LightSource]
+[Light]
 type = SPHERE
 position = 0 50 65
 radius = 5
@@ -197,7 +198,7 @@ nSamples = 64
 #/
 
 [SceneImport]
-    path = "bin/objs/venusm.obj"
+    path = "./objs/venusm.obj"
     scale = 0.025 0.025 0.025
     translate = -40 -52 30
     material = Glass2

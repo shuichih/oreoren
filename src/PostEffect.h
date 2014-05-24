@@ -3,13 +3,15 @@
 
 #include "Common.h"
 
+class Image;
+
 /**
  * PostEffect Interface
  */
 class IPostEffect
 {
 public:
-    virtual void Apply(Vec3* pBuffer, i32 bufferWidth, i32 bufferHeight) = 0;
+    virtual void Apply(Image& image, i32 bufferWidth, i32 bufferHeight) = 0;
 };
 
 class ToneMap : public IPostEffect
@@ -21,7 +23,7 @@ public:
     void SetKeyValue(real keyValue);
     void SetDelta(real delta);
     void SetSmallestWhiteLuminance(real l);
-    virtual void Apply(Vec3* pBuffer, i32 bufferWidth, i32 bufferHeight);
+    virtual void Apply(Image& image, i32 bufferWidth, i32 bufferHeight);
 
 private:
     real keyValue_;

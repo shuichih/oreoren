@@ -9,7 +9,7 @@
 #include "StringUtils.h"
 #include "MeshLoader.h"
 #include "SimpleArithmetic.h"
-#include "LightSource.h"
+#include "Light.h"
 #include "PerlinNoise.h"
 #include "OldMaterial.h"
 #include "Random.h"
@@ -597,10 +597,10 @@ bool CuboidParser::OnLeave()
 
 //--------------------------------------------------------------------------------
 
-LightSourceParser::LightSourceParser(const char* pName, Scene* pScene)
+LightParser::LightParser(const char* pName, Scene* pScene)
 : SectionParser(pName, pScene, NULL, 0)
 {
-    ItemDesc litSrcDesc[] = {
+    ItemDesc litDesc[] = {
         // common
         { "type", IVT_STR, &conf_.typeStr },
         { "flux", IVT_VEC3, &conf_.flux },
@@ -615,23 +615,23 @@ LightSourceParser::LightSourceParser(const char* pName, Scene* pScene)
         // for SPHERE
         { "radius", IVT_FLOAT, &conf_.radius }
     };
-    paryItemDesc_ = CreateItemDesc(litSrcDesc, ARRAY_SZ(litSrcDesc));
-    nItem_ = ARRAY_SZ(litSrcDesc);
+    paryItemDesc_ = CreateItemDesc(litDesc, ARRAY_SZ(litDesc));
+    nItem_ = ARRAY_SZ(litDesc);
 }
 
-LightSourceParser::~LightSourceParser()
+LightParser::~LightParser()
 {
 }
 
-bool LightSourceParser::OnLeave()
+bool LightParser::OnLeave()
 {
-    LightSource* pLitSrc = NULL;
+    Light* pLitSrc = NULL;
     if (StringUtils::Stricmp(conf_.typeStr, "POINT") == 0) {
-        pLitSrc = new PointLightSource(conf_.position, conf_.flux);
+        pLitSrc = new PointLight(conf_.position, conf_.flux);
     }
     else if (StringUtils::Stricmp(conf_.typeStr, "AREA") == 0) {
         Vec3* p = conf_.p;
-        pLitSrc = new AreaLightSource(
+        pLitSrc = new AreaLight(
             p[0], p[1], p[2], p[3],
             conf_.flux,
             conf_.nSamples
@@ -639,16 +639,16 @@ bool LightSourceParser::OnLeave()
         
         OldMaterial* pMtl = pScene_->GetLightOldMaterial();
         Vec3 p2[3] = { p[0], p[2], p[3] };
-        IShape* pLitShape0 = new AreaLightShape((AreaLightSource*)pLitSrc, p, conf_.flux, pMtl);
-        IShape* pLitShape1 = new AreaLightShape((AreaLightSource*)pLitSrc, p2, conf_.flux, pMtl);
+        IShape* pLitShape0 = new AreaLightShape((AreaLight*)pLitSrc, p, conf_.flux, pMtl);
+        IShape* pLitShape1 = new AreaLightShape((AreaLight*)pLitSrc, p2, conf_.flux, pMtl);
         pScene_->AddShape(pLitShape0);
         pScene_->AddShape(pLitShape1);
     }
     else if (StringUtils::Stricmp(conf_.typeStr, "SPHERE") == 0) {
-        pLitSrc = new SphereLightSource(conf_.position, conf_.radius, conf_.flux, conf_.nSamples);
+        pLitSrc = new SphereLight(conf_.position, conf_.radius, conf_.flux, conf_.nSamples);
         OldMaterial* pMtl = pScene_->GetLightOldMaterial();
         IShape* pLitShape = new SphereLightShape(
-            (SphereLightSource*)pLitSrc,
+            (SphereLight*)pLitSrc,
             conf_.radius,
             conf_.position,
             conf_.flux,
@@ -658,9 +658,9 @@ bool LightSourceParser::OnLeave()
     else {
         assert(false);
     }
-    pScene_->AddLightSource(pLitSrc);
+    pScene_->AddLight(pLitSrc);
                                 
-    conf_ = LightSourceConfig();
+    conf_ = LightConfig();
     return true;
 }
 
@@ -829,6 +829,7 @@ Config::Config()
     , windowHeight(256)
     , drawBBox(false)
     , rendererType(RTYPE_SIMPLE_RT)
+    , bgColor(0, 0, 0)
     , pCurrParser_(NULL)
     , bComment_(false)
 {
@@ -836,7 +837,8 @@ Config::Config()
         { "windowWidth", IVT_INT, &windowWidth },
         { "windowHeight", IVT_INT, &windowHeight },
         { "drawBBox", IVT_BOOL, &drawBBox },
-        { "rendererType", IVT_INT, &rendererType }
+        { "rendererType", IVT_INT, &rendererType },
+        { "bgColor", IVT_VEC3, &bgColor }
     };
     ItemDesc bvhDesc[] = {
         { "build", IVT_BOOL, &bvhConf.build },
@@ -925,7 +927,7 @@ Config::Config()
     parsers_[SEC_SHADOWPM]    = new SectionParser("[ShadowPhotonMap]", &scene, pShadowPmItemDesc, ARRAY_SZ(shadowPmDesc));
     parsers_[SEC_MATERIAL]    = new OldMaterialParser("[OldMaterial]", &scene );
     parsers_[SEC_CAMERA]      = new SectionParser("[Camera]", &scene, pCameraItemDesc, ARRAY_SZ(cameraDesc));
-    parsers_[SEC_LIGHTSOURCE] = new LightSourceParser("[LightSource]", &scene);
+    parsers_[SEC_LIGHTSOURCE] = new LightParser("[Light]", &scene);
     parsers_[SEC_SPHERE]      = new SphereParser("[Sphere]", &scene);
     parsers_[SEC_TRIANGLE]    = new TriangleParser("[Triangle]", &scene);
     parsers_[SEC_RECTANGLE]   = new RectangleParser("[Rectangle]", &scene);

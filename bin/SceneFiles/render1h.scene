@@ -145,7 +145,7 @@ direction = 0 -0.04 -1.0
 fovY = 0.5135
 
 /#
-[LightSource]
+[Light]
 type = POINT
 position = 0 0 0
 #position = 0 0 0
@@ -153,7 +153,7 @@ flux = 25000 25000 25000
 #/
 
 /#
-[LightSource]
+[Light]
 type = AREA
 p0 = -5 75  5
 p1 = -5 75 -5
@@ -163,7 +163,7 @@ flux = 50000 50000 50000
 nSamples = 16
 #/
 
-[LightSource]
+[Light]
 type = SPHERE
 position = 0 20 15
 radius = 5

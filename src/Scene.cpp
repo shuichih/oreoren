@@ -3,7 +3,7 @@
 #include <cstring>
 #include <cassert>
 #include "BBox.h"
-#include "LightSource.h"
+#include "Light.h"
 #include "vecmath/matrix4.h"
 #include "simd.h"
 #include "Ray.h"
@@ -676,8 +676,8 @@ Scene::Scene()
 
 Scene::~Scene()
 {
-    for (size_t i=0; i<litSrcs_.size(); i++) {
-        delete litSrcs_[i];
+    for (size_t i=0; i<lits_.size(); i++) {
+        delete lits_[i];
     }
     for (size_t i=0; i<shapes_.size(); i++) {
         delete shapes_[i];
@@ -693,9 +693,9 @@ Scene::~Scene()
     materialMap_.clear();
 }
 
-void Scene::AddLightSource(const LightSource* pLitSrc)
+void Scene::AddLight(const Light* pLitSrc)
 {
-    litSrcs_.push_back(pLitSrc);
+    lits_.push_back(pLitSrc);
 }
 
 void Scene::AddShape(IShape* pShape)

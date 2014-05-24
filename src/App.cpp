@@ -16,39 +16,25 @@
 #include "RayTracingRenderer.h"
 #include "OpenGLView.h"
 #include "BmpFileView.h"
+#include "Image.h"
 
 using namespace std;
 
 //
-
-inline real clamp(real x)
-{
-    return x < 0.f ? 0.f : x > 1.f ? 1.f : x;
-}
-
-inline int toInt(real x)
-{
-#ifdef USE_FLOAT
-    return int(powf(clamp(x), 1/2.2f) * 255.f + .5f);
-#else
-    return int(pow(clamp(x), 1/2.2) * 255 + .5);
-#endif
-}
-
 //
 
 App::App()
 : pBVH_(NULL)
-, pRealColorBuf_(NULL)
-, pColorBuf_(NULL)
+, pImageF32_(NULL)
+, pImage_(NULL)
 {
 }
 
 App::~App()
 {
     delete pBVH_;
-    delete pRealColorBuf_;
-    delete pColorBuf_;
+    delete pImageF32_;
+    delete pImage_;
 }
 
 void App::Run(int argc, const char * argv[])
@@ -59,7 +45,7 @@ void App::Run(int argc, const char * argv[])
 
     Render();
     
-    pView_->Present(pColorBuf_);
+    pView_->Present(*pImage_);
 }
 
 bool App::Init(int argc, const char * argv[])
@@ -92,8 +78,8 @@ bool App::Init(int argc, const char * argv[])
     pRenderer_->SetConfig(config);
 
     // 描画バッファ用意
-    pRealColorBuf_ = new Vec3[w * h];
-    pColorBuf_ = new u8[w * h * sizeof(char)*4];
+    pImageF32_ = new Image(w, h, Image::RGB_F32);
+    pImage_ = new Image(w, h, Image::RGBA_8);
 
     return true;
 }
@@ -103,20 +89,6 @@ void App::BuildBVH()
     if (config.bvhConf.build) {
         Timer timer("Building BVH");
         config.scene.BuildBVH(config.bvhConf.type);
-    }
-}
-
-void App::ConvertToUint(u8* pColorBuf, Vec3* pRealColorBuf)
-{
-    // Convert to u8 format
-    int w = config.windowWidth;
-    int h = config.windowHeight;
-    for (int i = 0, j=0; i < (w*h); ++i, j+=4)
-    {
-        pColorBuf[j+0] = (u8)(toInt(pRealColorBuf[i].x)); // including Gamma Correction
-        pColorBuf[j+1] = (u8)(toInt(pRealColorBuf[i].y));
-        pColorBuf[j+2] = (u8)(toInt(pRealColorBuf[i].z));
-        pColorBuf[j+3] = 255;
     }
 }
 
@@ -132,7 +104,8 @@ void App::Render()
         timer.PrintElapsed("Total rendering time: ");
     }
     
-    ConvertToUint(pColorBuf_, pRealColorBuf_);
+    pImageF32_->GammaCorrection();
+    pImage_->ConvertFrom(*pImageF32_);
 }
 
 void App::RenderScene()
@@ -140,13 +113,13 @@ void App::RenderScene()
     // @todo check if light is exist, camera is exist
     // CheckScene();
     
-    pRenderer_->Run(pRealColorBuf_, config.scene);
+    pRenderer_->Run(*pImageF32_, config.scene);
     
     // Tone Mapping
     if (config.postEffect.toneMapEnabled) {
         ToneMap toneMap;
         toneMap.SetKeyValue(config.postEffect.toneMapKeyValue);
-        toneMap.Apply(pRealColorBuf_, config.windowWidth, config.windowHeight);
+        toneMap.Apply(*pImageF32_, config.windowWidth, config.windowHeight);
     }
 }
 

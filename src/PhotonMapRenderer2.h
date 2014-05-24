@@ -11,6 +11,7 @@ struct HitRecord;
 class Scene;
 class Random;
 class Sampler;
+class Image;
 
 class PhotonMapRenderer2 : public IRenderer
 {
@@ -21,7 +22,7 @@ public:
     PhotonMapRenderer2();
     ~PhotonMapRenderer2();
     virtual void SetConfig(const Config& config);
-    virtual void Run(Vec3* pColorBuf, const Scene& scene);
+    virtual void Run(Image& image, const Scene& scene);
 
 private:
     
@@ -50,13 +51,12 @@ private:
     
     void InitializePhotonMap(Photon_map** ppPm, const PhotonMapConfig& pmConf, PhotonFilter** ppFilter);
     void PhotonTracing();
-    void PhotonTracing_(Photon_map& photonMap, const PhotonMapConfig& pmConfig, int nLit,
+    void PhotonTracing_(Photon_map& photonMap, const PhotonMapConfig& pmConfig,
                         double sumIntensity, TraceFlag traceFlag);
     void TracePhoton(const Ray& r, const Vec3& power, PathInfo pathInfo, Random& rand);
-    bool Intersect(const Ray& r, HitRecord& rec);
     Vec3 CosImportanceSamplingRay(const Vec3& n);
     Vec3 GlossyRay(const Vec3& w, float exponent);
-    void RayTracing(Vec3* pColorBuf);
+    void RayTracing(Image& image);
     Vec3 Irradiance(const Ray &r, PathInfo pathInfo, Random& rand);
     
     const Config* pConf_;

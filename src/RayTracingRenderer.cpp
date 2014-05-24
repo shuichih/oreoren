@@ -4,13 +4,14 @@
 #include <cassert>
 #include "Common.h"
 #include "Scene.h"
-#include "LightSource.h"
+#include "Light.h"
 #include "RayTracingRenderer.h"
 #include "BVH.h"
 #include "Config.h"
 #include "Ray.h"
 #include "OldMaterial.h"
 #include "Random.h"
+#include "Image.h"
 
 using namespace std;
 
@@ -39,7 +40,7 @@ Vec3 RayTracingRenderer::Irradiance(const Ray &r, int depth, Random& rand)
     }
     
     HitRecord rec;
-    if (!pScene_->Intersect(r, EPSILON, REAL_MAX, rec)) return Vec3(0, 0, 1);
+    if (!pScene_->Intersect(r, EPSILON, REAL_MAX, rec)) return pConfig_->bgColor;
     //const IShape& obj = *g_shapes[id];       // the hit object
     Vec3 x = r.o + r.d * rec.t;
     Vec3 n = rec.normal;
@@ -52,16 +53,16 @@ Vec3 RayTracingRenderer::Irradiance(const Ray &r, int depth, Random& rand)
     // Ideal DIFFUSE reflection
     if (refl == DIFF){
         Vec3 litPos;
-        LightSourceType litType = pScene_->GetLight(0)->GetType();
+        LightType litType = pScene_->GetLight(0)->GetType();
         if (litType == Lit_Point) {
-            litPos = ((PointLightSource*)pScene_->GetLight(0))->position_;
+            litPos = ((PointLight*)pScene_->GetLight(0))->position_;
         } else if (litType == Lit_Area) {
-            AreaLightSource* pLitSrc = (AreaLightSource*)pScene_->GetLight(0);
+            AreaLight* pLitSrc = (AreaLight*)pScene_->GetLight(0);
             litPos = (pLitSrc->p_[0] + pLitSrc->p_[1] + pLitSrc->p_[2] + pLitSrc->p_[3]) * 0.25f;
         } else if (litType == Lit_Sphere) {
-            litPos = ((SphereLightSource*)pScene_->GetLight(0))->position_;
+            litPos = ((SphereLight*)pScene_->GetLight(0))->position_;
         } else {
-            litPos = ((SphereLightSource*)pScene_->GetLight(0))->position_;
+            litPos = ((SphereLight*)pScene_->GetLight(0))->position_;
             assert(false);
         }
         Vec3 L = (litPos - x).normalize();
@@ -127,12 +128,17 @@ Vec3 RayTracingRenderer::Irradiance(const Ray &r, int depth, Random& rand)
          + Irradiance(Ray(x, tdir), depth, rand).mult(f) * Tr;
 }
 
-void RayTracingRenderer::RayTracing(Vec3* pColorBuf)
+void RayTracingRenderer::RayTracing(Image& image)
 {
-    const u32 w = pConfig_->windowWidth;
-    const u32 h = pConfig_->windowHeight;
+    if (image.format() != Image::RGB_F32) {
+        assert(false);
+        return;
+    }
+    const u32 w = image.width();
+    const u32 h = image.height();
     const u32 nSub = pRtConfig_->nSubPixelsSqrt;
     const real subPixelFactor = 1.0f / (real)(nSub*nSub);
+    Vec3* pColorBuf = (Vec3*)image.buffer();
     
     // バッファクリア
     for (u32 y=0; y<h; y++) {
@@ -215,9 +221,9 @@ void RayTracingRenderer::RayTracing(Vec3* pColorBuf)
     delete[] pRands;
 }
 
-void RayTracingRenderer::Run(Vec3* pColorBuf, const Scene& scene)
+void RayTracingRenderer::Run(Image& image, const Scene& scene)
 {
     pScene_ = &scene;
     
-    RayTracing(pColorBuf);
+    RayTracing(image);
 }

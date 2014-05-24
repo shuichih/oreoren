@@ -5,7 +5,7 @@
 #include "Common.h"
 #include "Scene.h"
 #include "PhotonMap.h"
-#include "LightSource.h"
+#include "Light.h"
 #include "PhotonMapRenderer2.h"
 #include "PhotonFilter.h"
 #include "Config.h"
@@ -16,6 +16,7 @@
 #include "BmpFileView.h"
 #include "StringUtils.h"
 #include "Sampler.h"
+#include "Image.h"
 #ifdef _WIN32
 #include "Windows.h"
 #endif
@@ -87,6 +88,7 @@ Vec3 PhotonMapRenderer2::GlossyRay(const Vec3& w, float exponent)
     return (sp.x * u + sp.y * v + sp.z * w).normalize();
 }
 
+// @todo Material::TracePhoton()を実装
 void PhotonMapRenderer2::TracePhoton(const Ray& r, const Vec3& power, PathInfo pathInfo, Random& rand)
 {
     if (++pathInfo.depth > pPmConf_->maxPhotonBounce)
@@ -115,7 +117,7 @@ void PhotonMapRenderer2::TracePhoton(const Ray& r, const Vec3& power, PathInfo p
         pCurrPm_->store(power.e, x.e, r.d.e, true, lightNo_);
         
         // 影フォトンをストア
-        std::vector<HitRecord> shadyHits(8);
+        std::vector<HitRecord> shadyHits(8); // @todo これnew呼ばれるな、よくない。PathInfoのメンバにすればいいのでは
         int nHits = pScene_->RayCast(shadyHits, 0, r, rec.t+EPSILON, REAL_MAX);
         //printf("%d\n", nHits);
         for (int i=0; i<nHits; i++) {
@@ -245,24 +247,20 @@ Vec3 PhotonMapRenderer2::Irradiance(const Ray& r, PathInfo pathInfo, Random& ran
     HitRecord rec;
     rec.hitLit = true;
     if (!pScene_->Intersect(r, EPSILON, REAL_MAX, rec)) {
-        return Vec3(1, 1, 1); // @todo BGColor
-        /*
-        if (pathInfo.depth == 1) {
-            return Vec3(1, 1, 1); // @todo BGColor
-        } else if (pathInfo.depth == 2) {
-            return Vec3(0, 0, 1);// bunnyの片面しか当たってない
-        } else if (pathInfo.depth == 3) {
-            return Vec3(0, 1, 0);
-        } else if (pathInfo.depth == 4) {
-            return Vec3(1, 0, 0);
-        } else {
-            return Vec3(1, 1, 1);
-        }
-        */
+#if 1
+        return pConf_->bgColor;
+#else
+        // depth毎の可視化
+        if (pathInfo.depth == 1) return Vec3(1, 1, 1);
+        if (pathInfo.depth == 2) return Vec3(0, 0, 1);
+        if (pathInfo.depth == 3) return Vec3(0, 1, 0);
+        if (pathInfo.depth == 4) return Vec3(1, 0, 0);
+        else                     return Vec3(1, 1, 1);
+#endif
     }
     Vec3 x = r.o + r.d * rec.t;
     Vec3 n = rec.normal;
-    Vec3 nl = n.dot(r.d) < 0.f ? n : n * -1.f;   // 交点の法線
+    Vec3 nl = n.dot(r.d) < 0.f ? n : n * -1.f;   // 表裏を考慮した法線
     Vec3 color = rec.color;
     Refl_t refl = rec.pOldMaterial->refl;
     
@@ -272,6 +270,7 @@ Vec3 PhotonMapRenderer2::Irradiance(const Ray& r, PathInfo pathInfo, Random& ran
         Vec3 irrad;
         const float BRDF = PI_INV;
         
+        // 半影エリアか判定
         float peRatio = .5f; // means penumbra area
         if (pPmRenConf_->shadowEstimate) {
             const float peDist = pShadowPmConf_->estimateDist;
@@ -279,23 +278,30 @@ Vec3 PhotonMapRenderer2::Irradiance(const Ray& r, PathInfo pathInfo, Random& ran
             peRatio = pShadowPhotonMap_->penumbra_estimate(lightNo_, x.e, nl, peDist, peNum);
         }
         
-        //printf("pe=%f\n", peRatio);
-        if (pPmRenConf_->drawShadowEstimate)
-        {
-            // 影度合い別に可視化
-            if (peRatio == 1.f) {
-                // direct
-                return Vec3(1.f, 1.f, 1.f);
-            }
-            else if (peRatio == 0) {
-                // umbra
-                return Vec3(0, 0, 0);
-            }
-            else {
-                // penumbra
-                return Vec3(.5f, .5f, .5f);
-            }
+        // 影度合い別に可視化
+        if (pPmRenConf_->drawShadowEstimate) {
+            if (peRatio == 1.f) return Vec3(1.f, 1.f, 1.f); // direct
+            if (peRatio == 0)   return Vec3(  0,   0,   0); // umbra
+            else                return Vec3(.5f, .5f, .5f); // penumbra
         }
+       
+        // PhotonMappingのLambertではSampleF()でなく
+        // F() で帰るBRDFだけ使う
+        //pLambert->F(rec, litDir, -r.d);
+        //
+        // 実際はMaterial::photonmap_shades()でこれを行う。
+        // Glossy等さらにトレースする場合もその中で行う
+        // diffuseのshadeではShaderRec->world->photonmapと辿れる必要がある
+        // PhotonTracingの内容もmaterialに以降する
+        // 余裕があればパストレRendererを書く
+        
+        // HitRecord -> ShaderRec
+        // HitRecord.pScene
+        // Material::photonmap_shade
+        // build new Material in Config
+        // Config -> SceneDesc?
+        // FIRST: Materialを使ってPMRen::DIFFUSEを処理
+        // MaterialをPhotonMapRendererのfriendにするか...とりあえず書いてみよう
         
         // Direct Light
         if (pPmRenConf_->directLight) {
@@ -413,28 +419,25 @@ void PhotonMapRenderer2::PhotonTracing()
     u32 nLit = (u32)pScene_->GetLightNum();
     double sumFlux = 0;
     for (u32 i=0; i<nLit; i++) {
-        const Vec3& flux = pScene_->GetLight(i)->GetFlux();
-        sumFlux += flux.sum(); // sumでなく輝度を使った方が精度が上がる
+        const Light& lit = *pScene_->GetLight(i);
+        if (lit.GetType() != Lit_Ambient) { // ambientはフォトン撒かない
+            const Vec3& flux = pScene_->GetLight(i)->GetFlux();
+            sumFlux += flux.sum(); // sumでなく輝度を使った方が精度が上がる
+        }
     }
     
     // 各ライトからライトの明るさに応じてフォトンをばらまく
     if (pPmConf_->enable && pPmRenConf_->indirectLight) {
         printf("<Indirect Photon Map>\n");
-        PhotonTracing_(*pPhotonMap_, *pPmConf_, nLit, sumFlux, Trace_Indirect);
+        PhotonTracing_(*pPhotonMap_, *pPmConf_, sumFlux, Trace_Indirect);
     }
-#ifdef _WIN32
-    Sleep(1000);
-#endif
     if (pCausticPmConf_->enable && pPmRenConf_->caustic) {
         printf("<Caustic Photon Map>\n");
-        PhotonTracing_(*pCausticPhotonMap_, *pCausticPmConf_, nLit, sumFlux, Trace_Caustic);
+        PhotonTracing_(*pCausticPhotonMap_, *pCausticPmConf_, sumFlux, Trace_Caustic);
     }
-#ifdef _WIN32
-    Sleep(1000);
-#endif
     if (pShadowPmConf_->enable && pPmRenConf_->shadowEstimate) {
         printf("<Shadow Photon Map>\n");
-        PhotonTracing_(*pShadowPhotonMap_, *pShadowPmConf_, nLit, sumFlux, Trace_Shadow);
+        PhotonTracing_(*pShadowPhotonMap_, *pShadowPmConf_, sumFlux, Trace_Shadow);
     }
 }
 
@@ -442,7 +445,6 @@ void PhotonMapRenderer2::PhotonTracing()
 void PhotonMapRenderer2::PhotonTracing_(
     Photon_map& photonMap,
     const PhotonMapConfig& pmConfig,
-    int nLit,
     double sumFlux,
     PhotonMapRenderer2::TraceFlag traceFlag)
 {
@@ -453,10 +455,13 @@ void PhotonMapRenderer2::PhotonTracing_(
     traceFlag_ = traceFlag;
     
     // 各ライトからライトの明るさに応じてフォトンをばらまく
-    for (int i=0; i<nLit; i++) {
+    for (int i=0; i<pScene_->GetLightNum(); i++) {
         u32 iPhoton = 0;
 
-        const LightSource* pLit = pScene_->GetLight(i);
+        const Light* pLit = pScene_->GetLight(i);
+        if (pLit->GetType() == Lit_Ambient)
+            continue;
+        
         float nPhotonRatio = (float)(pLit->GetFlux().sum() / sumFlux);
         u32 nPhotons = (u32)(c_nPhotons * nPhotonRatio);
         
@@ -521,44 +526,26 @@ inline int toInt(real x)
 #endif
 }
 
-// @todo Appのと共通化
-void ConvertToUint(u8* pColorBuf, const Vec3* pRealColorBuf, int w, int h)
+void OutputInterimImage(const Image& image, const char* filePath);
+void OutputInterimImage(const Image& image, const char* filePath)
 {
-    // Convert to u8 format
-    for (int i = 0, j=0; i < (w*h); ++i, j+=4)
-    {
-        pColorBuf[j+0] = (u8)(toInt(pRealColorBuf[i].x)); // including Gamma Correction
-        pColorBuf[j+1] = (u8)(toInt(pRealColorBuf[i].y));
-        pColorBuf[j+2] = (u8)(toInt(pRealColorBuf[i].z));
-        pColorBuf[j+3] = 255;
-    }
-}
-
-void OutputInterimImage(Vec3* pRealColorBuf, int w, int h, const char* filePath)
-{
-    u8* pColorBuf = new u8[w * h * sizeof(char)*4]; 
-    ConvertToUint(pColorBuf, pRealColorBuf, w, h);
+    Image destImg(image.width(), image.height(), Image::RGBA_8);
+    destImg.ConvertFrom(image);
+    destImg.GammaCorrection();
     BmpFileView bmpFileView;
     bmpFileView.SetFilePath(filePath);
-    bmpFileView.Init(w, h);
-    bmpFileView.Present(pColorBuf);
-
-    delete pColorBuf;
+    bmpFileView.Init(image.width(), image.height());
+    bmpFileView.Present(destImg);
 }
 
-void PhotonMapRenderer2::RayTracing(Vec3* pColorBuf)
+void PhotonMapRenderer2::RayTracing(Image& image)
 {
-    const u32 w = pConf_->windowWidth;
-    const u32 h = pConf_->windowHeight;
+    const u32 w = image.width();
+    const u32 h = image.height();
     const u32 nSub = pPmRenConf_->nSubPixelsSqrt;
     //const real subPixelFactor = 1.0f / (real)(nSub*nSub);
     
-    // バッファクリア
-    for (u32 y=0; y<h; y++) {
-        for (u32 x=0; x<w; x++) {
-            pColorBuf[w*y + x] = Vec3();
-        }
-    }
+    image.Clear();
     
     const Ray camRay = Ray(pConf_->camera.position, pConf_->camera.direction);
     const real fovY = pConf_->camera.fovY;
@@ -574,6 +561,7 @@ void PhotonMapRenderer2::RayTracing(Vec3* pColorBuf)
     int nImage = 0;
     const int nSub2 = nSub*nSub;
     
+    Vec3* pColorBuf = (Vec3*)image.buffer();
     for (u32 sy=0; sy<nSub; sy++) {         // subpixel rows
         for (u32 sx=0; sx<nSub; sx++) {     // subpixel cols
             const int iSpp = (sy*nSub+sx);
@@ -597,7 +585,7 @@ void PhotonMapRenderer2::RayTracing(Vec3* pColorBuf)
                         timer.Restart();
                         char pPath[64];
                         StringUtils::Sprintf(pPath, 64, "./image%d.bmp", nImage);
-                        OutputInterimImage(pColorBuf, w, h, pPath);
+                        OutputInterimImage(image, pPath);
                         nImage++;
                    }
                 }
@@ -656,8 +644,13 @@ void PhotonMapRenderer2::RayTracing(Vec3* pColorBuf)
     delete[] pRands;
 }
 
-void PhotonMapRenderer2::Run(Vec3* pColorBuf, const Scene& scene)
+void PhotonMapRenderer2::Run(Image& image, const Scene& scene)
 {
+    if (image.format() != Image::RGB_F32) {
+        assert(false);
+        return;
+    }
+    
     pScene_ = &scene;
     
     {
@@ -667,7 +660,7 @@ void PhotonMapRenderer2::Run(Vec3* pColorBuf, const Scene& scene)
     }
     {
         Timer timer;
-        RayTracing(pColorBuf);
+        RayTracing(image);
         timer.PrintElapsed("RayTracing time: ");
     }
 }

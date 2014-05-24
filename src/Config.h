@@ -93,7 +93,7 @@ struct PostEffectConfig
     {}
 };
 
-struct LightSourceConfig
+struct LightConfig
 {
     string typeStr;
     Vec3 p[4];
@@ -102,7 +102,7 @@ struct LightSourceConfig
     float radius;
     int nSamples;
     
-    LightSourceConfig()
+    LightConfig()
     : flux(10000, 10000, 10000)
     , nSamples(64)
     , radius(1)
@@ -163,6 +163,12 @@ struct RayTracingConfig
     u32 maxRayBounce;
     bool useTentFilter;
     float distanceToProjPlane;
+    RayTracingConfig()
+    : nSubPixelsSqrt(1)
+    , maxRayBounce(1)
+    , useTentFilter(false)
+    , distanceToProjPlane(100)
+    {}
 };
 
 struct BVHConfig
@@ -211,6 +217,7 @@ struct PhotonMapRendererConfig
     , nFinalGetheringRays(64)
     , nMaxGlossyBounce(1)
     , nGlossyRays(64)
+    , nSubPixelsSqrt(1)
     {}
 };
 
@@ -298,8 +305,8 @@ SECTION_PARSER_BEGIN(CuboidParser)
 SECTION_PARSER_END
 
 //--------------------------------------------------------------------------------
-SECTION_PARSER_BEGIN(LightSourceParser)
-    LightSourceConfig conf_;
+SECTION_PARSER_BEGIN(LightParser)
+    LightConfig conf_;
     ItemDesc* pItemDesc_;
 SECTION_PARSER_END
 
@@ -335,6 +342,7 @@ public:
     int windowHeight;
     bool drawBBox;
     RendererType rendererType;
+    Vec3 bgColor;
     BVHConfig bvhConf;
     PhotonMapRendererConfig pmRendererConf;
     PhotonMapConfig photonMapConf;
@@ -343,7 +351,7 @@ public:
     RayTracingConfig rayTracingConf;
     PostEffectConfig postEffect;
     CameraConfig camera;
-    LightSourceConfig lightSource;
+    LightConfig lightSource;
     SphereConfig sphere;
     SceneImportConfig sceneImport;
     Scene scene;

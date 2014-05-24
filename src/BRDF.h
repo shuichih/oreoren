@@ -33,7 +33,7 @@ public:
      * @param wi sampled direction
      * @param wo light direction
      */
-    virtual RGB SampleF(const HitRecord& hr, Vec3& wi, const Vec3& wo) const = 0;
+    virtual RGB SampleF(const HitRecord& hr, Vec3& wi, const Vec3& wo, float& pdf) const = 0;
     
     /**
      * Bihemispherical reflectance
@@ -53,7 +53,10 @@ public:
 class Lambertian : public IBRDF
 {
 public:
+    Lambertian();
     Lambertian(float kd, const RGB& cd);
+    void SetKd(float k) { kd_ = k; }
+    void SetCr(const RGB& c) { cd_ = c; }
     virtual RGB F(const HitRecord& hr, const Vec3& wi, const Vec3& wo) const;
     virtual RGB SampleF(const HitRecord& hr, Vec3& wi, const Vec3& wo, float& pdf) const;
     virtual RGB Rho(const HitRecord& hr, const Vec3& wo) const;
@@ -71,7 +74,10 @@ private:
 class PerfectSpecular : public IBRDF
 {
 public:
+    PerfectSpecular();
     PerfectSpecular(float kr, const RGB& cr);
+    void SetKr(float k) { kr_ = k; }
+    void SetCr(const RGB& c) { cr_ = c; }
     virtual RGB F(const HitRecord& hr, const Vec3& wi, const Vec3& wo) const;
     virtual RGB SampleF(const HitRecord& hr, Vec3& wi, const Vec3& wo, float& pdf) const;
     virtual RGB Rho(const HitRecord& hr, const Vec3& wo) const;
@@ -88,6 +94,7 @@ private:
 class GlossySpecular : public IBRDF
 {
 public:
+    GlossySpecular();
     GlossySpecular(float kr, const RGB& cr, float exp);
     virtual RGB F(const HitRecord& hr, const Vec3& wi, const Vec3& wo) const;
     virtual RGB SampleF(const HitRecord& hr, Vec3& wi, const Vec3& wo, float& pdf) const;

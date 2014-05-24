@@ -76,7 +76,7 @@ camera.direction = 0 -0.04 -1.0
 camera.fovY = 0.5135
 
 /#
-[LightSource]
+[Light]
 type = POINT
 position = 0 50 70
 #position = 0 0 0
@@ -86,7 +86,7 @@ flux = 25000 25000 25000
 # 直接光、間接光など要素ごとに比べる
 
 /#
-[LightSource]
+[Light]
 type = AREA
 p0 = -5 52  5
 p1 = -5 52 -5
@@ -96,7 +96,7 @@ flux = 10000 10000 10000
 nSamples = 8
 #/
 
-[LightSource]
+[Light]
 type = SPHERE
 position = 0 50 70
 #position = 0 0 0

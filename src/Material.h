@@ -3,18 +3,31 @@
 
 #include "Common.h"
 
+struct HitRecord;
+class Lambertian;
 
-// @todo HitRecord -> ShaderRec
-// @todo introduce Ambient Light
-// @todo shade() 読解
-// @todo PhotonmapShade() 作成
-// @todo 新Material Config作成
-
+//--------------------------------------------------------------------------------
 class Material
 {
 public:
-    Material() {}
+    virtual RGB PhotonMapShade(HitRecord& hr);
+};
+
+//--------------------------------------------------------------------------------
+class Matte : public Material
+{
+public:
+    Matte();
+    void SetKa(float k);
+    void SetKd(float k);
+    void SetCd(const RGB& c);
+    virtual RGB PhotonMapShade(HitRecord& hr);
+    
+private:
+    Lambertian* pAmbientBrdf_;
+    Lambertian* pDiffuseBrdf_;
 };
 
 #endif
+
 

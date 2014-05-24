@@ -6,6 +6,7 @@
 class Config;
 class BVH;
 class Scene;
+class Image;
 
 /**
  * Renderer Interface
@@ -17,7 +18,7 @@ protected:
     
 public:
     virtual void SetConfig(const Config& config) = 0;
-    virtual void Run(Vec3* pColorBuf, const Scene& scene) = 0;
+    virtual void Run(Image& image, const Scene& scene) = 0;
 };
 
 #endif

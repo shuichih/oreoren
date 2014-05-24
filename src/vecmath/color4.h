@@ -28,12 +28,10 @@ public:
 	Color4(float sa, float sr, float sg, float sb): a(sa), r(sr), g(sg), b(sb) {}
 
 	inline uint32 to32BitARGB() const {
-		// TODO
-		uint32 uc_a = static_cast<uint32>(a * 255);
-		uint32 uc_r = static_cast<uint32>(r * 255);
-		uint32 uc_g = static_cast<uint32>(g * 255);
-		uint32 uc_b = static_cast<uint32>(b * 255);
-
+		uint32 uc_a = static_cast<uint32>(a * 255.999f);
+		uint32 uc_r = static_cast<uint32>(r * 255.999f);
+		uint32 uc_g = static_cast<uint32>(g * 255.999f);
+		uint32 uc_b = static_cast<uint32>(b * 255.999f);
 		return (uc_a << 24) | (uc_r << 16) | (uc_g << 8) | uc_b;
 	}
 

@@ -20,7 +20,7 @@ public:
     PhotonMapRenderer();
     ~PhotonMapRenderer();
     virtual void SetConfig(const Config& config);
-    virtual void Run(Vec3* pColorBuf, const Scene& scene);
+    virtual void Run(Image& image, const Scene& scene);
 
 private:
     
@@ -44,7 +44,7 @@ private:
     bool Intersect(const Ray& r, HitRecord& rec);
     Vec3 CosImportanceSamplingRay(const Vec3& n);
     Vec3 GlossyRay(const Vec3& w, float exponent, Random& rand);
-    void RayTracing(Vec3* pColorBuf);
+    void RayTracing(Image& image);
     Vec3 Irradiance(const Ray &r, PathInfo pathInfo, Random& rand);
     
     const Config* pConf_;

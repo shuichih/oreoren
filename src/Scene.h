@@ -11,8 +11,10 @@
 
 
 class IShape;
-class LightSource;
+class Light;
 class BVH;
+class Scene;
+class PhotonMapRenderer2;
 
 // material type
 enum ColorUnit
@@ -35,12 +37,14 @@ enum ShapeType
 
 struct HitRecord
 {
-    real t;
     Vec3 normal;
     RGB color;
     OldMaterial* pOldMaterial;
-    bool hitLit;
     const IShape* pShape;
+    const Scene* pScene;
+    PhotonMapRenderer2* pPmRen;
+    bool hitLit;
+    real t;
     HitRecord()
     : t(0)
     , pOldMaterial(NULL)
@@ -177,7 +181,7 @@ public:
     Scene();
     ~Scene();
     
-    void AddLightSource(const LightSource* pLitSrc);
+    void AddLight(const Light* pLitSrc);
     void AddShape(IShape* pShape);
     bool Intersect(const Ray& r, float tmin, float tmax, HitRecord& rec) const;
     int RayCast(std::vector<HitRecord>& shapes, int nHits, const Ray& r, float tmin, float tmax) const;
@@ -185,8 +189,8 @@ public:
     inline IShape* GetBVH() { return pBVH_; }
     inline u32 GetShapeNum() const { return (u32)shapes_.size(); }
     inline const IShape* GetShape(u32 index) const { return shapes_[index]; }
-    inline u32 GetLightNum() const { return (u32)litSrcs_.size(); }
-    inline const LightSource* GetLight(u32 index) const { return litSrcs_[index]; }
+    inline u32 GetLightNum() const { return (u32)lits_.size(); }
+    inline const Light* GetLight(u32 index) const { return lits_[index]; }
     OldMaterial* GetOldMaterial(std::string name);
     OldMaterial* GetDefaultOldMaterial();
     OldMaterial* GetLightOldMaterial();
@@ -196,7 +200,7 @@ private:
     OldMaterial defaultOldMaterial_;
     OldMaterial lightOldMaterial_;
     OldMaterialMap materialMap_;
-    std::vector<const LightSource*> litSrcs_;
+    std::vector<const Light*> lits_;
     std::vector<const IShape*> shapes_;
     IShape* pBVH_;
 };

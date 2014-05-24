@@ -14,6 +14,7 @@ class Photon_map;
 class BVH;
 class IRenderer;
 class IView;
+class Image;
 
 class App
 {
@@ -41,8 +42,8 @@ private:
     BVH* pBVH_;
     Timer timer_;
     IView* pView_;
-    Vec3* pRealColorBuf_;
-    u8* pColorBuf_;
+    Image* pImageF32_;
+    Image* pImage_;
 };
 
 #endif

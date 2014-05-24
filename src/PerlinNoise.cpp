@@ -90,6 +90,7 @@ static float CubicInterporate(float v0, float v1, float v2, float v3, float t)
     return t * (t * (t * p + q) + r) + v1;
 }
 
+#if 0
 // 補間関数ポインタ配列
 static float (*pFadeFuncs[])(float t) =
 {
@@ -98,6 +99,7 @@ static float (*pFadeFuncs[])(float t) =
     Hermite3dFade,
     Hermite5dFade
 };
+#endif
 
 // ctor
 PerlinNoise2D::PerlinNoise2D()

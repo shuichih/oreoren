@@ -68,7 +68,7 @@ camera.position = 0 12 285
 camera.direction = 0 -0.04 -1.0
 camera.fovY = 0.5135
 
-[LightSource]
+[Light]
 type = SPHERE
 position = 0 200 100
 radius = 5
